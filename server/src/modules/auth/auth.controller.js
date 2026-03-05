@@ -62,3 +62,24 @@ export const refreshAccessToken = async (req, res, next) => {
     next(error);
   }
 };
+
+export const forgotPassword = async(req, res, next)=> {
+  try{
+    const result = await authService.forgotPassword(req.body);
+    res.status(200).json(result);
+  }
+  catch(error)  
+  {
+    next(error);
+  }
+}
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const result = await authService.resetPassword(req.body);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

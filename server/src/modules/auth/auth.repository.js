@@ -34,3 +34,49 @@ export const findRefreshToken = async (refreshToken) => {
   return result.rows[0];
 };
 
+export const storePasswordResetToken = async (
+  userId,
+  token,
+  expiresAt
+) => {
+
+  const query = `
+    INSERT INTO password_resets (user_id, token, expires_at)
+    VALUES ($1, $2, $3)
+  `;
+
+  await pool.query(query, [userId, token, expiresAt]);
+};
+
+export const deletePasswordResetToken = async (token) => {
+
+  const query = `
+    DELETE FROM password_resets
+    WHERE token = $1
+  `;
+
+  await pool.query(query, [token]);
+};
+
+export const updateUserPassword = async (
+  userId,
+  password
+) => {
+
+  const query = `
+    UPDATE users
+    SET password = $1
+    WHERE id = $2
+  `;
+
+  await pool.query(query, [password, userId]);
+};
+
+export const findPasswordResetToken = async (token) => {
+  const result = await pool.query(
+    `SELECT * FROM password_resets WHERE token = $1`,
+    [token]
+  );
+
+  return result.rows[0];
+};

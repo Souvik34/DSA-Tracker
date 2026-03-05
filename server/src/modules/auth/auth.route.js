@@ -2,13 +2,13 @@ import express from "express";
 import passport from "passport";
 
 import { signUp, signIn, signOut,  refreshAccessToken} from "./auth.controller.js";
-
+import { authLimiter } from "../../middlewares/ratelimit.js";
 const router = express.Router();
 
-router.post("/signup", signUp);
-router.post("/signin", signIn);
-router.post("/signout", signOut);
-router.post("/refresh", refreshAccessToken);
+router.post("/signup", authLimiter, signUp);
+router.post("/signin", authLimiter, signIn);
+router.post("/signout", authLimiter, signOut);
+router.post("/refresh", authLimiter, refreshAccessToken);
 
 router.get(
   "/google",

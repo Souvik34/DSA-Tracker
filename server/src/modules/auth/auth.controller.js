@@ -14,13 +14,13 @@ export const signUp = async(req, res, next) => {
     }
 }
 
-export const signIn = async(req,res,next)=>
-{
-    try{
-        const result = await authService.signIn(req.body);
-          res.cookie("refreshToken", refreshToken, {
+export const signIn = async (req, res, next) => {
+  try {
+    const { accessToken, refreshToken, user, message } =
+      await authService.signIn(req.body);
+
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-    //   secure: false, 
       sameSite: "strict",
     });
 
@@ -29,11 +29,11 @@ export const signIn = async(req,res,next)=>
       accessToken,
       user,
     });
+
   } catch (error) {
     next(error);
-    }
+  }
 };
-
 export const signOut = async(req,res,next)=>
 {
     try{

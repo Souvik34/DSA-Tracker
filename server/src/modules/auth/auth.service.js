@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import crypto from "crypto";
 import * as authRepository from './auth.repository.js';
 import { generateAccessToken,generateRefreshToken} from "../../utils/token.utils.js";
+import { sendPasswordResetEmail } from '../../utils/email.utils.js';
 
 export const signUp = async({name, email, password})=> {
     const existingUser = await authRepository.findUserByEmail(email);
@@ -110,6 +111,7 @@ export const  forgotPassword = async({email})=> {
     expiresAt
  );
 
+  await sendPasswordResetEmail(email, resetToken);
   return {
     message: "Password reset token generated",
     resetToken: resetToken

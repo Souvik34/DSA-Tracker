@@ -1,8 +1,31 @@
 import pool from "../../db/db.js";
 
-export const getAllProblems = async () => {
-  const res = await pool.query("SELECT * FROM problems ORDER BY created_at DESC");
-    return res.rows;
+export const getAllProblems = async ({difficulty, topic, page, limit}) => {
+    let query = "SELECT * FROM problems WHERE 1=1";
+  const values = [];
+
+  if (difficulty) {
+    values.push(difficulty);
+    query += ` AND difficulty = ANY($${values.length})`;
+  }
+
+  if (topic) {
+    values.push(topic);
+    query += ` AND topic = ANY($${values.length})`;
+  }
+
+  const offset = (page - 1) * limit;
+
+  values.push(limit);
+  query += ` LIMIT $${values.length}`;
+
+  values.push(offset);
+  query += ` OFFSET $${values.length}`;
+
+  const result = await db.query(query, values);
+
+  return result.rows;
+
 };
 
 export const getProblemById = async (id) => {

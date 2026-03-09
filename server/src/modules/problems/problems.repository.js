@@ -22,9 +22,9 @@ export const getAllProblems = async ({difficulty, topic, page, limit}) => {
   values.push(offset);
   query += ` OFFSET $${values.length}`;
 
-  const result = await db.query(query, values);
+  const res = await pool.query(query, values);
 
-  return result.rows;
+  return res.rows;
 
 };
 

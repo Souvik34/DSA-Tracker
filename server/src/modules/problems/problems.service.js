@@ -1,11 +1,11 @@
-import * as problemService from "./problem.service.js";
+import * as problemRepository from "./problem.repository.js";
 
 export const getAllProblems = async () => {
-    return await problemService.getAllProblems();
+    return await problemRepository.getAllProblems();
 };
 
 export const getProblemById = async (id) => {
-    return await problemService.getProblemById(id);
+    return await problemRepository.getProblemById(id);
 }
 
 export const createProblem = async (data) => {

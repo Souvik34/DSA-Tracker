@@ -1,4 +1,4 @@
-import * as problemRepository from "./problem.repository.js";
+import * as problemRepository from "./problems.repository.js";
 
 export const getAllProblems = async () => {
     return await problemRepository.getAllProblems();

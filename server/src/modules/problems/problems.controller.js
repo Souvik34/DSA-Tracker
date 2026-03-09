@@ -1,4 +1,4 @@
-import * as problemService from "./problem.service.js";
+import * as problemService from "./problems.service.js";
 
 export const getAllProblems = async (req, res) => {
     try{

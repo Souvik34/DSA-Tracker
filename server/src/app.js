@@ -15,5 +15,7 @@ app.use(passport.initialize());
 import authRoutes from "./modules/auth/auth.route.js";
 app.use("/api/v1/auth", authRoutes);
 
+import problemRoutes from "./modules/problems/problems.route.js";
+app.use("/api/v1/problems", problemRoutes);
 
 export default app;

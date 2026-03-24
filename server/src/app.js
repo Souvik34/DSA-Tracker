@@ -20,4 +20,10 @@ app.use("/api/v1/auth", authRoutes);
 import problemRoutes from "./modules/problems/problems.route.js";
 app.use("/api/v1/problems", problemRoutes);
 
+import revisionRoutes from "./modules/revision/revision.route.js";
+app.use("/api/v1/revision", revisionRoutes);
+
+import progressRoutes from "./modules/progress/progress.route.js";
+app.use("/api/v1/progress", progressRoutes);
+
 export default app;

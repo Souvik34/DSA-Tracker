@@ -1,15 +1,9 @@
-import { getDueRevisionsRepo } from "../revision/revision.repository.js";
+import { getUserProgressRepo } from "./progress.repository.js";
 
-export const getProblemsService = async (params, userId) => {
-  const dueRevisions = await getDueRevisionsRepo(userId);
-
-  if (dueRevisions.length > 0) {
-    return {
-      blocked: true,
-      message: "Complete your revisions first",
-      revisions: dueRevisions,
-    };
+export const getUserProgressService = async (userId) => {
+  if (!userId) {
+    throw new Error("userId is required");
   }
 
-  return await getAllProblemsRepo(params);
+  return await getUserProgressRepo(userId);
 };

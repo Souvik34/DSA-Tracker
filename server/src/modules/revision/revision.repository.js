@@ -1,10 +1,75 @@
+import pool from '../../db/db.js';
+
+export const insertRevisionRepo = async (userId, problemId) => {
+  await pool.query(
+    `INSERT INTO revision_queue (user_id, problem_id, next_revision_date)
+     VALUES ($1, $2, CURRENT_DATE + INTERVAL '1 day')
+     ON CONFLICT (user_id, problem_id) DO NOTHING`,
+    [userId, problemId]
+  );
+};
+
+
+
 export const getDueRevisionsRepo = async (userId) => {
   const result = await pool.query(
     `SELECT * FROM revision_queue
      WHERE user_id = $1
-     AND next_revision_date <= CURRENT_DATE`,
+     AND is_completed = FALSE
+     AND next_revision_date <= CURRENT_DATE
+     ORDER BY next_revision_date ASC`,
     [userId]
   );
 
   return result.rows;
+};
+
+
+
+export const getAllRevisionsRepo = async (userId) => {
+  const result = await pool.query(
+    `SELECT * FROM revision_queue
+     WHERE user_id = $1
+     ORDER BY next_revision_date ASC`,
+    [userId]
+  );
+
+  return result.rows;
+};
+
+
+
+export const getRevisionByProblemRepo = async (userId, problemId) => {
+  const result = await pool.query(
+    `SELECT * FROM revision_queue
+     WHERE user_id = $1 AND problem_id = $2`,
+    [userId, problemId]
+  );
+
+  return result.rows[0];
+};
+
+
+
+
+export const updateRevisionRepo = async (userId, problemId, nextDate) => {
+  await pool.query(
+    `UPDATE revision_queue
+     SET 
+       revision_count = revision_count + 1,
+       next_revision_date = $1
+     WHERE user_id = $2 AND problem_id = $3`,
+    [nextDate, userId, problemId]
+  );
+};
+
+
+
+export const markCompletedRepo = async (userId, problemId) => {
+  await pool.query(
+    `UPDATE revision_queue
+     SET is_completed = TRUE
+     WHERE user_id = $1 AND problem_id = $2`,
+    [userId, problemId]
+  );
 };

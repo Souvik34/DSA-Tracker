@@ -1,4 +1,7 @@
-import pool from '../../db/db.js';
+import pool from "../../db/index.js";
+import redisClient from "../../config/redis.js";
+
+
 
 export const insertRevisionRepo = async (userId, problemId) => {
   await pool.query(
@@ -7,11 +10,24 @@ export const insertRevisionRepo = async (userId, problemId) => {
      ON CONFLICT (user_id, problem_id) DO NOTHING`,
     [userId, problemId]
   );
+
+ await redisClient.del(`revision:all:${userId}`);
+await redisClient.del(`revision:due:${userId}`);
 };
 
 
 
 export const getDueRevisionsRepo = async (userId) => {
+  const cacheKey = `revision:due:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    console.log("CACHE HIT (due revisions)");
+    return JSON.parse(cached);
+  }
+
+  console.log("CACHE MISS (due revisions)");
+
   const result = await pool.query(
     `SELECT * FROM revision_queue
      WHERE user_id = $1
@@ -21,12 +37,26 @@ export const getDueRevisionsRepo = async (userId) => {
     [userId]
   );
 
+  await redisClient.setEx(
+    cacheKey,
+    300,
+    JSON.stringify(result.rows)
+  );
+
   return result.rows;
 };
 
-
-
 export const getAllRevisionsRepo = async (userId) => {
+  const cacheKey = `revision:all:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    console.log("CACHE HIT (all revisions)");
+    return JSON.parse(cached);
+  }
+
+  console.log("CACHE MISS (all revisions)");
+
   const result = await pool.query(
     `SELECT * FROM revision_queue
      WHERE user_id = $1
@@ -34,9 +64,14 @@ export const getAllRevisionsRepo = async (userId) => {
     [userId]
   );
 
+  await redisClient.setEx(
+    cacheKey,
+    300,
+    JSON.stringify(result.rows)
+  );
+
   return result.rows;
 };
-
 
 
 export const getRevisionByProblemRepo = async (userId, problemId) => {
@@ -51,7 +86,6 @@ export const getRevisionByProblemRepo = async (userId, problemId) => {
 
 
 
-
 export const updateRevisionRepo = async (userId, problemId, nextDate) => {
   await pool.query(
     `UPDATE revision_queue
@@ -61,9 +95,11 @@ export const updateRevisionRepo = async (userId, problemId, nextDate) => {
      WHERE user_id = $2 AND problem_id = $3`,
     [nextDate, userId, problemId]
   );
+
+  
+  await redisClient.del(`revision:due:${userId}`);
+  await redisClient.del(`revision:all:${userId}`);
 };
-
-
 
 export const markCompletedRepo = async (userId, problemId) => {
   await pool.query(
@@ -72,4 +108,8 @@ export const markCompletedRepo = async (userId, problemId) => {
      WHERE user_id = $1 AND problem_id = $2`,
     [userId, problemId]
   );
+
+
+  await redisClient.del(`revision:due:${userId}`);
+  await redisClient.del(`revision:all:${userId}`);
 };

@@ -2,7 +2,7 @@ import express from'express';
 import cors from 'cors';
 import { connectRedis } from "./config/redis.js";
 const app = express();
-
+import "./workers/solve.worker.js";
 await connectRedis();
 app.use(cors());
 

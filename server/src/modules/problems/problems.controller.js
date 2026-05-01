@@ -1,6 +1,6 @@
 import { success } from "zod";
 import * as problemService from "./problems.service.js";
-
+import { solveQueue } from "../../queues/solve.queue.js";
 export const getAllProblems = async (req, res) => {
   try {
     const { difficulty, topic, page = 1, limit = 50 } = req.query;
@@ -40,5 +40,37 @@ export const createProblem = async (req, res) => {
     res.status(201).json(problem);
   } catch (err) {
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const markProblemSolved = async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const { problemId, difficulty } = req.body;
+
+    if (!Number.isInteger(userId) || !problemId || !difficulty) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input",
+      });
+    }
+
+  
+    await solveQueue.add("solve-job", {
+      userId,
+      problemId,
+      difficulty,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Solve event queued successfully",
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

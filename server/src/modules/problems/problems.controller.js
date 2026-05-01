@@ -7,8 +7,8 @@ export const getAllProblems = async (req, res) => {
     const problems = await problemService.getAllProblems({
       page: Number(page),
       limit: Number(limit),
-      difficulty: difficulty ? difficulty.split(",") : undefined,
-      topic: topic ? topic.split(",") : undefined,
+  difficulty: difficulty ? difficulty.split(",") : [],
+topic: topic ? topic.split(",") : [],
     });
     res.status(200).json({
       success: true,

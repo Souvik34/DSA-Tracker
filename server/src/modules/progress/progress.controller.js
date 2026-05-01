@@ -2,8 +2,14 @@ import { getUserProgressService } from "./progress.service.js";
 
 export const getUserProgress = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = Number(req.params.userId);
 
+if (!userId) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid userId"
+  });
+}
     const data = await getUserProgressService(userId);
 
     res.json({
@@ -11,6 +17,9 @@ export const getUserProgress = async (req, res) => {
       data,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+   res.status(500).json({
+  success: false,
+  message: "Internal Server Error"
+});
   }
 };

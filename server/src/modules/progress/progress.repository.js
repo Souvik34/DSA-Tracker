@@ -1,6 +1,17 @@
 import { pool } from "../../db/index.js";
+import redisClient from "../../config/redis.js";
 
 export const getUserProgressRepo = async (userId) => {
+  const cacheKey = `progress:stats:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    console.log("CACHE HIT");
+    return JSON.parse(cached);
+  }
+
+  console.log("CACHE MISS");
+
   const result = await pool.query(
     `SELECT 
         COUNT(*) as total,
@@ -10,6 +21,12 @@ export const getUserProgressRepo = async (userId) => {
      FROM solved_problems
      WHERE user_id = $1`,
     [userId]
+  );
+
+  await redisClient.setEx(
+    cacheKey,
+    300,
+    JSON.stringify(result.rows[0])
   );
 
   return result.rows[0];

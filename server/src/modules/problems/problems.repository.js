@@ -151,3 +151,15 @@ export const createProblemRepo = async (data) => {
 
   return result.rows[0];
 };
+
+export const insertSolvedProblemRepo = async (userId, difficulty) => {
+  await pool.query(
+    `INSERT INTO solved_problems (user_id, difficulty)
+     VALUES ($1, $2)
+     ON CONFLICT DO NOTHING`,
+    [userId, difficulty]
+  );
+
+
+  await redisClient.del(`progress:stats:${userId}`);
+};

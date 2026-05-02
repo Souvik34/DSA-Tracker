@@ -56,12 +56,22 @@ export const markProblemSolved = async (req, res) => {
     }
 
   
-    await solveQueue.add("solve-job", {
-      userId,
-      problemId,
-      difficulty,
-    });
-
+ await solveQueue.add(
+  "solve-job",
+  {
+    userId,
+    problemId,
+    difficulty,
+  },
+  {
+    jobId: `${userId}-${problemId}`, 
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 2000,
+    },
+  }
+);
     res.status(200).json({
       success: true,
       message: "Solve event queued successfully",

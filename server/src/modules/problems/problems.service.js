@@ -27,3 +27,13 @@ export const createProblem = async (data) => {
     platform
   });
 };
+
+import { insertSolvedProblemRepo } from "./progress.repository.js";
+
+export const addSolvedProblemService = async (userId, difficulty) => {
+  if (!userId || !difficulty) {
+    throw new Error("Invalid solve data");
+  }
+
+  await insertSolvedProblemRepo(userId, difficulty);
+};

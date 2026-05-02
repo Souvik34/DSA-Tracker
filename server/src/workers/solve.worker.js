@@ -1,46 +1,41 @@
 import { Worker } from "bullmq";
-import redisClient from "../config/redis.js";
-import pool from "../db/index.js";
+import { connection } from "../config/bullmq.redis.js";
+
+import { addSolvedProblemService } from "../modules/progress/progress.service.js";
+import { insertRevisionRepo } from "../modules/revision/revision.repository.js";
 
 export const solveWorker = new Worker(
   "solve-problem",
   async (job) => {
     const { userId, problemId, difficulty } = job.data;
 
-    console.log("Processing solve job:", job.id);
+    console.log("Processing job:", job.id);
 
     try {
     
-    
-      await pool.query(
-        `INSERT INTO solved_problems (user_id, difficulty)
-         VALUES ($1, $2)`,
-        [userId, difficulty]
-      );
+      await addSolvedProblemService(userId, difficulty);
 
-      await pool.query(
-        `INSERT INTO revision_queue (user_id, problem_id, next_revision_date)
-         VALUES ($1, $2, CURRENT_DATE + INTERVAL '1 day')
-         ON CONFLICT (user_id, problem_id) DO NOTHING`,
-        [userId, problemId]
-      );
+      await insertRevisionRepo(userId, problemId);
 
-     
-      await redisClient.del(`progress:stats:${userId}`);
-      await redisClient.del(`revision:due:${userId}`);
-      await redisClient.del(`revision:all:${userId}`);
-
-      console.log("Solve job completed:", job.id);
+      console.log("Job completed:", job.id);
 
     } catch (err) {
-      console.error(" Worker error:", err);
-
-      
+      console.error("Worker error:", err);
       throw err;
     }
   },
   {
-    connection: redisClient,
+    connection,
     concurrency: 5,
   }
 );
+
+
+
+solveWorker.on("completed", (job) => {
+  console.log(`Job ${job.id} completed`);
+});
+
+solveWorker.on("failed", (job, err) => {
+  console.error(`Job ${job?.id} failed`, err.message);
+});

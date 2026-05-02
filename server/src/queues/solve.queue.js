@@ -1,7 +1,9 @@
-import { Queue } from "bullmq";
-import redisClient from "../config/redis.js";
 
+import { Queue } from "bullmq";
 
 export const solveQueue = new Queue("solve-problem", {
-  connection: redisClient,
+  connection: {
+    host: "127.0.0.1",
+    port: 6379,
+  },
 });

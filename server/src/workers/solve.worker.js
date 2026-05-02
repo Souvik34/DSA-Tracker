@@ -3,6 +3,7 @@ import { connection } from "../config/bullmq.redis.js";
 
 import { addSolvedProblemService } from "../modules/progress/progress.service.js";
 import { insertRevisionRepo } from "../modules/revision/revision.repository.js";
+import redisClient from "../config/redis.js";
 
 export const solveWorker = new Worker(
   "solve-problem",
@@ -12,10 +13,14 @@ export const solveWorker = new Worker(
     console.log("Processing job:", job.id);
 
     try {
-    
+      // DB updates
       await addSolvedProblemService(userId, difficulty);
-
       await insertRevisionRepo(userId, problemId);
+
+      // Cache invalidation 🔥
+      await redisClient.del(`progress:stats:${userId}`);
+      await redisClient.del(`revision:due:${userId}`);
+      await redisClient.del(`revision:all:${userId}`);
 
       console.log("Job completed:", job.id);
 
@@ -29,8 +34,6 @@ export const solveWorker = new Worker(
     concurrency: 5,
   }
 );
-
-
 
 solveWorker.on("completed", (job) => {
   console.log(`Job ${job.id} completed`);

@@ -28,3 +28,41 @@ export const getRecommendedProblemsRepo = async (topic) => {
 
   return result.rows;
 };
+
+export const getDailySolveRepo = async (userId) => {
+  const result = await pool.query(
+    `SELECT DATE(created_at) as date, COUNT(*) as count
+     FROM solved_problems
+     WHERE user_id = $1
+     GROUP BY date
+     ORDER BY date ASC`,
+    [userId]
+  );
+
+  return result.rows;
+};
+
+export const getTopicDistributionRepo = async (userId) => {
+  const result = await pool.query(
+    `SELECT topic, COUNT(*) as count
+     FROM solved_problems
+     WHERE user_id = $1
+     GROUP BY topic
+     ORDER BY count DESC`,
+    [userId]
+  );
+
+  return result.rows;
+};
+
+export const getDifficultyDistributionRepo = async (userId) => {
+  const result = await pool.query(
+    `SELECT difficulty, COUNT(*) as count
+     FROM solved_problems
+     WHERE user_id = $1
+     GROUP BY difficulty`,
+    [userId]
+  );
+
+  return result.rows;
+};

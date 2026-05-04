@@ -1,4 +1,4 @@
-import pool from "../../db/index.js";
+import pool from "../../db/db.js";
 
 
 export const getWeakTopicRepo = async (userId) => {

@@ -1,4 +1,4 @@
-import pool from "../../db/index.js";
+import pool from "../../db/db.js";
 import redisClient from "../../config/redis.js";
 
 

@@ -1,6 +1,5 @@
 import { Worker } from "bullmq";
 import { connection } from "../config/bullmq.redis.js";
-
 import { addSolvedProblemService } from "../modules/progress/progress.service.js";
 import { insertRevisionRepo } from "../modules/revision/revision.repository.js";
 import redisClient from "../config/redis.js";

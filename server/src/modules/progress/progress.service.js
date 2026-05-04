@@ -1,6 +1,7 @@
-import pool from "../../db/index.js";
-import { getUserProgressRepo } from "./progress.repository.js";
-
+import {
+  getUserProgressRepo,
+  insertSolvedProblemRepo,
+} from "./progress.repository.js";
 
 export const getUserProgressService = async (userId) => {
   if (!userId || isNaN(userId)) {
@@ -19,10 +20,5 @@ export const addSolvedProblemService = async (
     throw new Error("Invalid input for solved problem");
   }
 
-  await pool.query(
-    `INSERT INTO solved_problems (user_id, problem_id, difficulty)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (user_id, problem_id) DO NOTHING`,
-    [userId, problemId, difficulty]
-  );
+  await insertSolvedProblemRepo(userId, problemId, difficulty);
 };

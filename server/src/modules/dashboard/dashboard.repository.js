@@ -3,10 +3,11 @@ import pool from "../../db/index.js";
 
 export const getWeakTopicRepo = async (userId) => {
   const result = await pool.query(
-    `SELECT topic, COUNT(*) as count
-     FROM solved_problems
-     WHERE user_id = $1
-     GROUP BY topic
+    `SELECT p.topic, COUNT(*) as count
+     FROM solved_problems sp
+     JOIN problems p ON sp.problem_id = p.id
+     WHERE sp.user_id = $1
+     GROUP BY p.topic
      ORDER BY count ASC
      LIMIT 1`,
     [userId]
@@ -14,7 +15,6 @@ export const getWeakTopicRepo = async (userId) => {
 
   return result.rows[0] || null;
 };
-
 
 export const getRecommendedProblemsRepo = async (topic) => {
   if (!topic) return [];
@@ -31,7 +31,7 @@ export const getRecommendedProblemsRepo = async (topic) => {
 
 export const getDailySolveRepo = async (userId) => {
   const result = await pool.query(
-    `SELECT DATE(created_at) as date, COUNT(*) as count
+    `SELECT DATE(solved_at) as date, COUNT(*) as count
      FROM solved_problems
      WHERE user_id = $1
      GROUP BY date
@@ -44,10 +44,11 @@ export const getDailySolveRepo = async (userId) => {
 
 export const getTopicDistributionRepo = async (userId) => {
   const result = await pool.query(
-    `SELECT topic, COUNT(*) as count
-     FROM solved_problems
-     WHERE user_id = $1
-     GROUP BY topic
+    `SELECT p.topic, COUNT(*) as count
+     FROM solved_problems sp
+     JOIN problems p ON sp.problem_id = p.id
+     WHERE sp.user_id = $1
+     GROUP BY p.topic
      ORDER BY count DESC`,
     [userId]
   );

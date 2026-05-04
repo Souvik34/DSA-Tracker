@@ -12,33 +12,53 @@ export const solveWorker = new Worker(
 
     console.log("Processing job:", job.id);
 
+    /* ---------- VALIDATION ---------- */
+    if (!userId || !problemId || !difficulty) {
+      throw new Error("Invalid job data");
+    }
+
     try {
-     
-      await addSolvedProblemService(userId, difficulty);
+      /* ---------- CORE LOGIC ---------- */
+      await addSolvedProblemService(userId, problemId, difficulty);
       await insertRevisionRepo(userId, problemId);
 
-     
+      /* ---------- CACHE INVALIDATION ---------- */
       await redisClient.del(`progress:stats:${userId}`);
       await redisClient.del(`revision:due:${userId}`);
       await redisClient.del(`revision:all:${userId}`);
+      await redisClient.del(`dashboard:${userId}`);
 
-      console.log("Job completed:", job.id);
+      console.log(
+        `Job completed: ${job.id} | user ${userId} solved problem ${problemId}`
+      );
 
     } catch (err) {
       console.error("Worker error:", err);
-      throw err;
+      throw err; // IMPORTANT for retry
     }
   },
   {
     connection,
     concurrency: 5,
+
+    /* ---------- CLEANUP ---------- */
+    removeOnComplete: true,   // prevent Redis memory bloat
+    removeOnFail: 100,       // keep last 100 failed jobs for debugging
   }
 );
 
+/* ---------- EVENTS ---------- */
 solveWorker.on("completed", (job) => {
   console.log(`Job ${job.id} completed`);
 });
 
 solveWorker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed`, err.message);
+  console.error(`Job ${job?.id} failed:`, err.message);
+});
+
+/* ---------- GRACEFUL SHUTDOWN ---------- */
+process.on("SIGINT", async () => {
+  console.log("Shutting down worker...");
+  await solveWorker.close();
+  process.exit(0);
 });

@@ -13,11 +13,11 @@ export const solveWorker = new Worker(
     console.log("Processing job:", job.id);
 
     try {
-      // DB updates
+     
       await addSolvedProblemService(userId, difficulty);
       await insertRevisionRepo(userId, problemId);
 
-      // Cache invalidation 🔥
+     
       await redisClient.del(`progress:stats:${userId}`);
       await redisClient.del(`revision:due:${userId}`);
       await redisClient.del(`revision:all:${userId}`);

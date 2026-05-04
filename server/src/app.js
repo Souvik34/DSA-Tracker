@@ -26,4 +26,7 @@ app.use("/api/v1/revision", revisionRoutes);
 import progressRoutes from "./modules/progress/progress.route.js";
 app.use("/api/v1/progress", progressRoutes);
 
+import dashboardRoutes from "./modules/dashboard/dashboard.route.js";
+app.use("/api/v1/dashboard", dashboardRoutes);
+
 export default app;

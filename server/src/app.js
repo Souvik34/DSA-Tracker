@@ -1,5 +1,5 @@
-import express from'express';
-import cors from 'cors';
+import express from "express";
+import cors from "cors";
 import { connectRedis } from "./config/redis.js";
 const app = express();
 import "./workers/solve.worker.js";
@@ -32,4 +32,7 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 import aiRoutes from "./modules/ai/ai.route.js";
 app.use("/api/v1/ai", aiRoutes);
 
+import interviewRoutes from "./modules/interview/interview.route.js";
+
+app.use("/api/v1/interview", interviewRoutes);
 export default app;

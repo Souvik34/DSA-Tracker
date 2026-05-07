@@ -10,6 +10,7 @@
   "author": "Souvik Sural",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.76.5",
     "cookie-parser": "^1.4.7",

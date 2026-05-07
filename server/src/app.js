@@ -29,4 +29,7 @@ app.use("/api/v1/progress", progressRoutes);
 import dashboardRoutes from "./modules/dashboard/dashboard.route.js";
 app.use("/api/v1/dashboard", dashboardRoutes);
 
+import aiRoutes from "./src/modules/ai/ai.routes.js";
+app.use("/api/v1/ai", aiRoutes);
+
 export default app;

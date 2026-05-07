@@ -1,14 +1,11 @@
 import express from "express";
-
 import {
-  getAIInsights,
+  getAIDashboard,
 } from "./ai.controller.js";
-
 const router = express.Router();
 
 router.get(
   "/dashboard/:userId",
-  getAIInsights
+  getAIDashboard
 );
-
 export default router;

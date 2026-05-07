@@ -107,3 +107,68 @@ export const getInterviewMessagesRepo = async (
 
   return result.rows;
 };
+
+export const createInterviewFeedbackRepo =
+  async ({
+    sessionId,
+    overallScore,
+    communicationScore,
+    problemSolvingScore,
+    optimizationScore,
+    strengths,
+    weaknesses,
+    finalFeedback,
+  }) => {
+
+    const result = await pool.query(
+      `
+      INSERT INTO interview_feedback
+      (
+        session_id,
+        overall_score,
+        communication_score,
+        problem_solving_score,
+        optimization_score,
+        strengths,
+        weaknesses,
+        final_feedback
+      )
+
+      VALUES
+      (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8
+      )
+
+      RETURNING *
+      `,
+      [
+        sessionId,
+        overallScore,
+        communicationScore,
+        problemSolvingScore,
+        optimizationScore,
+        strengths,
+        weaknesses,
+        finalFeedback,
+      ]
+    );
+
+    return result.rows[0];
+};
+
+export const endInterviewSessionRepo =
+  async (sessionId) => {
+
+    await pool.query(
+      `
+      UPDATE interview_sessions
+      SET
+        status = 'completed',
+        ended_at = NOW()
+
+      WHERE id = $1
+      `,
+      [sessionId]
+    );
+};

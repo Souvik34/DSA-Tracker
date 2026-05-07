@@ -85,3 +85,57 @@ Your task:
 
   return result.response.text();
 };
+
+export const generateInterviewFeedback =
+  async ({
+    type,
+    difficulty,
+    messages,
+  }) => {
+
+    const formattedConversation =
+      messages
+        .map(
+          (msg) =>
+            `${msg.sender}: ${msg.message}`
+        )
+        .join("\n");
+
+
+
+    const prompt = `
+You are an expert FAANG technical interviewer.
+
+Interview Type:
+${type}
+
+Difficulty:
+${difficulty}
+
+Conversation:
+${formattedConversation}
+
+Evaluate the candidate.
+
+Return STRICT JSON ONLY.
+
+Format:
+
+{
+  "overallScore": number,
+  "communicationScore": number,
+  "problemSolvingScore": number,
+  "optimizationScore": number,
+  "strengths": "...",
+  "weaknesses": "...",
+  "finalFeedback": "..."
+}
+`;
+
+
+
+    const result =
+      await model.generateContent(prompt);
+
+    return result.response.text();
+};

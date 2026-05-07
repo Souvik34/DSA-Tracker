@@ -6,6 +6,9 @@ import {
   sendInterviewMessageService,
 } from "./interview.service.js";
 
+import {
+  endInterviewService,
+} from "./interview.service.js";
 
 export const startInterview = async (
   req,
@@ -91,6 +94,49 @@ export const sendInterviewMessage =
       res.json({
         success: true,
         data,
+      });
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        success: false,
+        message: err.message,
+      });
+    }
+};
+
+export const endInterview =
+  async (req, res) => {
+
+    try {
+
+      const { sessionId } =
+        req.body;
+
+
+
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "sessionId required",
+        });
+      }
+
+
+
+      const feedback =
+        await endInterviewService(
+          sessionId
+        );
+
+
+
+      res.json({
+        success: true,
+        feedback,
       });
 
     } catch (err) {

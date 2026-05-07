@@ -28,14 +28,30 @@ export const getDueRevisionsRepo = async (userId) => {
 
   console.log("CACHE MISS (due revisions)");
 
-  const result = await pool.query(
-    `SELECT * FROM revision_queue
-     WHERE user_id = $1
-     AND is_completed = FALSE
-     AND next_revision_date <= CURRENT_DATE
-     ORDER BY next_revision_date ASC`,
-    [userId]
-  );
+const result = await pool.query(
+  `
+  SELECT
+    rq.*,
+    sp.felt_difficulty,
+    sp.confidence_rating,
+    p.topic,
+    p.title
+
+  FROM revision_queue rq
+
+  JOIN solved_problems sp
+    ON rq.user_id = sp.user_id
+    AND rq.problem_id = sp.problem_id
+
+  JOIN problems p
+    ON rq.problem_id = p.id
+
+  WHERE rq.user_id = $1
+    AND rq.is_completed = FALSE
+    AND rq.next_revision_date <= CURRENT_DATE
+  `,
+  [userId]
+);
 
   await redisClient.setEx(
     cacheKey,

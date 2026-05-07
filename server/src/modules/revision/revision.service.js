@@ -5,19 +5,62 @@ import {
   updateRevisionRepo,
   markCompletedRepo,
 } from "./revision.repository.js";
+import {
+  calculatePriorityScore,
+  getPriorityLabel,
+} from "../../utils/revisionPriority.js";
 
 const revisionIntervals = [1, 2, 4, 8, 16, 30];
 
 
-
 export const getDueRevisionsService = async (userId) => {
+
   if (!userId) {
     throw new Error("userId is required");
   }
 
-  const revisions = await getDueRevisionsRepo(userId);
+  const revisions =
+    await getDueRevisionsRepo(userId);
 
-  return revisions;
+  const enriched = revisions.map((rev) => {
+
+    const today = new Date();
+
+    const nextDate =
+      new Date(rev.next_revision_date);
+
+    const overdueDays = Math.max(
+      0,
+      Math.floor(
+        (today - nextDate)
+        / (1000 * 60 * 60 * 24)
+      )
+    );
+
+    const priorityScore =
+      calculatePriorityScore({
+        overdueDays,
+        revisionCount: rev.revision_count,
+        feltDifficulty:
+          rev.felt_difficulty,
+        confidenceRating:
+          rev.confidence_rating,
+      });
+
+    return {
+      ...rev,
+      priorityScore,
+      priorityLabel:
+        getPriorityLabel(priorityScore),
+    };
+  });
+
+  enriched.sort(
+    (a, b) =>
+      b.priorityScore - a.priorityScore
+  );
+
+  return enriched;
 };
 
 

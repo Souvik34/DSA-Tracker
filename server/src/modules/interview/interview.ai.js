@@ -1,14 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { INTERVIEW_PROMPTS } from "./interview.prompt.js";
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY
-);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
 });
-
-
 
 export const generateInterviewQuestion = async ({
   type,
@@ -16,28 +13,13 @@ export const generateInterviewQuestion = async ({
   language,
 }) => {
 
-  const prompt = `
-You are an expert technical interviewer.
+  const prompt = INTERVIEW_PROMPTS.QUESTION({
+    type,
+    difficulty,
+    language,
+  });
 
-Generate ONE ${difficulty} level ${type} interview question.
-
-Rules:
-- Do not provide solution
-- Keep it realistic
-- Keep it concise
-
-If type is DSA:
-- include problem statement
-- include constraints
-- include examples
-
-If type is system design:
-- ask realistic architecture problem
-`;
-
-  const result =
-    await model.generateContent(prompt);
-
+  const result = await model.generateContent(prompt);
   return result.response.text();
 };
 
@@ -47,95 +29,60 @@ export const generateFollowUpQuestion = async ({
   messages,
 }) => {
 
-  const formattedConversation =
-    messages
-      .map(
-        (msg) =>
-          `${msg.sender}: ${msg.message}`
-      )
-      .join("\n");
+  const formattedConversation = messages
+    .map((msg) => `${msg.sender}: ${msg.message}`)
+    .join("\n");
 
+  const prompt = INTERVIEW_PROMPTS.FOLLOW_UP({
+    type,
+    difficulty,
+    conversation: formattedConversation,
+  });
 
-
-  const prompt = `
-You are a real technical interviewer.
-
-Interview Type:
-${type}
-
-Difficulty:
-${difficulty}
-
-Conversation:
-${formattedConversation}
-
-Your task:
-- Ask ONE realistic follow-up question
-- Be concise
-- Ask about optimization, edge cases,
-  scalability, tradeoffs, or reasoning
-- Never provide full solutions
-- Behave like a real interviewer
-`;
-
-
-
-  const result =
-    await model.generateContent(prompt);
-
+  const result = await model.generateContent(prompt);
   return result.response.text();
 };
 
-export const generateInterviewFeedback =
-  async ({
-    type,
-    difficulty,
-    messages,
-  }) => {
+export const generateInterviewFeedback = async ({
+  type,
+  difficulty,
+  messages,
+}) => {
 
-    const formattedConversation =
-      messages
-        .map(
-          (msg) =>
-            `${msg.sender}: ${msg.message}`
-        )
-        .join("\n");
+  const formattedConversation = messages
+    .map((msg) => `${msg.sender}: ${msg.message}`)
+    .join("\n");
 
+  const prompt = `
+You are a FAANG technical interviewer.
 
+Evaluate this interview.
 
-    const prompt = `
-You are an expert FAANG technical interviewer.
-
-Interview Type:
-${type}
-
-Difficulty:
-${difficulty}
+Interview Type: ${type}
+Difficulty: ${difficulty}
 
 Conversation:
 ${formattedConversation}
 
-Evaluate the candidate.
+CRITICAL RULES:
+- Return ONLY valid JSON
+- No markdown
+- No explanation text
+- No extra characters
 
-Return STRICT JSON ONLY.
-
-Format:
-
+JSON FORMAT:
 {
-  "overallScore": number,
-  "communicationScore": number,
-  "problemSolvingScore": number,
-  "optimizationScore": number,
-  "strengths": "...",
-  "weaknesses": "...",
-  "finalFeedback": "..."
+  "overallScore": 0,
+  "communicationScore": 0,
+  "problemSolvingScore": 0,
+  "optimizationScore": 0,
+  "strengths": "",
+  "weaknesses": "",
+  "finalFeedback": ""
 }
 `;
 
+  const result = await model.generateContent(prompt);
 
-
-    const result =
-      await model.generateContent(prompt);
-
-    return result.response.text();
+  return result.response.text();
 };

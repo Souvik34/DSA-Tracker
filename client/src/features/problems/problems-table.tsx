@@ -31,7 +31,10 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useProblemsStore } from "@/store/problems-store";
-import { COMPANIES, PROBLEMS, TOPICS, type Difficulty, type Problem } from "./problems-data";
+// import { COMPANIES, PROBLEMS, TOPICS, type Difficulty, type Problem } from "./problems-data";
+import type { Problem } from "./problems-data";
+import problemService from "@/services/problemService";
+import { useEffect } from "react";
 import { NotesDialog } from "./notes-dialog";
 
 const difficultyClasses: Record<Difficulty, string> = {

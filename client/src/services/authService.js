@@ -4,7 +4,7 @@ const TOKEN_KEY = "auth_token";
 
 export const authService = {
   async login(email, password) {
-    const { data } = await api.post("/auth/login", { email, password });
+    const { data } = await api.post("/auth/signin", { email, password });
     const token = data?.token ?? data?.accessToken;
     const user = data?.user ?? data?.data?.user ?? null;
     if (token && typeof window !== "undefined") {
@@ -14,7 +14,7 @@ export const authService = {
   },
 
   async signup(name, email, password) {
-    const { data } = await api.post("/auth/register", { name, email, password });
+    const { data } = await api.post("/auth/signup", { name, email, password });
     const token = data?.token ?? data?.accessToken;
     const user = data?.user ?? data?.data?.user ?? null;
     if (token && typeof window !== "undefined") {

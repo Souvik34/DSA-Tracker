@@ -1,11 +1,11 @@
 import * as problemRepository from "./problems.repository.js";
 
 export const getAllProblems = async (filters) => {
-  return await problemRepository.getAllProblems(filters);
+  return await problemRepository.getAllProblemsRepo(filters);
 };
 
 export const getProblemById = async (id) => {
-  return await problemRepository.getProblemById(id);
+  return await problemRepository.getProblemByIdRepo(id);
 };
 
 export const createProblem = async (data) => {
@@ -18,7 +18,7 @@ export const createProblem = async (data) => {
     platform,
   } = data;
 
-  return await problemRepository.createProblem({
+  return await problemRepository.createProblemRepo({
     title,
     question_link,
     difficulty,

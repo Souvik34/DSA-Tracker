@@ -17,18 +17,19 @@ export interface DueRevisionResponse {
 
 const revisionService = {
   async getDueRevisions(): Promise<DueRevisionResponse> {
-    // assuming backend uses JWT (recommended approach)
-    const res = await api.get<DueRevisionResponse>("/revision/due/me");
+
+
+const res = await api.get("/revision/due");
     return res.data;
   },
 
   async completeRevision(problemId: string) {
-    const res = await api.post(`/revision/complete/me/${problemId}`);
+const res = await api.post(`/revision/complete/${problemId}`);
     return res.data;
   },
 
   async getAllRevisions() {
-    const res = await api.get("/revision/all/me");
+   const res = await api.get("/revision/all");
     return res.data;
   },
 };

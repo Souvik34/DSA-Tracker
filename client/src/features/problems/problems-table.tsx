@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Bookmark,
@@ -32,9 +32,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useProblemsStore } from "@/store/problems-store";
 // import { COMPANIES, PROBLEMS, TOPICS, type Difficulty, type Problem } from "./problems-data";
-import type { Problem } from "./problems-data";
+import type { Problem, BackendProblem, Difficulty } from "./problems-data";
 import problemService from "@/services/problemService";
-import { useEffect } from "react";
+// import { useEffect } from "react";
 import { NotesDialog } from "./notes-dialog";
 
 const difficultyClasses: Record<Difficulty, string> = {
@@ -55,9 +55,33 @@ export function ProblemsTable() {
   const [difficulty, setDifficulty] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [notesFor, setNotesFor] = useState<Problem | null>(null);
+  const [problems, setProblems] = useState<Problem[]>([]);
 
+  useEffect(() => {
+    const loadProblems = async () => {
+      try {
+        const data = (await problemService.list()) as BackendProblem[];
+
+        const mappedProblems: Problem[] = data.map((p) => ({
+          id: p.id,
+          title: p.title,
+          difficulty: (p.difficulty.charAt(0).toUpperCase() +
+            p.difficulty.slice(1).toLowerCase()) as Difficulty,
+          topic: p.topic,
+          companies: [],
+          leetcodeUrl: p.question_link,
+        }));
+
+        setProblems(mappedProblems);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadProblems();
+  }, []);
   const filtered = useMemo(() => {
-    return PROBLEMS.filter((p) => {
+    return problems.filter((p) => {
       if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
       if (topic !== "all" && p.topic !== topic) return false;
       if (company !== "all" && !p.companies.includes(company)) return false;
@@ -69,21 +93,21 @@ export function ProblemsTable() {
       if (status === "bookmarked" && !st?.bookmarked) return false;
       return true;
     });
-  }, [query, topic, company, difficulty, status, byId]);
+  }, [problems, query, topic, company, difficulty, status, byId]);
 
   const stats = useMemo(() => {
-    const total = PROBLEMS.length;
+    const total = problems.length;
     let solved = 0;
     let revision = 0;
     let bookmarked = 0;
-    for (const p of PROBLEMS) {
+    for (const p of problems) {
       const s = byId[p.id];
       if (s?.solved) solved++;
       if (s?.revision) revision++;
       if (s?.bookmarked) bookmarked++;
     }
     return { total, solved, revision, bookmarked, pct: Math.round((solved / total) * 100) };
-  }, [byId]);
+  }, [problems, byId]);
 
   return (
     <div className="space-y-6">
@@ -126,14 +150,20 @@ export function ProblemsTable() {
           value={topic}
           onChange={setTopic}
           placeholder="Topic"
-          options={[{ value: "all", label: "All topics" }, ...TOPICS.map((t) => ({ value: t, label: t }))]}
+          options={[
+            { value: "all", label: "All topics" },
+            ...Array.from(new Set(problems.map((p) => p.topic))).map((t) => ({
+              value: t,
+              label: t,
+            })),
+          ]}
         />
         <FilterSelect
           className="md:col-span-2"
           value={company}
           onChange={setCompany}
           placeholder="Company"
-          options={[{ value: "all", label: "All companies" }, ...COMPANIES.map((c) => ({ value: c, label: c }))]}
+          options={[{ value: "all", label: "All companies" }]}
         />
         <FilterSelect
           className="md:col-span-2"
@@ -298,11 +328,7 @@ function StatPill({
   accent: "success" | "warning" | "primary";
 }) {
   const tone =
-    accent === "success"
-      ? "text-success"
-      : accent === "warning"
-        ? "text-warning"
-        : "text-primary";
+    accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : "text-primary";
   const Icon = accent === "success" ? Check : accent === "warning" ? RotateCcw : Bookmark;
   return (
     <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5">

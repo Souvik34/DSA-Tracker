@@ -66,6 +66,8 @@ const job = await solveQueue.add(
       type: "exponential",
       delay: 2000,
     },
+    removeOnComplete: true,
+    removeOnFail: 100,
   }
 );
 

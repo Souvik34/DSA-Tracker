@@ -39,10 +39,6 @@ export const solveWorker = new Worker(
   {
     connection,
     concurrency: 5,
-
-    /* ---------- CLEANUP ---------- */
-    removeOnComplete: true,   // prevent Redis memory bloat
-    removeOnFail: 100,       // keep last 100 failed jobs for debugging
   }
 );
 

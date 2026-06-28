@@ -10,7 +10,7 @@ import {
   getPriorityLabel,
 } from "../../utils/revisionPriority.js";
 
-const revisionIntervals = [1, 2, 4, 8, 16, 30];
+const revisionIntervals = [1, 3, 7, 14, 30, 60, 90, 180];
 
 
 export const getDueRevisionsService = async (userId) => {

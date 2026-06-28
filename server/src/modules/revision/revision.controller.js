@@ -6,14 +6,7 @@ import {
 
 export const getDueRevisions = async (req, res) => {
   try {
-   const userId = Number(req.params.userId);
-
-if (!userId || isNaN(userId)) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid userId"
-  });
-}
+    const userId = req.user.id;
 
     const revisions = await getDueRevisionsService(userId);
 
@@ -29,21 +22,15 @@ if (!userId || isNaN(userId)) {
 
 export const markRevisionDone = async (req, res) => {
   try {
-const userId = Number(req.params.userId);
-
-if (!userId || isNaN(userId)) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid userId"
-  });
-}
+    const userId = req.user.id;
     const problemId = Number(req.params.problemId);
-    if (!problemId || isNaN(problemId)) {
-  return res.status(400).json({
-    success: false,
-    message: "problemId is required"
-  });
-}
+
+    if (!problemId) {
+      return res.status(400).json({
+        success: false,
+        message: "problemId is required",
+      });
+    }
 
     const result = await markRevisionDoneService(userId, problemId);
 
@@ -57,16 +44,10 @@ if (!userId || isNaN(userId)) {
   }
 };
 
+
 export const getAllRevisions = async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
-
-if (!userId || isNaN(userId)) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid userId"
-  });
-}
+    const userId = req.user.id;
 
     const revisions = await getAllRevisionsService(userId);
 

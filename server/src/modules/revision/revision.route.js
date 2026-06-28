@@ -5,12 +5,12 @@ import {
   getAllRevisions,
 } from "./revision.controller.js";
 
+import { protect } from "../../middlewares/auth.middleware.js";
+
 const router = express.Router();
 
-
-
-router.get("/due/:userId", getDueRevisions);
-router.post("/complete/:userId/:problemId", markRevisionDone);
-router.get("/all/:userId", getAllRevisions);
+router.get("/due", protect, getDueRevisions);
+router.post("/complete/:problemId", protect, markRevisionDone);
+router.get("/all", protect, getAllRevisions);
 
 export default router;

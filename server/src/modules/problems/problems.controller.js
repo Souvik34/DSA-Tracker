@@ -1,6 +1,7 @@
 import { success } from "zod";
 import * as problemService from "./problems.service.js";
 import { solveQueue } from "../../queues/solve.queue.js";
+import { getDueRevisionsService } from "../revision/revision.service.js";
 export const getAllProblems = async (req, res) => {
   try {
     const { difficulty, topic, page = 1, limit = 50 } = req.query;
@@ -46,6 +47,16 @@ export const createProblem = async (req, res) => {
 export const markProblemSolved = async (req, res) => {
   try {
     const userId = Number(req.params.userId);
+    const dueRevisions = await getDueRevisionsService(userId);
+
+if (dueRevisions.length > 0) {
+  return res.status(403).json({
+    success: false,
+    blocked: true,
+    message: "Complete your due revisions before solving new problems.",
+    revisions: dueRevisions.length,
+  });
+}
     const { problemId, difficulty } = req.body;
 
     if (!Number.isInteger(userId) || !problemId || !difficulty) {

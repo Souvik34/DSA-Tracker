@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { api } from "@/lib/api";
 import { BackendProblem } from "../features/problems/problems-data";
 
@@ -35,11 +36,14 @@ export const problemService = {
     return data.problem ?? data.data!;
   },
 
-  async markSolved(id: string, solved = true) {
-    const res = await api.post(`/problems/${id}/solved`, { solved });
-    return res.data;
-  },
+async markSolved(problemId: string, difficulty: string) {
+  const res = await api.post("/problems/solve", {
+    problemId,
+    difficulty,
+  });
 
+  return res.data;
+},
   async toggleBookmark(id: string) {
     const res = await api.post(`/problems/${id}/bookmark`);
     return res.data;

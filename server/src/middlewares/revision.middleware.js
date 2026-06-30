@@ -2,14 +2,7 @@ import { getDueRevisionsService } from "../modules/revision/revision.service.js"
 
 export const revisionMiddleware = async (req, res, next) => {
   try {
-    const userId = Number(req.params.userId);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid userId",
-      });
-    }
+    const userId = req.user.id;
 
     const dueRevisions = await getDueRevisionsService(userId);
 

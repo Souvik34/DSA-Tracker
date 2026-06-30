@@ -18,8 +18,12 @@ topic: topic ? topic.split(",") : [],
       data: problems,
     });
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
+  console.error("🔥 getAllProblems ERROR:", err);
+  res.status(500).json({
+    message: err.message,
+    stack: err.stack,
+  });
+}
 };
 
 export const getProblemById = async (req, res) => {
@@ -31,6 +35,7 @@ export const getProblemById = async (req, res) => {
     }
     res.status(200).json(problem);
   } catch (err) {
+    console.error("🔥 getProblemById ERROR:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -46,7 +51,7 @@ export const createProblem = async (req, res) => {
 
 export const markProblemSolved = async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
+   const userId = req.user.id;
     const dueRevisions = await getDueRevisionsService(userId);
 
 if (dueRevisions.length > 0) {
@@ -59,12 +64,12 @@ if (dueRevisions.length > 0) {
 }
     const { problemId, difficulty } = req.body;
 
-    if (!Number.isInteger(userId) || !problemId || !difficulty) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid input",
-      });
-    }
+    if (!problemId || !difficulty) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid input",
+  });
+}
 
   
 const job = await solveQueue.add(

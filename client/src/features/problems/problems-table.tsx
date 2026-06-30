@@ -1,4 +1,6 @@
+/* eslint-disable prettier/prettier */
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import {
   Bookmark,
@@ -33,9 +35,10 @@ import { cn } from "@/lib/utils";
 import { useProblemsStore } from "@/store/problems-store";
 // import { COMPANIES, PROBLEMS, TOPICS, type Difficulty, type Problem } from "./problems-data";
 import type { Problem, BackendProblem, Difficulty } from "./problems-data";
-import problemService from "@/services/problemService";
+import problemService from "../../services/problemService";
 // import { useEffect } from "react";
 import { NotesDialog } from "./notes-dialog";
+import revisionService from "@/services/revisionService";
 
 const difficultyClasses: Record<Difficulty, string> = {
   Easy: "bg-success/15 text-success border-success/30",
@@ -56,30 +59,62 @@ export function ProblemsTable() {
   const [status, setStatus] = useState<string>("all");
   const [notesFor, setNotesFor] = useState<Problem | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
+const formatDifficulty = (d?: string): Difficulty => {
+  if (!d) return "Easy";
 
-  useEffect(() => {
-    const loadProblems = async () => {
-      try {
-        const data = (await problemService.list()) as BackendProblem[];
+  const val = d.toLowerCase();
 
-        const mappedProblems: Problem[] = data.map((p) => ({
-          id: p.id,
-          title: p.title,
-          difficulty: (p.difficulty.charAt(0).toUpperCase() +
-            p.difficulty.slice(1).toLowerCase()) as Difficulty,
-          topic: p.topic,
-          companies: [],
-          leetcodeUrl: p.question_link,
-        }));
+  if (val === "easy") return "Easy";
+  if (val === "medium") return "Medium";
+  if (val === "hard") return "Hard";
 
-        setProblems(mappedProblems);
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  return "Easy";
+};
 
-    loadProblems();
-  }, []);
+useEffect(() => {
+  const check = async () => {
+    const res = await revisionService.getDueRevisions();
+
+    if (res.blocked) {
+      alert(
+        "You have pending revisions that need to be completed before accessing the problems page. Please complete your revisions first.",
+      );
+      window.location.href = "/revision";
+    }
+  };
+
+  check();
+}, []);
+
+useEffect(() => {
+  let ignore = false;
+
+  const loadProblems = async () => {
+    try {
+      const data = await problemService.list();
+
+      const mappedProblems: Problem[] = data.map((p) => ({
+        id: p.id,
+        title: p.title,
+        difficulty: formatDifficulty(p.difficulty),
+        topic: p.topic,
+        companies: [],
+        leetcodeUrl: p.question_link,
+      }));
+
+      if (!ignore) setProblems(mappedProblems);
+    } catch (err) {
+      console.error("Failed to load problems:", err);
+      if (!ignore) setProblems([]); // safe fallback
+    }
+  };
+
+  loadProblems();
+
+  return () => {
+    ignore = true;
+  };
+}, []);
   const filtered = useMemo(() => {
     return problems.filter((p) => {
       if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
@@ -106,9 +141,18 @@ export function ProblemsTable() {
       if (s?.revision) revision++;
       if (s?.bookmarked) bookmarked++;
     }
-    return { total, solved, revision, bookmarked, pct: Math.round((solved / total) * 100) };
+    return { total, solved, revision, bookmarked, pct: total ? Math.round((solved / total) * 100) : 0 };
   }, [problems, byId]);
 
+
+  const handleSolve = async (p: Problem) => {
+  try {
+    await problemService.markSolved(p.id, p.difficulty);
+    toggleSolved(p.id);
+  } catch (err) {
+    console.error(err);
+  }
+};
   return (
     <div className="space-y-6">
       {/* Header / stats */}
@@ -211,11 +255,11 @@ export function ProblemsTable() {
               return (
                 <TableRow key={p.id} className="group transition-colors">
                   <TableCell className="pl-4">
-                    <Checkbox
-                      checked={!!st?.solved}
-                      onCheckedChange={() => toggleSolved(p.id)}
-                      aria-label="Mark solved"
-                    />
+                 <Checkbox
+  checked={!!st?.solved}
+  onCheckedChange={() => handleSolve(p)}
+  aria-label="Mark solved"
+/>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-0.5">

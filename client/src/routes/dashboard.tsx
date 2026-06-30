@@ -9,12 +9,12 @@ import { StreakWidget } from "@/features/dashboard/streak-widget";
 import { UpcomingInterview } from "@/features/dashboard/upcoming-interview";
 import { RevisionGate } from "@/features/dashboard/revision-gate";
 import { requireRevisionCheck } from "@/lib/revision-guard";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async ({ location }) => {
-    await requireAuth(location);
-    await requireRevisionCheck(location);
-  },
+beforeLoad: async ({ location }) => {
+  await requireAuth(location);
+},
   head: () => ({
     meta: [
       { title: "Dashboard · AlgoForge" },

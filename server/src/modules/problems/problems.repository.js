@@ -1,7 +1,12 @@
 import pool from "../../db/db.js";
 import redisClient from "../../config/redis.js";
 
-
+const safeArray = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") return val.split(",");
+  return [];
+};
 
 const normalize = (val) => {
   if (!val || val.length === 0) return "all";
@@ -46,18 +51,21 @@ export const getAllProblemsRepo = async (params) => {
   console.log("CACHE MISS");
 
   /* ---------- SQL QUERY ---------- */
-  let query = "SELECT * FROM problems WHERE 1=1";
-  const values = [];
+  const difficultyArr = safeArray(difficulty);
+const topicArr = safeArray(topic);
 
-  if (difficulty?.length) {
-    values.push(difficulty);
-    query += ` AND difficulty = ANY($${values.length})`;
-  }
+let query = "SELECT * FROM problems WHERE 1=1";
+const values = [];
 
-  if (topic?.length) {
-    values.push(topic);
-    query += ` AND topic = ANY($${values.length})`;
-  }
+if (difficultyArr.length > 0) {
+  values.push(difficultyArr);
+  query += ` AND difficulty = ANY($${values.length})`;
+}
+
+if (topicArr.length > 0) {
+  values.push(topicArr);
+  query += ` AND topic = ANY($${values.length})`;
+}
 
   if (search) {
     values.push(`%${search}%`);

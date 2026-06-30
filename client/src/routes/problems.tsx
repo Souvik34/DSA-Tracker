@@ -7,7 +7,7 @@ import { requireRevisionCheck } from "@/lib/revision-guard";
 export const Route = createFileRoute("/problems")({
   beforeLoad: async ({ location }) => {
     await requireAuth(location);
-    await requireRevisionCheck(location);
+    // await requireRevisionCheck(location);
   },
   head: () => ({
     meta: [

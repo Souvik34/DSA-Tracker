@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
@@ -14,6 +15,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [blocked, setBlocked] = useState<boolean>(false);
   const [revisions, setRevisions] = useState<RevisionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate();
+const pathname = useRouterState({
+  select: (state) => state.location.pathname,
+});
 
   useEffect(() => {
     const loadRevisions = async () => {
@@ -42,11 +47,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   if (loading) return null; // or a loader if you want
 
-  const isLocked = blocked;
+const isLocked = blocked && pathname !== "/revisions";
+// const isLocked = true && pathname !== "/revisions";
 
   return (
     <>
-      <RevisionGate blocked={isLocked} revisions={revisions} />
+     <RevisionGate
+  blocked={isLocked}
+  revisions={revisions}
+  onStartRevision={() => navigate({ to: "/revisions" })}
+/>
 
       <SidebarProvider defaultOpen>
         <div className="flex min-h-screen w-full bg-background">

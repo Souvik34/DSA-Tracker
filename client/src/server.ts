@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";

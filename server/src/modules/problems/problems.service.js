@@ -27,3 +27,6 @@ export const createProblem = async (data) => {
     platform,
   });
 };
+export const getProgress = async (userId) => {
+  return await problemRepository.getProgressRepo(userId);
+};

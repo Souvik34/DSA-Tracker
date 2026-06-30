@@ -101,3 +101,21 @@ res.status(200).json({
     });
   }
 };
+
+export const getProgress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const progress = await problemService.getProgress(userId);
+
+    res.status(200).json({
+      success: true,
+      progress,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

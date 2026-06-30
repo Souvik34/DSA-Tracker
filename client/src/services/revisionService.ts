@@ -2,9 +2,21 @@
 import { api } from "@/lib/api";
 
 export interface RevisionItem {
-  problem_id: string;
+  id: number;
+  problem_id: number;
+
+  revision_count: number;
+  next_revision_date: string;
+  is_completed: boolean;
+
+  user_id: string;
+
+  felt_difficulty: string;
+  confidence_rating: number;
+
   title: string;
   topic?: string;
+
   priorityLabel?: string;
   priorityScore?: number;
 }
@@ -23,10 +35,10 @@ const res = await api.get("/revision/due");
     return res.data;
   },
 
-  async completeRevision(problemId: string) {
-const res = await api.post(`/revision/complete/${problemId}`);
-    return res.data;
-  },
+async completeRevision(problemId: number | string) {
+  const res = await api.post(`/revision/complete/${problemId}`);
+  return res.data;
+},
 
   async getAllRevisions() {
    const res = await api.get("/revision/all");

@@ -172,3 +172,24 @@ export const insertSolvedProblemRepo = async (
     [userId, problemId, difficulty]
   );
 };
+
+export const getProgressRepo = async (userId) => {
+  const result = await pool.query(
+    `
+    SELECT
+      problem_id,
+      difficulty,
+      solved_at,
+      started_at,
+      time_taken_minutes,
+      felt_difficulty,
+      confidence_rating
+    FROM solved_problems
+    WHERE user_id = $1
+    ORDER BY solved_at DESC
+    `,
+    [userId]
+  );
+
+  return result.rows;
+};

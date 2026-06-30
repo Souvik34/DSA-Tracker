@@ -24,8 +24,14 @@ function RevisionsPage() {
 
   const loadRevisions = async () => {
     try {
+      setLoading(true);
+
       const res = await revisionService.getDueRevisions();
-      setRevisions(res.revisions);
+
+      setRevisions(res?.revisions ?? []);
+    } catch (err) {
+      console.error("Failed to load revisions:", err);
+      setRevisions([]);
     } finally {
       setLoading(false);
     }
@@ -35,25 +41,36 @@ function RevisionsPage() {
     loadRevisions();
   }, []);
 
-  const handleComplete = async (problemId: string) => {
-    await revisionService.completeRevision(problemId);
+  const handleComplete = async (problemId: number) => {
+    try {
+      await revisionService.completeRevision(problemId);
 
-    clearRevisionCache();
+      clearRevisionCache();
 
-    const res = await revisionService.getDueRevisions();
+      // optimistic UI update
+      setRevisions((prev) =>
+        prev.filter((r) => r.problem_id !== problemId)
+      );
 
-    if (!res.blocked) {
-      navigate({ to: "/dashboard" });
-      return;
+      const res = await revisionService.getDueRevisions();
+
+      if (!res.blocked) {
+        navigate({ to: "/dashboard" });
+        return;
+      }
+
+      setRevisions(res.revisions ?? []);
+    } catch (err) {
+      console.error("Failed to complete revision:", err);
     }
-
-    setRevisions(res.revisions);
   };
 
   if (loading) {
     return (
       <DashboardShell>
-        <div>Loading revisions...</div>
+        <div className="text-sm text-muted-foreground">
+          Loading revisions...
+        </div>
       </DashboardShell>
     );
   }
@@ -62,16 +79,22 @@ function RevisionsPage() {
     <DashboardShell>
       <div className="mx-auto max-w-5xl space-y-6">
 
-        <div>
-          <h1 className="text-3xl font-bold">
-            Revision Mode
-          </h1>
+        {/* Blocking banner */}
+        {revisions.length > 0 && (
+          <div className="rounded-lg border bg-yellow-50 p-3 text-sm text-yellow-800">
+            ⚠️ You must complete {revisions.length} revision(s) before continuing.
+          </div>
+        )}
 
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold">Revision Mode</h1>
           <p className="text-muted-foreground">
-            Complete every revision to unlock the application.
+            Complete your spaced revisions to unlock the platform.
           </p>
         </div>
 
+        {/* Empty state */}
         {revisions.length === 0 ? (
           <div className="rounded-xl border p-6">
             No pending revisions 🎉
@@ -80,8 +103,9 @@ function RevisionsPage() {
           revisions.map((rev) => (
             <div
               key={rev.problem_id}
-              className="rounded-xl border p-5 flex items-center justify-between"
+              className="rounded-xl border p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:shadow-sm transition"
             >
+              {/* Left section */}
               <div>
                 <h2 className="font-semibold text-lg">
                   {rev.title}
@@ -91,20 +115,49 @@ function RevisionsPage() {
                   {rev.topic}
                 </p>
 
-                <p className="text-sm mt-2">
-                  Priority : {rev.priorityLabel}
-                </p>
+                {/* Priority + stats */}
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                  <p>
+                    Priority:{" "}
+                    <b
+                      className={
+                        rev.priorityLabel === "HIGH"
+                          ? "text-red-500"
+                          : rev.priorityLabel === "MEDIUM"
+                          ? "text-yellow-500"
+                          : "text-green-500"
+                      }
+                    >
+                      {rev.priorityLabel}
+                    </b>
+                  </p>
+
+                  <p>Score: {rev.priorityScore ?? 0}</p>
+                  <p>Confidence: {rev.confidence_rating ?? "N/A"}</p>
+                  <p>Revisions done: {rev.revision_count ?? 0}/8</p>
+                </div>
               </div>
 
-              <Button
-                onClick={() => handleComplete(rev.problem_id)}
-              >
-                Mark Complete
-              </Button>
+              {/* Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigate({ to: `/workspace/${rev.problem_id}` })
+                  }
+                >
+                  Open Problem
+                </Button>
+
+                <Button
+                 onClick={() => handleComplete(rev.problem_id)}
+                >
+                  Mark Complete
+                </Button>
+              </div>
             </div>
           ))
         )}
-
       </div>
     </DashboardShell>
   );

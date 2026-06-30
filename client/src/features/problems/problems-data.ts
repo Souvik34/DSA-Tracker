@@ -1,7 +1,7 @@
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export interface BackendProblem {
-  id: string;
+  id: number;
   title: string;
   question_link: string;
   difficulty: string;
@@ -11,7 +11,7 @@ export interface BackendProblem {
 }
 
 export interface Problem {
-  id: string;
+  id: number;
   title: string;
   difficulty: Difficulty;
   topic: string;

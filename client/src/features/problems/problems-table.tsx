@@ -145,12 +145,23 @@ useEffect(() => {
   }, [problems, byId]);
 
 
-  const handleSolve = async (p: Problem) => {
+const navigate = useNavigate(); 
+
+const handleSolve = async (p: Problem) => {
   try {
-    await problemService.markSolved(p.id, p.difficulty);
+    const res = await problemService.markSolved(p.id, p.difficulty);
+
+    // optimistic UI update
     toggleSolved(p.id);
+
+    // IMPORTANT: refresh revision state (THIS WAS MISSING)
+    await revisionService.getDueRevisions();
+
+    if (res?.blocked) {
+      navigate({ to: "/revisions" });
+    }
   } catch (err) {
-    console.error(err);
+    console.error("Solve failed:", err);
   }
 };
   return (
@@ -305,7 +316,21 @@ useEffect(() => {
                       <IconAction
                         title={st?.revision ? "Remove from revision" : "Mark for revision"}
                         active={!!st?.revision}
-                        onClick={() => toggleRevision(p.id)}
+                        onClick={async () => {
+  try {
+    const st = byId[p.id];
+
+    if (st?.revision) {
+      // OPTIONAL: if you have unmark API later
+      toggleRevision(p.id);
+    } else {
+      await revisionService.completeRevision(p.id);
+      toggleRevision(p.id);
+    }
+  } catch (err) {
+    console.error("Revision toggle failed:", err);
+  }
+}}
                       >
                         <RotateCcw className="h-4 w-4" />
                       </IconAction>

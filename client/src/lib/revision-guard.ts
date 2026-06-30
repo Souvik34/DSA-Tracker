@@ -13,7 +13,7 @@ export const requireRevisionCheck = async (
   }
 
   // Revision page will also be allowed
-  if (location.pathname.startsWith("/revisions")) {
+  if (location.pathname.startsWith("/revision/due")) {
     return;
   }
 

@@ -79,7 +79,7 @@ useEffect(() => {
       alert(
         "You have pending revisions that need to be completed before accessing the problems page. Please complete your revisions first.",
       );
-      window.location.href = "/revision";
+      window.location.href = "/revisions";
     }
   };
 

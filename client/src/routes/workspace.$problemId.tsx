@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+/* eslint-disable prettier/prettier */
+import { useMemo, useState, useEffect} from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PROBLEMS } from "@/features/problems/problems-data";
+
 import {
   CodeEditor,
   STARTER_CODE,
@@ -21,7 +22,7 @@ import {
   type SupportedLanguageId,
 } from "@/features/editor/code-editor";
 import { AIInterviewerPanel } from "@/features/interview/ai-interviewer-panel";
-import { problemService } from "@/services/problemService";
+import problemService from "@/services/problemService";
 
 export const Route = createFileRoute("/workspace/$problemId")({
   beforeLoad: ({ location }) => requireAuth(location),
@@ -40,7 +41,23 @@ export const Route = createFileRoute("/workspace/$problemId")({
 
 function WorkspacePage() {
   const { problemId } = Route.useParams();
-  const problem = useMemo(() => PROBLEMS.find((p) => p.id === problemId), [problemId]);
+  const [problem, setProblem] = useState<any>(null);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const loadProblem = async () => {
+    try {
+      const data = await problemService.getProblemById(problemId);
+      setProblem(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadProblem();
+}, [problemId]);
 
   const [language, setLanguage] = useState<SupportedLanguageId>("python");
   const [code, setCode] = useState<string>(STARTER_CODE.python);
@@ -66,6 +83,14 @@ function WorkspacePage() {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
+}
 
   if (!problem) {
     return (
@@ -123,13 +148,21 @@ function WorkspacePage() {
         {/* Left: problem statement */}
         <section className="min-h-0 overflow-y-auto border-r border-border/60 p-5">
           <h1 className="text-lg font-semibold">{problem.title}</h1>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {problem.companies.map((c) => (
-              <Badge key={c} variant="outline" className="text-[10px]">
-                {c}
-              </Badge>
-            ))}
-          </div>
+       <div className="mt-2 flex flex-wrap gap-2">
+  <Badge variant="outline">
+    {problem.topic}
+  </Badge>
+
+  <Badge variant="secondary">
+    {problem.difficulty}
+  </Badge>
+
+  {problem.tags?.split(",").map((tag: string) => (
+    <Badge key={tag} variant="outline">
+      {tag.trim()}
+    </Badge>
+  ))}
+</div>
 
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Problem Statement

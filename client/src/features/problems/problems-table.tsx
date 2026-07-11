@@ -429,11 +429,7 @@ toggleRevision(p.id);
                       >
                         <FileText className="h-4 w-4" />
                       </IconAction>
-                      <Button variant="ghost" size="icon" asChild title="Open coding workspace">
-                        <Link to="/workspace/$problemId" params={{ problemId: p.id }}>
-                          <SquareCode className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                    
                       <Button variant="ghost" size="icon" asChild title="Open on LeetCode">
                         <a href={p.leetcodeUrl} target="_blank" rel="noreferrer noopener">
                           <ExternalLink className="h-4 w-4" />

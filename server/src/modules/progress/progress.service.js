@@ -4,9 +4,9 @@ import {
 } from "./progress.repository.js";
 
 export const getUserProgressService = async (userId) => {
-  if (!userId || isNaN(userId)) {
+if (!userId) {
     throw new Error("Valid userId is required");
-  }
+}
 
   return await getUserProgressRepo(userId);
 };

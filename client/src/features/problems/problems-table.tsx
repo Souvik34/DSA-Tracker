@@ -48,7 +48,8 @@ const difficultyClasses: Record<Difficulty, string> = {
 
 export function ProblemsTable() {
   const byId = useProblemsStore((s) => s.byId);
-  const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+const hydrateSolved = useProblemsStore((s) => s.hydrateSolved);
   const toggleRevision = useProblemsStore((s) => s.toggleRevision);
   const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
 
@@ -92,7 +93,13 @@ useEffect(() => {
   const loadProblems = async () => {
     try {
       const data = await problemService.list();
+const progress = await problemService.getProgress();
 
+const solvedIds = progress.map(
+  (p: { problem_id: number }) => p.problem_id
+);
+
+hydrateSolved(solvedIds);
       const mappedProblems: Problem[] = data.map((p) => ({
         id: p.id,
         title: p.title,

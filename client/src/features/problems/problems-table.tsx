@@ -39,6 +39,7 @@ import problemService from "../../services/problemService";
 // import { useEffect } from "react";
 import { NotesDialog } from "./notes-dialog";
 import revisionService from "@/services/revisionService";
+import { toast } from "sonner";
 
 const difficultyClasses: Record<Difficulty, string> = {
   Easy: "bg-success/15 text-success border-success/30",
@@ -56,6 +57,7 @@ const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
 const hydrateSolved = useProblemsStore((s) => s.hydrateSolved);
 const hydrateBookmarks = useProblemsStore((s) => s.hydrateBookmarks);
 const hydrateNotes = useProblemsStore((s) => s.hydrateNotes);
+const hydrateRevision = useProblemsStore((s) => s.hydrateRevision);
 
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState<string>("all");
@@ -100,12 +102,19 @@ useEffect(() => {
       const progress = await problemService.getProgress();
 const bookmarks = await problemService.getBookmarks();
 const notes = await problemService.getNotes();
-      
+const revisions = await revisionService.getAllRevisions();
+
+
 
 const solvedIds = progress.map(
   (p: { problem_id: number }) => p.problem_id
 );
 
+hydrateRevision(
+    revisions.revisions
+        .filter(r => !r.is_completed)
+        .map(r => r.problem_id)
+);
 hydrateSolved(solvedIds);
       const mappedProblems: Problem[] = data.map((p) => ({
         id: p.id,
@@ -347,11 +356,12 @@ const handleSolve = async (p: Problem) => {
     const st = byId[p.id];
 
     if (st?.revision) {
-      // OPTIONAL: if you have unmark API later
-      toggleRevision(p.id);
+
+      toast.info("Already added to revision queue");
+   return;
     } else {
-      await revisionService.completeRevision(p.id);
-      toggleRevision(p.id);
+      await revisionService.addRevision(p.id);
+toggleRevision(p.id);
     }
   } catch (err) {
     console.error("Revision toggle failed:", err);

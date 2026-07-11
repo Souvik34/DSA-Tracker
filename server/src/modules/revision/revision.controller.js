@@ -2,6 +2,7 @@ import {
   getDueRevisionsService,
   markRevisionDoneService,
   getAllRevisionsService,
+  addRevisionService
 } from "./revision.service.js";
 
 export const getDueRevisions = async (req, res) => {
@@ -57,5 +58,24 @@ export const getAllRevisions = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const addRevision = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.problemId);
+
+    await addRevisionService(userId, problemId);
+
+    res.json({
+      success: true,
+      message: "Added to revision queue",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

@@ -5,6 +5,8 @@ import {
   updateRevisionRepo,
   markCompletedRepo,
 } from "./revision.repository.js";
+
+import { insertRevisionRepo } from "./revision.repository.js";
 import {
   calculatePriorityScore,
   getPriorityLabel,
@@ -104,4 +106,8 @@ export const getAllRevisionsService = async (userId) => {
   const revisions = await getAllRevisionsRepo(userId);
 
   return revisions;
+};
+
+export const addRevisionService = async (userId, problemId) => {
+  await insertRevisionRepo(userId, problemId);
 };

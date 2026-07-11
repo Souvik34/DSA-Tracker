@@ -44,6 +44,11 @@ async completeRevision(problemId: number | string) {
    const res = await api.get("/revision/all");
     return res.data;
   },
+
+  async addRevision(problemId: number | string) {
+  const res = await api.post(`/revision/${problemId}`);
+  return res.data;
+},
 };
 
 export default revisionService;

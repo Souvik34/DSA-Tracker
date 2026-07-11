@@ -119,3 +119,60 @@ export const getProgress = async (req, res) => {
     });
   }
 };
+
+export const addBookmark = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.id);
+
+    await problemService.addBookmark(userId, problemId);
+
+    res.status(200).json({
+      success: true,
+      message: "Bookmarked",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const removeBookmark = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.id);
+
+    await problemService.removeBookmark(userId, problemId);
+
+    res.status(200).json({
+      success: true,
+      message: "Bookmark removed",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const getBookmarks = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const bookmarks =
+      await problemService.getBookmarks(userId);
+
+    res.status(200).json({
+      success: true,
+      bookmarks,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

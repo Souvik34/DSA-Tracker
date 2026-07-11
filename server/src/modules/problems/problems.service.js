@@ -30,3 +30,23 @@ export const createProblem = async (data) => {
 export const getProgress = async (userId) => {
   return await problemRepository.getProgressRepo(userId);
 };
+
+export const addBookmark = async (userId, problemId) => {
+  return await problemRepository.addBookmarkRepo(
+    userId,
+    problemId
+  );
+};
+
+export const removeBookmark = async (userId, problemId) => {
+  return await problemRepository.removeBookmarkRepo(
+    userId,
+    problemId
+  );
+};
+
+export const getBookmarks = async (userId) => {
+  return await problemRepository.getBookmarksRepo(
+    userId
+  );
+};

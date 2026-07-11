@@ -96,6 +96,60 @@ if (topicArr.length > 0) {
 
 
 
+export const addBookmarkRepo = async (userId, problemId) => {
+  await pool.query(
+    `
+    INSERT INTO bookmarks (user_id, problem_id)
+    VALUES ($1, $2)
+    ON CONFLICT (user_id, problem_id) DO NOTHING
+    `,
+    [userId, problemId]
+  );
+
+  await redisClient.del(`bookmarks:${userId}`);
+};
+
+export const removeBookmarkRepo = async (userId, problemId) => {
+  await pool.query(
+    `
+    DELETE FROM bookmarks
+    WHERE user_id = $1
+      AND problem_id = $2
+    `,
+    [userId, problemId]
+  );
+
+  await redisClient.del(`bookmarks:${userId}`);
+};
+
+export const getBookmarksRepo = async (userId) => {
+  const cacheKey = `bookmarks:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const result = await pool.query(
+    `
+    SELECT problem_id
+    FROM bookmarks
+    WHERE user_id = $1
+    `,
+    [userId]
+  );
+
+  await redisClient.setEx(
+    cacheKey,
+    300,
+    JSON.stringify(result.rows)
+  );
+
+  return result.rows;
+};
+
+
 export const getProblemByIdRepo = async (id) => {
   const cacheKey = `problem:${id}`;
 
@@ -192,4 +246,61 @@ export const getProgressRepo = async (userId) => {
   );
 
   return result.rows;
+};
+
+export const saveNotesRepo = async (userId, problemId, notes) => {
+  await pool.query(
+    `
+    INSERT INTO problem_notes (user_id, problem_id, notes)
+    VALUES ($1,$2,$3)
+    ON CONFLICT (user_id, problem_id)
+    DO UPDATE SET
+      notes = EXCLUDED.notes,
+      updated_at = CURRENT_TIMESTAMP
+    `,
+    [userId, problemId, notes]
+  );
+
+  await redisClient.del(`notes:${userId}`);
+};
+
+export const getNotesRepo = async (userId) => {
+  const cacheKey = `notes:${userId}`;
+
+  const cached = await redisClient.get(cacheKey);
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const result = await pool.query(
+    `
+    SELECT problem_id, notes
+    FROM problem_notes
+    WHERE user_id = $1
+    `,
+    [userId]
+  );
+
+  await redisClient.setEx(
+    cacheKey,
+    300,
+    JSON.stringify(result.rows)
+  );
+
+  return result.rows;
+};
+
+export const getProblemNotesRepo = async (userId, problemId) => {
+  const result = await pool.query(
+    `
+    SELECT notes
+    FROM problem_notes
+    WHERE user_id = $1
+      AND problem_id = $2
+    `,
+    [userId, problemId]
+  );
+
+  return result.rows[0] || null;
 };

@@ -71,6 +71,42 @@ async markSolved(problemId: number | string, difficulty: string) {
     const res = await api.post(`/problems/${id}/submit`, payload);
     return res.data;
   },
+
+  async getNotes() {
+  const res = await api.get("/problems/notes");
+  return res.data.notes;
+},
+
+async getProblemNotes(id: number | string) {
+  const res = await api.get(`/problems/${id}/notes`);
+  return res.data.notes;
+},
+
+async saveNotes(problemId: number | string, notes: string) {
+  const res = await api.put(
+    `/problems/${problemId}/notes`,
+    { notes }
+  );
+
+  return res.data;
+},
+
+
+async getBookmarks() {
+  const res = await api.get("/problems/bookmarks");
+  return res.data.bookmarks;
+},
+
+async addBookmark(id: number | string) {
+  const res = await api.post(`/problems/${id}/bookmark`);
+  return res.data;
+},
+
+async removeBookmark(id: number | string) {
+  const res = await api.delete(`/problems/${id}/bookmark`);
+  return res.data;
+},
 };
+
 
 export default problemService;

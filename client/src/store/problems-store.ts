@@ -19,6 +19,14 @@ interface ProblemsStore {
   setNotes: (id: string | number, notes: string) => void;
 
   hydrateSolved: (problemIds: number[]) => void;
+  hydrateBookmarks: (problemIds: number[]) => void;
+  hydrateRevision: (problemIds: number[]) => void;
+  hydrateNotes: (
+    notes: {
+      problem_id: number;
+      notes: string;
+    }[]
+  ) => void;
 
   get: (id: string | number) => ProblemState;
 }
@@ -48,6 +56,57 @@ export const useProblemsStore = create<ProblemsStore>()(
             updated[key] = {
               ...cur,
               solved: true,
+            };
+          });
+
+          return { byId: updated };
+        }),
+
+      hydrateBookmarks: (problemIds) =>
+        set((state) => {
+          const updated = { ...state.byId };
+
+          problemIds.forEach((id) => {
+            const key = String(id);
+            const cur = updated[key] ?? empty;
+
+            updated[key] = {
+              ...cur,
+              bookmarked: true,
+            };
+          });
+
+          return { byId: updated };
+        }),
+
+      hydrateRevision: (problemIds) =>
+        set((state) => {
+          const updated = { ...state.byId };
+
+          problemIds.forEach((id) => {
+            const key = String(id);
+            const cur = updated[key] ?? empty;
+
+            updated[key] = {
+              ...cur,
+              revision: true,
+            };
+          });
+
+          return { byId: updated };
+        }),
+
+      hydrateNotes: (notes) =>
+        set((state) => {
+          const updated = { ...state.byId };
+
+          notes.forEach((n) => {
+            const key = String(n.problem_id);
+            const cur = updated[key] ?? empty;
+
+            updated[key] = {
+              ...cur,
+              notes: n.notes,
             };
           });
 
@@ -124,6 +183,6 @@ export const useProblemsStore = create<ProblemsStore>()(
     }),
     {
       name: "algoforge_problems_v1",
-    },
-  ),
+    }
+  )
 );

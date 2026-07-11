@@ -1,4 +1,6 @@
+/* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
+import problemService from "@/services/problemService";
 import {
   Dialog,
   DialogContent,
@@ -44,19 +46,30 @@ export function NotesDialog({ problem, open, onOpenChange }: Props) {
           placeholder="// Approach&#10;// Time: O(n)&#10;// Space: O(1)"
           className="min-h-[220px] font-mono text-sm"
         />
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              setNotes(problem.id, draft);
-              onOpenChange(false);
-            }}
-          >
-            Save notes
-          </Button>
-        </DialogFooter>
+     <DialogFooter>
+  <Button
+    variant="ghost"
+    onClick={() => onOpenChange(false)}
+  >
+    Cancel
+  </Button>
+
+  <Button
+    onClick={async () => {
+      try {
+        await problemService.saveNotes(problem.id, draft);
+
+        setNotes(problem.id, draft);
+
+        onOpenChange(false);
+      } catch (err) {
+        console.error(err);
+      }
+    }}
+  >
+    Save notes
+  </Button>
+</DialogFooter>
       </DialogContent>
     </Dialog>
   );

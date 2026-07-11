@@ -48,10 +48,14 @@ const difficultyClasses: Record<Difficulty, string> = {
 
 export function ProblemsTable() {
   const byId = useProblemsStore((s) => s.byId);
+
 const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+const toggleRevision = useProblemsStore((s) => s.toggleRevision);
+const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
+
 const hydrateSolved = useProblemsStore((s) => s.hydrateSolved);
-  const toggleRevision = useProblemsStore((s) => s.toggleRevision);
-  const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
+const hydrateBookmarks = useProblemsStore((s) => s.hydrateBookmarks);
+const hydrateNotes = useProblemsStore((s) => s.hydrateNotes);
 
   const [query, setQuery] = useState("");
   const [topic, setTopic] = useState<string>("all");
@@ -93,7 +97,10 @@ useEffect(() => {
   const loadProblems = async () => {
     try {
       const data = await problemService.list();
-const progress = await problemService.getProgress();
+      const progress = await problemService.getProgress();
+const bookmarks = await problemService.getBookmarks();
+const notes = await problemService.getNotes();
+      
 
 const solvedIds = progress.map(
   (p: { problem_id: number }) => p.problem_id
@@ -109,7 +116,19 @@ hydrateSolved(solvedIds);
         leetcodeUrl: p.question_link,
       }));
 
-      if (!ignore) setProblems(mappedProblems);
+     if (!ignore) {
+  setProblems(mappedProblems);
+
+  hydrateSolved(
+    progress.map((p: any) => p.problem_id)
+  );
+
+  hydrateBookmarks(
+    bookmarks.map((b: any) => b.problem_id)
+  );
+
+  hydrateNotes(notes);
+}
     } catch (err) {
       console.error("Failed to load problems:", err);
       if (!ignore) setProblems([]); // safe fallback
@@ -344,7 +363,19 @@ const handleSolve = async (p: Problem) => {
                       <IconAction
                         title={st?.bookmarked ? "Remove bookmark" : "Bookmark"}
                         active={!!st?.bookmarked}
-                        onClick={() => toggleBookmark(p.id)}
+                        onClick={async () => {
+  try {
+    if (st?.bookmarked) {
+      await problemService.removeBookmark(p.id);
+    } else {
+      await problemService.addBookmark(p.id);
+    }
+
+    toggleBookmark(p.id);
+  } catch (err) {
+    console.error(err);
+  }
+}}
                       >
                         {st?.bookmarked ? (
                           <BookmarkCheck className="h-4 w-4" />

@@ -50,3 +50,29 @@ export const getBookmarks = async (userId) => {
     userId
   );
 };
+
+export const saveNotes = async (
+  userId,
+  problemId,
+  notes
+) => {
+  return await problemRepository.saveNotesRepo(
+    userId,
+    problemId,
+    notes
+  );
+};
+
+export const getNotes = async (userId) => {
+  return await problemRepository.getNotesRepo(userId);
+};
+
+export const getProblemNotes = async (
+  userId,
+  problemId
+) => {
+  return await problemRepository.getProblemNotesRepo(
+    userId,
+    problemId
+  );
+};

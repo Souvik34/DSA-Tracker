@@ -176,3 +176,69 @@ export const getBookmarks = async (req, res) => {
     });
   }
 };
+
+export const saveNotes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.id);
+
+    const { notes } = req.body;
+
+    await problemService.saveNotes(
+      userId,
+      problemId,
+      notes
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Notes saved",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const getNotes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const notes = await problemService.getNotes(userId);
+
+    res.status(200).json({
+      success: true,
+      notes,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const getProblemNotes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.id);
+
+    const notes =
+      await problemService.getProblemNotes(
+        userId,
+        problemId
+      );
+
+    res.status(200).json({
+      success: true,
+      notes,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};

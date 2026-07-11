@@ -11,6 +11,9 @@ import {
   RotateCcw,
   Search,
   SquareCode,
+    ChevronLeft,
+  ChevronRight,
+  ChevronUp 
 } from "lucide-react";
 import {
   Table,
@@ -48,6 +51,8 @@ const difficultyClasses: Record<Difficulty, string> = {
 };
 
 export function ProblemsTable() {
+
+  
   const byId = useProblemsStore((s) => s.byId);
 
 const toggleSolved = useProblemsStore((s) => s.toggleSolved);
@@ -66,6 +71,9 @@ const hydrateRevision = useProblemsStore((s) => s.hydrateRevision);
   const [status, setStatus] = useState<string>("all");
   const [notesFor, setNotesFor] = useState<Problem | null>(null);
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [page, setPage] = useState(1);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+const LIMIT = 50;
 const formatDifficulty = (d?: string): Difficulty => {
   if (!d) return "Easy";
 
@@ -98,7 +106,10 @@ useEffect(() => {
 
   const loadProblems = async () => {
     try {
-      const data = await problemService.list();
+     const data = await problemService.list({
+  page,
+  limit: LIMIT,
+});
       const progress = await problemService.getProgress();
 const bookmarks = await problemService.getBookmarks();
 const notes = await problemService.getNotes();
@@ -149,6 +160,24 @@ hydrateSolved(solvedIds);
   return () => {
     ignore = true;
   };
+}, [page]);
+useEffect(() => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}, [page]);
+
+useEffect(() => {
+  const handleScroll = () => {
+    setShowScrollTop(window.scrollY > 250);
+  };
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
 }, []);
   const filtered = useMemo(() => {
     return problems.filter((p) => {
@@ -164,7 +193,7 @@ hydrateSolved(solvedIds);
       return true;
     });
   }, [problems, query, topic, company, difficulty, status, byId]);
-
+const hasNextPage = problems.length === LIMIT;
   const stats = useMemo(() => {
     const total = problems.length;
     let solved = 0;
@@ -426,14 +455,49 @@ toggleRevision(p.id);
         </Table>
       </div>
 
+ 
+
       <NotesDialog
         problem={notesFor}
         open={!!notesFor}
         onOpenChange={(o) => !o && setNotesFor(null)}
       />
+
+      <div className="mt-6 flex items-center justify-center gap-4">
+<Button
+  variant="outline"
+  disabled={page === 1}
+  onClick={() => setPage((p) => p - 1)}
+>
+  <ChevronLeft className="mr-2 h-4 w-4" />
+  Previous
+</Button>
+
+  <span className="text-sm font-medium">
+    Page {page}
+  </span>
+<Button
+  variant="outline"
+  disabled={!hasNextPage}
+  onClick={() => setPage((p) => p + 1)}
+>
+  Next
+  <ChevronRight className="ml-2 h-4 w-4" />
+</Button>
+
+
+
+
+</div>
     </div>
+
+    
   );
+
+  
 }
+
+
 
 function StatPill({
   label,

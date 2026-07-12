@@ -33,4 +33,5 @@ server.listen(PORT, () => {
   }
 };
 
+console.log(process.env.GEMINI_API_KEY);
 startServer();

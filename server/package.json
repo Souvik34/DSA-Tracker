@@ -10,6 +10,7 @@
   "author": "Souvik Sural",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^2.11.0",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.16.0",
     "bcrypt": "^6.0.0",

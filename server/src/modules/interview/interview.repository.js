@@ -172,3 +172,75 @@ export const endInterviewSessionRepo =
       [sessionId]
     );
 };
+
+export const updateInterviewPhaseRepo = async (
+    sessionId,
+    phase
+) => {
+
+    await pool.query(
+        `
+        UPDATE interview_sessions
+        SET
+            phase = $2,
+            interruption_count = 0,
+            last_interrupt_at_version = NULL
+        WHERE id = $1
+        `,
+        [sessionId, phase]
+    );
+
+};
+
+
+export const updateCodeSnapshotRepo = async ({
+    sessionId,
+    code
+})=>{
+
+    await pool.query(
+        `
+        UPDATE interview_sessions
+        SET
+            last_code=$2,
+            code_version=code_version+1
+        WHERE id=$1
+        `,
+        [sessionId,code]
+    );
+
+};
+export const recordInterruptRepo = async ({
+    sessionId,
+    codeVersion
+}) => {
+
+    await pool.query(
+        `
+        UPDATE interview_sessions
+        SET
+            interruption_count = interruption_count + 1,
+            last_interrupt_at_version = $2
+        WHERE id = $1
+        `,
+        [sessionId, codeVersion]
+    );
+
+};
+
+export const resetInterruptRepo = async (
+    sessionId
+) => {
+
+    await pool.query(
+        `
+        UPDATE interview_sessions
+        SET
+            interruption_count = 0,
+            last_interrupt_at_version = NULL
+        WHERE id = $1
+        `,
+        [sessionId]
+    );
+
+};

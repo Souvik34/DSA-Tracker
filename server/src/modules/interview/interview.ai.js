@@ -19,8 +19,12 @@ export const generateInterviewQuestion = async ({
     language,
   });
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+const result = await ai.models.generateContent({
+    model: "gemini-3-flash",
+    contents: prompt,
+});
+
+return result.text;
 };
 
 export const generateFollowUpQuestion = async ({
@@ -39,8 +43,12 @@ export const generateFollowUpQuestion = async ({
     conversation: formattedConversation,
   });
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+const result = await ai.models.generateContent({
+    model: "gemini-3-flash",
+    contents: prompt,
+});
+
+return result.text;
 };
 
 export const generateInterviewFeedback = async ({
@@ -81,8 +89,10 @@ JSON FORMAT:
   "finalFeedback": ""
 }
 `;
+const result = await ai.models.generateContent({
+    model: "gemini-3-flash",
+    contents: prompt,
+});
 
-  const result = await model.generateContent(prompt);
-
-  return result.response.text();
+return result.text;
 };

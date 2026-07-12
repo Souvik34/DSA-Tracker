@@ -1,340 +1,598 @@
 import {
-  createInterviewSessionRepo,
-  insertInterviewMessageRepo,
+    createInterviewSessionRepo,
+    insertInterviewMessageRepo,
+    getInterviewSessionRepo,
+    getInterviewMessagesRepo,
+    createInterviewFeedbackRepo,
+    endInterviewSessionRepo,
+    updateInterviewPhaseRepo,
+    updateCodeSnapshotRepo,
+    recordInterruptRepo,
+    resetInterruptRepo
 } from "./interview.repository.js";
+
+
 import { generateStructuredQuestion } from "./questionGenerator.ai.js";
-import { generateCodeReview } from "./codeReview.ai.js";
+
 import { evaluateCode } from "./codeEvaluation.service.js";
-// import { interviewBrain } from "./interview.brain.js";
-import {
-  getInterruptQuestion,
-} from "./interview.interrupts.js";
-import {
-  getInterviewSessionRepo,
-  getInterviewMessagesRepo,
-  //   insertInterviewMessageRepo,
-} from "./interview.repository.js";
-
-import {
-  detectInterviewPhase,
-} from "./interview.phase.js";
-
-// import { generateFollowUpQuestion } from "./interview.ai.js";
-
-import {
-  createInterviewFeedbackRepo,
-  endInterviewSessionRepo,
-} from "./interview.repository.js";
 
 import { generateInterviewFeedback } from "./interview.ai.js";
+
+import {
+    detectSubmissionType,
+    analyzeCodeProgress,
+    SubmissionType
+} from "./codeDetector.js";
+
+import {
+    shouldInterrupt,
+    getInterruptReason
+} from "./interviewDecisionEngine.js";
+
+import {
+    InterviewPhase,
+    decideNextPhase
+} from "./interviewStateMachine.js";
+
+import {
+    generateInterviewerResponse
+} from "./interviewer.ai.js";
+
 export const startInterviewService = async ({
-  userId,
-  type,
-  difficulty,
-  language,
-}) => {
-  const rawQuestion = await generateStructuredQuestion({
-    difficulty,
-    language,
-  });
-
-  let parsedQuestion;
-
-  try {
-    const cleaned = rawQuestion
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    parsedQuestion = JSON.parse(cleaned);
-  } catch (err) {
-    console.error("Question parse error:", rawQuestion);
-
-    throw new Error("Failed to generate interview question");
-  }
-
-  const title = parsedQuestion.title;
-
-  const session = await createInterviewSessionRepo({
     userId,
     type,
     difficulty,
-    language,
-    title,
-    currentQuestion: JSON.stringify(parsedQuestion),
-  });
+    language
+}) => {
 
-  await insertInterviewMessageRepo({
+    const rawQuestion =
+        await generateStructuredQuestion({
+            difficulty,
+            language
+        });
+console.log(rawQuestion);
+    let question;
+
+ try {
+
+    const cleaned = rawQuestion
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    const jsonString = cleaned.substring(start, end + 1);
+
+    question = JSON.parse(jsonString);
+
+    const starter =
+        question.starterCode ||
+        question.starter_code ||
+        {};
+
+    question.starterCode =
+        typeof starter === "string"
+            ? starter
+            : starter[language] || "";
+
+    delete question.optimal_solution;
+    delete question.solution;
+    delete question.answer;
+
+} catch (err) {
+
+    console.error("RAW RESPONSE:\n", rawQuestion);
+    console.error("PARSE ERROR:", err);
+    throw err;
+
+}
+    const session =
+        await createInterviewSessionRepo({
+
+            userId,
+
+            type,
+
+            difficulty,
+
+            language,
+
+            title: question.title,
+
+            currentQuestion:
+                JSON.stringify(question)
+
+        });
+
+    await updateInterviewPhaseRepo(
+
+        session.id,
+
+        InterviewPhase.UNDERSTANDING
+
+    );
+
+    // await insertInterviewMessageRepo({
+
+    //     sessionId: session.id,
+
+    //     sender: "ai",
+
+    //     message:
+    //         question.interviewGuide
+    //             .openingQuestion
+
+    // });
+await insertInterviewMessageRepo({
     sessionId: session.id,
     sender: "ai",
-    message: parsedQuestion.problem,
-  });
-
-  return {
-    session,
-    firstQuestion: parsedQuestion,
-  };
+    message:
+        question.interviewGuide?.openingQuestion ||
+        "Let's begin. Can you explain the problem in your own words?"
+});
+   const responseQuestion = {
+    ...question
 };
 
-export const sendInterviewMessageService = async ({ sessionId, message }) => {
-  const session = await getInterviewSessionRepo(sessionId);
-
-  if (!session) {
-    throw new Error("Interview session not found");
-  }
-
-  // save user message
-  await insertInterviewMessageRepo({
-    sessionId,
-    sender: "user",
-    message,
-  });
-  let evaluation = null;
-
-  // detect if user sent code (simple MVP detection)
-  const looksLikeCode =
-    message.includes("function") ||
-    message.includes("class") ||
-    message.includes("return") ||
-    message.includes("for") ||
-    message.includes("while") ||
-    message.includes("{") ||
-    message.includes("};") ||
-    message.includes("public static") ||
-    message.includes("def ");
-
-    if (looksLikeCode && session.type === "DSA") {
-
-  let currentQuestion = {};
-
-  try {
-
-    currentQuestion = JSON.parse(
-      session.current_question
-    );
-
-  } catch (err) {
-
-    console.error(
-      "Question parse failed",
-      err
-    );
-  }
-
-  const testCases =
-    currentQuestion.testCases || [];
-
-  if (!testCases.length) {
-    throw new Error(
-      "No testcases available"
-    );
-  }
-
-  evaluation = await evaluateCode({
-    language: session.language,
-    code: message,
-    testCases
-  });
-}
-  // fetch updated conversation
-  const messages = await getInterviewMessagesRepo(sessionId);
-  const phase =
-  detectInterviewPhase({
-    messages,
-    evaluation,
-  });
-
-//   let review = null;
-
-// if (
-//   evaluation &&
-//   looksLikeCode
-// ) {
-
-//   let currentQuestion = {};
-
-//   try {
-
-//     currentQuestion = JSON.parse(
-//       session.current_question
-//     );
-
-//   } catch (err) {
-
-//     console.error(err);
-//   }
-
-//   const rawReview =
-//     await generateCodeReview({
-//       question: currentQuestion,
-//       code: message,
-//       evaluation,
-//       messages,
-//     });
-
-//   try {
-
-//     const cleaned =
-//       rawReview
-//         .replace(/```json/g, "")
-//         .replace(/```/g, "")
-//         .trim();
-
-//     review =
-//       JSON.parse(cleaned);
-
-//   } catch (err) {
-
-//     console.error(
-//       "Review parse failed",
-//       rawReview
-//     );
-//   }
-// }
-
-  // const action = interviewBrain({ messages });
-
-// let aiReply;
-
-// if (
-//   phase === "OPTIMIZATION_PHASE"
-// ) {
-
-//   aiReply =
-//     "Your solution passes current testcases. Can you optimize the time or space complexity further?";
-
-// }
-// else if (
-//   phase === "DEBUGGING_PHASE"
-// ) {
-
-//   aiReply =
-//     "Your solution is failing some testcases. Try debugging edge cases and walk through your logic carefully.";
-
-// }
-// else if (
-//   review?.interviewerResponse
-// ) {
-
-//   aiReply =
-//     review.interviewerResponse;
-
-// }
-// else {
-
-//   // switch (action) {
-
-//   //   case "GIVE_HINT":
-//   //     aiReply =
-//   //       "I'll guide you step by step. Start with brute force approach. What would you try first?";
-//   //     break;
-
-//   //   case "PUSH_USER_THINKING":
-//   //     aiReply =
-//   //       "Take a moment. Break the problem into smaller subproblems before coding.";
-//   //     break;
-
-//   //   case "CHALLENGE_APPROACH":
-//   //     aiReply =
-//   //       "Good direction. Can you analyze time and space complexity of your approach?";
-//   //     break;
-
-//   //   case "ASK_EDGE_CASES":
-//   //     aiReply =
-//   //       "Nice progress. What edge cases might break your solution?";
-//   //     break;
-
-//   //   default:
-//   //     aiReply =
-//   //       await generateFollowUpQuestion({
-//   //         type: session.type,
-//   //         difficulty: session.difficulty,
-//   //         messages
-//   //       });
-//   // }
-// }
-
-
-let aiReply =
-  getInterruptQuestion({
-    phase,
-    evaluation,
-    message
-  });
-
-if (!aiReply) {
-  aiReply = "Continue.";
-}
-
-  // save AI response
-  await insertInterviewMessageRepo({
-    sessionId,
-    sender: "ai",
-    message: aiReply,
-  });
+delete responseQuestion.hiddenTestCases;
+delete responseQuestion.interviewGuide;
+delete responseQuestion.expectedConcepts;
+delete responseQuestion.expectedComplexity;
 
 return {
-  aiReply,
-  evaluation, 
+
+    session: {
+        id: session.id,
+        status: session.status,
+        phase: InterviewPhase.UNDERSTANDING
+    },
+
+    firstQuestion: responseQuestion
+
 };
 };
-export const endInterviewService = async (sessionId) => {
-  const session = await getInterviewSessionRepo(sessionId);
 
-  if (!session) {
-    throw new Error("Session not found");
-  }
 
-  const messages = await getInterviewMessagesRepo(sessionId);
+export const sendInterviewMessageService = async ({
+    sessionId,
+    message
+}) => {
 
-  const rawFeedback = await generateInterviewFeedback({
-    type: session.type,
-    difficulty: session.difficulty,
-    messages,
-  });
+    const session =
+        await getInterviewSessionRepo(sessionId);
 
-  let feedback;
+    if (!session) {
+        throw new Error(
+            "Interview session not found."
+        );
+    }
 
-  try {
-    const cleaned = rawFeedback
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+    // Save user message
+    await insertInterviewMessageRepo({
 
-    feedback = JSON.parse(cleaned);
-  } catch (err) {
-    console.error("Feedback parse failed:", rawFeedback);
+        sessionId,
 
-    feedback = {
-      overallScore: 0,
-      communicationScore: 0,
-      problemSolvingScore: 0,
-      optimizationScore: 0,
-      strengths: "Could not evaluate properly",
-      weaknesses: "Parsing issue",
-      finalFeedback: "System evaluation issue",
-    };
-  }
+        sender: "user",
 
-  await createInterviewFeedbackRepo({
+        message
+
+    });
+
+    // Load interview package
+    let interviewPackage;
+
+    try {
+
+        interviewPackage = JSON.parse(
+            session.current_question
+        );
+
+    } catch (err) {
+
+        throw new Error(
+            "Interview package corrupted."
+        );
+
+    }
+
+    // Entire conversation
+    const conversation =
+        await getInterviewMessagesRepo(
+            sessionId
+        );
+
+    //--------------------------------------------------
+    // Detect whether candidate sent code
+    //--------------------------------------------------
+
+    const submissionType =
+        detectSubmissionType(message);
+
+    const codeDetected =
+        submissionType === SubmissionType.CODE;
+
+    let evaluation = null;
+
+    let codeAnalysis = null;
+
+    //--------------------------------------------------
+    // Judge0 Evaluation
+    //--------------------------------------------------
+
+    if (
+        codeDetected &&
+        session.type === "DSA"
+    ) {
+
+        codeAnalysis =
+            analyzeCodeProgress({
+
+                previousCode:
+                    session.last_code || "",
+
+                currentCode:
+                    message,
+
+                interviewGuide:
+                    interviewPackage.interviewGuide
+
+            });
+
+        const testCases = [
+
+            ...(interviewPackage.visibleTestCases || []),
+
+            ...(interviewPackage.hiddenTestCases || [])
+
+        ];
+
+        evaluation =
+            await evaluateCode({
+
+                language:
+                    session.language,
+
+                code:
+                    message,
+
+                testCases
+
+            });
+
+        await updateCodeSnapshotRepo({
+
+            sessionId,
+
+            code: message
+
+        });
+
+    }
+
+    //--------------------------------------------------
+    // Decide Interview Phase
+    //--------------------------------------------------
+
+    const nextPhase =
+        decideNextPhase({
+
+            currentPhase:
+                session.phase,
+
+            evaluation,
+
+            codeDetected,
+
+            approachAccepted:
+                !codeDetected
+
+        });
+
+    if (
+        nextPhase !== session.phase
+    ) {
+
+        await updateInterviewPhaseRepo(
+
+            sessionId,
+
+            nextPhase
+
+        );
+
+        await resetInterruptRepo(
+            sessionId
+        );
+
+    }
+
+    //--------------------------------------------------
+    // Decide whether interviewer should interrupt
+    //--------------------------------------------------
+
+    const interrupt =
+        shouldInterrupt({
+
+            phase:
+                nextPhase,
+
+            evaluation,
+
+            interruptionCount:
+                session.interruption_count,
+
+            codeAnalysis,
+
+            lastInterruptAtVersion:
+                session.last_interrupt_at_version,
+
+            currentCodeVersion:
+                session.code_version +
+                (codeDetected ? 1 : 0)
+
+        });
+
+    let aiReply = null;
+
+    //--------------------------------------------------
+    // Decide interrupt reason
+    //--------------------------------------------------
+
+    let interruptReason = null;
+
+    if (interrupt) {
+
+        interruptReason =
+            getInterruptReason({
+
+                phase:
+                    nextPhase,
+
+                evaluation,
+
+                codeAnalysis
+
+            });
+            //--------------------------------------------------
+// Generate interviewer response
+//--------------------------------------------------
+
+if (interrupt) {
+
+    const rawResponse =
+        await generateInterviewerResponse({
+
+            phase: nextPhase,
+
+            interviewGuide:
+                interviewPackage.interviewGuide,
+
+            expectedConcepts:
+                interviewPackage.expectedConcepts,
+
+            conversation,
+
+            candidateMessage: message,
+
+            evaluation,
+
+            interruptReason
+
+        });
+
+    try {
+
+        const cleaned =
+            rawResponse
+                .replace(/```json/g, "")
+                .replace(/```/g, "")
+                .trim();
+
+        const parsed =
+            JSON.parse(cleaned);
+
+        aiReply =
+            parsed.reply;
+
+    } catch (err) {
+
+        console.error(
+            "Interviewer response parse failed",
+            rawResponse
+        );
+
+        aiReply =
+            "Can you explain your reasoning behind this step?";
+    }
+
+    //--------------------------------------------------
+    // Record interruption
+    //--------------------------------------------------
+
+    await recordInterruptRepo({
+
+        sessionId,
+
+        codeVersion:
+            session.code_version +
+            (codeDetected ? 1 : 0)
+
+    });
+
+}
+else {
+
+    aiReply =
+        "Continue.";
+
+}
+
+//--------------------------------------------------
+// Save AI message
+//--------------------------------------------------
+
+await insertInterviewMessageRepo({
+
     sessionId,
 
-    overallScore: feedback.overallScore,
+    sender: "ai",
 
-    communicationScore: feedback.communicationScore,
+    message: aiReply
 
-    problemSolvingScore: feedback.problemSolvingScore,
+});
 
-    optimizationScore: feedback.optimizationScore,
+//--------------------------------------------------
+// Return
+//--------------------------------------------------
 
-    strengths: feedback.strengths,
+return {
 
-    weaknesses: feedback.weaknesses,
+    aiReply,
 
-    finalFeedback: feedback.finalFeedback,
-  });
+    phase: nextPhase,
 
-  await endInterviewSessionRepo(sessionId);
+    evaluation,
 
-  return feedback;
+    codeAnalysis,
+
+    interrupted: interrupt
+
+};
+
+};
+
+    }
+    
+export const endInterviewService = async (sessionId) => {
+
+    const session =
+        await getInterviewSessionRepo(sessionId);
+
+    if (!session) {
+        throw new Error("Interview session not found");
+    }
+
+    const conversation =
+        await getInterviewMessagesRepo(sessionId);
+
+    let interviewPackage = {};
+
+    try {
+
+        interviewPackage =
+            JSON.parse(session.current_question);
+
+    } catch (err) {
+
+        console.error(
+            "Interview package parse failed",
+            err
+        );
+
+    }
+
+    const rawFeedback =
+        await generateInterviewFeedback({
+
+            type: session.type,
+
+            difficulty: session.difficulty,
+
+            conversation,
+
+            expectedConcepts:
+                interviewPackage.expectedConcepts || [],
+
+            expectedComplexity:
+                interviewPackage.expectedComplexity || {},
+
+            interviewGuide:
+                interviewPackage.interviewGuide || {}
+
+        });
+
+    let feedback;
+
+    try {
+
+        const cleaned =
+            rawFeedback
+                .replace(/```json/g, "")
+                .replace(/```/g, "")
+                .trim();
+
+        feedback =
+            JSON.parse(cleaned);
+
+    } catch (err) {
+
+        console.error(
+            "Feedback Parse Error",
+            rawFeedback
+        );
+
+        feedback = {
+
+            overallScore: 0,
+
+            communicationScore: 0,
+
+            problemSolvingScore: 0,
+
+            optimizationScore: 0,
+
+            strengths: [
+                "Could not evaluate"
+            ],
+
+            weaknesses: [
+                "Parsing failed"
+            ],
+
+            finalFeedback:
+                "Interview feedback generation failed."
+
+        };
+
+    }
+
+    await createInterviewFeedbackRepo({
+
+        sessionId,
+
+        overallScore:
+            feedback.overallScore,
+
+        communicationScore:
+            feedback.communicationScore,
+
+        problemSolvingScore:
+            feedback.problemSolvingScore,
+
+        optimizationScore:
+            feedback.optimizationScore,
+
+        strengths:
+            Array.isArray(feedback.strengths)
+                ? feedback.strengths.join("\n")
+                : feedback.strengths,
+
+        weaknesses:
+            Array.isArray(feedback.weaknesses)
+                ? feedback.weaknesses.join("\n")
+                : feedback.weaknesses,
+
+        finalFeedback:
+            feedback.finalFeedback
+
+    });
+
+    await endInterviewSessionRepo(
+        sessionId
+    );
+
+    return feedback;
+
 };

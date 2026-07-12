@@ -15,9 +15,12 @@ export const generateDashboardInsights = async (
 
     const prompt = buildDashboardPrompt(dashboardData);
 
-    const result = await model.generateContent(prompt);
+    const result = await ai.models.generateContent({
+    model: "gemini-3-flash",
+    contents: prompt,
+});
 
-    const response = result.response.text();
+return result.text;
 
     return response;
 

@@ -1,24 +1,15 @@
 import express from "express";
-
+import {protect} from "../../middlewares/auth.middleware.js";
 import {
-  startInterview, sendInterviewMessage, endInterview
+  startInterview,
+  sendInterviewMessage,
+  endInterview, getInterviewById
 } from "./interview.controller.js";
 
 const router = express.Router();
-
-
-
-router.post(
-  "/start",
-  startInterview
-);
-router.post(
-  "/message",
-  sendInterviewMessage
-);
-router.post(
-  "/end",
-  endInterview
-);
+router.get("/:id", protect,getInterviewById);
+router.post("/start", protect, startInterview);
+router.post("/message", protect, sendInterviewMessage);
+router.post("/end", protect, endInterview);
 
 export default router;

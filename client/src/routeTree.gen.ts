@@ -13,9 +13,11 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RevisionsRouteImport } from './routes/revisions'
 import { Route as ProblemsRouteImport } from './routes/problems'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkspaceProblemIdRouteImport } from './routes/workspace.$problemId'
+import { Route as WorkspaceSessionIdRouteImport } from './routes/workspace.$sessionId'
+import { Route as InterviewSessionIdReportRouteImport } from './routes/interview.$sessionId.report'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -37,6 +39,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterviewsRoute = InterviewsRouteImport.update({
+  id: '/interviews',
+  path: '/interviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -47,78 +54,98 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WorkspaceProblemIdRoute = WorkspaceProblemIdRouteImport.update({
-  id: '/workspace/$problemId',
-  path: '/workspace/$problemId',
+const WorkspaceSessionIdRoute = WorkspaceSessionIdRouteImport.update({
+  id: '/workspace/$sessionId',
+  path: '/workspace/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterviewSessionIdReportRoute =
+  InterviewSessionIdReportRouteImport.update({
+    id: '/interview/$sessionId/report',
+    path: '/interview/$sessionId/report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
-  '/workspace/$problemId': typeof WorkspaceProblemIdRoute
+  '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
+  '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
-  '/workspace/$problemId': typeof WorkspaceProblemIdRoute
+  '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
+  '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
-  '/workspace/$problemId': typeof WorkspaceProblemIdRoute
+  '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
+  '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/interviews'
     | '/login'
     | '/problems'
     | '/revisions'
     | '/signup'
-    | '/workspace/$problemId'
+    | '/workspace/$sessionId'
+    | '/interview/$sessionId/report'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/interviews'
     | '/login'
     | '/problems'
     | '/revisions'
     | '/signup'
-    | '/workspace/$problemId'
+    | '/workspace/$sessionId'
+    | '/interview/$sessionId/report'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/interviews'
     | '/login'
     | '/problems'
     | '/revisions'
     | '/signup'
-    | '/workspace/$problemId'
+    | '/workspace/$sessionId'
+    | '/interview/$sessionId/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  InterviewsRoute: typeof InterviewsRoute
   LoginRoute: typeof LoginRoute
   ProblemsRoute: typeof ProblemsRoute
   RevisionsRoute: typeof RevisionsRoute
   SignupRoute: typeof SignupRoute
-  WorkspaceProblemIdRoute: typeof WorkspaceProblemIdRoute
+  WorkspaceSessionIdRoute: typeof WorkspaceSessionIdRoute
+  InterviewSessionIdReportRoute: typeof InterviewSessionIdReportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interviews': {
+      id: '/interviews'
+      path: '/interviews'
+      fullPath: '/interviews'
+      preLoaderRoute: typeof InterviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -165,11 +199,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/workspace/$problemId': {
-      id: '/workspace/$problemId'
-      path: '/workspace/$problemId'
-      fullPath: '/workspace/$problemId'
-      preLoaderRoute: typeof WorkspaceProblemIdRouteImport
+    '/workspace/$sessionId': {
+      id: '/workspace/$sessionId'
+      path: '/workspace/$sessionId'
+      fullPath: '/workspace/$sessionId'
+      preLoaderRoute: typeof WorkspaceSessionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interview/$sessionId/report': {
+      id: '/interview/$sessionId/report'
+      path: '/interview/$sessionId/report'
+      fullPath: '/interview/$sessionId/report'
+      preLoaderRoute: typeof InterviewSessionIdReportRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -178,11 +219,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  InterviewsRoute: InterviewsRoute,
   LoginRoute: LoginRoute,
   ProblemsRoute: ProblemsRoute,
   RevisionsRoute: RevisionsRoute,
   SignupRoute: SignupRoute,
-  WorkspaceProblemIdRoute: WorkspaceProblemIdRoute,
+  WorkspaceSessionIdRoute: WorkspaceSessionIdRoute,
+  InterviewSessionIdReportRoute: InterviewSessionIdReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

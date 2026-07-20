@@ -3,7 +3,7 @@ import {
 } from "./interview.service.js";
 
 import {
-  sendInterviewMessageService,
+  sendInterviewMessageService, getInterviewByIdService,
 } from "./interview.service.js";
 
 import {
@@ -17,21 +17,13 @@ export const startInterview = async (
 
   try {
 
-    const {
-      userId,
-      type,
-      difficulty,
-      language,
-    } = req.body;
+const {
+  type,
+  difficulty,
+  language,
+} = req.body;
 
-
-
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "userId required",
-      });
-    }
+const userId = req.user.id;
 
 
 
@@ -148,4 +140,24 @@ export const endInterview =
         message: err.message,
       });
     }
+};
+
+export const getInterviewById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const data = await getInterviewByIdService(id);
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };

@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect} from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
+import interviewService from "@/services/interviewService";
 
 import { requireAuth } from "@/lib/route-guard";
 import { Button } from "@/components/ui/button";
@@ -21,10 +22,10 @@ import {
   SUPPORTED_LANGUAGES,
   type SupportedLanguageId,
 } from "@/features/editor/code-editor";
-import { AIInterviewerPanel } from "@/features/interview/ai-interviewer-panel";
-import problemService from "@/services/problemService";
+import AIInterviewerPanel from "@/features/interview/ai-interviewer-panel";
 
-export const Route = createFileRoute("/workspace/$problemId")({
+
+export const Route = createFileRoute("/workspace/$sessionId")({
   beforeLoad: ({ location }) => requireAuth(location),
   head: () => ({
     meta: [
@@ -40,24 +41,34 @@ export const Route = createFileRoute("/workspace/$problemId")({
 });
 
 function WorkspacePage() {
-  const { problemId } = Route.useParams();
+ const { sessionId } = Route.useParams();
   const [problem, setProblem] = useState<any>(null);
 const [loading, setLoading] = useState(true);
 
 useEffect(() => {
-  const loadProblem = async () => {
+const loadInterview = async () => {
     try {
-      const data = await problemService.getProblemById(problemId);
-      setProblem(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  loadProblem();
-}, [problemId]);
+        const data =
+            await interviewService.getById(sessionId);
+
+        setProblem(data.firstQuestion);
+        setLanguage(data.session.language);
+        setCode(data.firstQuestion.starterCode);
+
+    } catch (err) {
+
+        console.error(err);
+
+    } finally {
+
+        setLoading(false);
+
+    }
+};
+
+ loadInterview();
+}, [sessionId]);
 
   const [language, setLanguage] = useState<SupportedLanguageId>("python");
   const [code, setCode] = useState<string>(STARTER_CODE.python);
@@ -69,20 +80,24 @@ useEffect(() => {
     setCode(STARTER_CODE[next]);
   };
 
+  // const onSubmit = async () => {
+  //   setSubmitting(true);
+  //   const t = toast.loading("Submitting your solution…");
+  //   try {
+  //     await problemService
+  //       .submitSolution?.(problemId, { language, code })
+  //       .catch(() => null);
+  //     toast.success("Solution submitted!", { id: t });
+  //   } catch (err: any) {
+  //     toast.error(err?.message ?? "Submission failed", { id: t });
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
+
   const onSubmit = async () => {
-    setSubmitting(true);
-    const t = toast.loading("Submitting your solution…");
-    try {
-      await problemService
-        .submitSolution?.(problemId, { language, code })
-        .catch(() => null);
-      toast.success("Solution submitted!", { id: t });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Submission failed", { id: t });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  console.log(code);
+};
 
   if (loading) {
   return (
@@ -131,16 +146,7 @@ useEffect(() => {
             {problem.topic}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={problem.leetcodeUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-          >
-            <ExternalLink className="h-3.5 w-3.5" /> LeetCode
-          </a>
-        </div>
+    
       </header>
 
       {/* 3-pane grid */}
@@ -157,40 +163,49 @@ useEffect(() => {
     {problem.difficulty}
   </Badge>
 
-  {problem.tags?.split(",").map((tag: string) => (
-    <Badge key={tag} variant="outline">
-      {tag.trim()}
+{problem.expectedConcepts?.map((tag:string)=>(
+    <Badge key={tag}>
+        {tag}
     </Badge>
-  ))}
+))}
 </div>
 
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Problem Statement
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-foreground/90">
-            Solve <span className="font-medium">{problem.title}</span>. Read the full
-            statement on LeetCode and outline your approach before coding.
-          </p>
+         <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+    {problem.problem}
+</p>
 
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Constraints
           </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground/90">
-            <li>Inputs follow the problem's stated bounds.</li>
-            <li>Aim for the best possible time complexity.</li>
-            <li>Handle empty, minimal, and maximal inputs.</li>
-          </ul>
+         <ul className="mt-2 list-disc pl-5">
+    {problem.constraints?.map((constraint: string) => (
+        <li key={constraint}>{constraint}</li>
+    ))}
+</ul>
 
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Examples
           </h2>
-          <div className="mt-2 space-y-3">
-            <pre className="rounded-lg border border-border/60 bg-card/60 p-3 text-xs leading-relaxed">
-{`Input:  <see LeetCode>
-Output: <see LeetCode>
-Explain: walk the interviewer through your reasoning.`}
-            </pre>
-          </div>
+        <div className="mt-2 space-y-4">
+    {problem.examples?.map((example: any, index: number) => (
+        <div
+            key={index}
+            className="rounded-lg border border-border/60 bg-card/60 p-3 text-sm"
+        >
+            <p className="font-semibold">Input</p>
+            <pre>{example.input}</pre>
+
+            <p className="mt-2 font-semibold">Output</p>
+            <pre>{example.output}</pre>
+
+            <p className="mt-2 font-semibold">Explanation</p>
+            <p>{example.explanation}</p>
+        </div>
+    ))}
+</div>
         </section>
 
         {/* Middle: editor */}
@@ -224,7 +239,11 @@ Explain: walk the interviewer through your reasoning.`}
         </section>
 
         {/* Right: AI interviewer */}
-        <AIInterviewerPanel problemId={problemId} language={language} code={code} />
+      <AIInterviewerPanel
+    sessionId={sessionId}
+    language={language}
+    code={code}
+/>
       </div>
     </div>
   );

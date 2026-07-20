@@ -28,7 +28,7 @@ const mainItems = [
   { title: "Problems", url: "/problems", icon: Code2 },
   { title: "Sheets", url: "/dashboard", icon: ListChecks },
   { title: "Contests", url: "/dashboard", icon: Trophy },
-  { title: "Interviews", url: "/dashboard", icon: CalendarClock },
+  { title: "Interviews", url: "/interviews", icon: CalendarClock },
 ];
 
 const learnItems = [

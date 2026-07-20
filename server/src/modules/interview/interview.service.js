@@ -44,29 +44,30 @@ export const startInterviewService = async ({
     difficulty,
     language
 }) => {
-
+ console.log("1. Starting interview");
     const rawQuestion =
         await generateStructuredQuestion({
             difficulty,
             language
         });
+        console.log("2. Question generated");
 console.log(rawQuestion);
-    let question;
+let question;
 
- try {
-
+try {
+    
     const cleaned = rawQuestion
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+    
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
-
+    
     const jsonString = cleaned.substring(start, end + 1);
-
+    
     question = JSON.parse(jsonString);
-
+console.log("3. Parsed question");
     const starter =
         question.starterCode ||
         question.starter_code ||
@@ -105,6 +106,7 @@ console.log(rawQuestion);
                 JSON.stringify(question)
 
         });
+        console.log("4. Session created", session.id);
 
     await updateInterviewPhaseRepo(
 
@@ -140,7 +142,7 @@ delete responseQuestion.hiddenTestCases;
 delete responseQuestion.interviewGuide;
 delete responseQuestion.expectedConcepts;
 delete responseQuestion.expectedComplexity;
-
+console.log("5. Returning response");
 return {
 
     session: {
@@ -595,4 +597,31 @@ export const endInterviewService = async (sessionId) => {
 
     return feedback;
 
+};
+
+
+export const getInterviewByIdService = async (sessionId) => {
+    const session = await getInterviewSessionRepo(sessionId);
+
+    if (!session) {
+        throw new Error("Interview session not found");
+    }
+
+    const question = JSON.parse(session.current_question);
+
+    delete question.hiddenTestCases;
+    delete question.interviewGuide;
+    delete question.expectedConcepts;
+    delete question.expectedComplexity;
+
+    return {
+        session: {
+            id: session.id,
+            language: session.language,
+            difficulty: session.difficulty,
+            phase: session.phase,
+            status: session.status,
+        },
+        firstQuestion: question,
+    };
 };

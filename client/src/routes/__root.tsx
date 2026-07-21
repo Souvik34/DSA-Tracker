@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -10,7 +11,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-
+import { InterviewSocketProvider } from "@/socket/interviewSocketProvider";
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -113,9 +114,20 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster richColors position="top-right" theme="dark" />
-    </QueryClientProvider>
+<QueryClientProvider client={queryClient}>
+
+    <InterviewSocketProvider>
+
+        <Outlet />
+
+    </InterviewSocketProvider>
+
+    <Toaster
+        richColors
+        position="top-right"
+        theme="dark"
+    />
+
+</QueryClientProvider>
   );
 }

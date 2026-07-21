@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import interviewService from "@/services/interviewService";
-
+import { useInterviewSocket } from "@/socket/useInterviewSocket";
 import { requireAuth } from "@/lib/route-guard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +41,17 @@ export const Route = createFileRoute("/workspace/$sessionId")({
 });
 
 function WorkspacePage() {
+  const { joinInterview } = useInterviewSocket()!;
  const { sessionId } = Route.useParams();
   const [problem, setProblem] = useState<any>(null);
 const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+
+    joinInterview(sessionId);
+
+}, [sessionId]);
+
 
 useEffect(() => {
 const loadInterview = async () => {

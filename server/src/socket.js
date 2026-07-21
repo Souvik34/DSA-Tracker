@@ -12,19 +12,23 @@ export const initSocket = (server) => {
     },
   });
 
-  io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
 
-    registerInterviewSockets(socket);
+  registerInterviewSockets(socket);
 
-    socket.on("join-interview", (sessionId) => {
-      socket.join(`interview-${sessionId}`);
-    });
+  socket.on("join-interview", (sessionId) => {
 
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected");
-    });
+    console.log("Joined interview:", sessionId);
+
+    socket.join(`interview-${sessionId}`);
+
   });
+
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected");
+  });
+});
 };
 
 export const getIO = () => {

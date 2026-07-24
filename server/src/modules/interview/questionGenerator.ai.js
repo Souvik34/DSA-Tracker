@@ -1,8 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-});
+import { generateAI } from "../ai/aiProvider.js";
 
 export const generateStructuredQuestion =
   async ({
@@ -239,11 +235,13 @@ codingTriggers MUST be an array of objects like:
 
 Return ONLY valid JSON.
 `;
-const result = await ai.models.generateContent({
-  model: "gemini-3.5-flash",
-  contents: prompt,
-  // contents: "Generate an easy array interview problem in JSON."   
-});
+// const result = await ai.models.generateContent({
+//   model: "gemini-3.5-flash",
+//   contents: prompt,
+//   // contents: "Generate an easy array interview problem in JSON."   
+// });
 
-return result.text;
+return await generateAI(prompt);
+
+// return result.text;
   };

@@ -159,9 +159,11 @@ return {
 
 export const sendInterviewMessageService = async ({
     sessionId,
-    message
+    message,
+    code
 }) => {
 
+    console.log(">>> sendInterviewMessageService called");
     const session =
         await getInterviewSessionRepo(sessionId);
 
@@ -211,9 +213,15 @@ export const sendInterviewMessageService = async ({
 console.log("=================================");
 console.log("Candidate message:");
 console.log(message);
+console.log("Editor code:");
+console.log(code);
+const candidateContent =
+    code?.trim()
+        ? code
+        : message;
 
 const submissionType =
-    detectSubmissionType(message);
+    detectSubmissionType(candidateContent);
 
 console.log("Submission type:", submissionType);
 
@@ -243,8 +251,7 @@ console.log("=================================");
                 previousCode:
                     session.last_code || "",
 
-                currentCode:
-                    message,
+                currentCode: candidateContent,
 
                 interviewGuide:
                     interviewPackage.interviewGuide
@@ -265,8 +272,7 @@ console.log("=================================");
                 language:
                     session.language,
 
-                code:
-                    message,
+                code: candidateContent,
 
                 testCases
 
@@ -276,7 +282,7 @@ console.log("=================================");
 
             sessionId,
 
-            code: message
+          code: candidateContent
 
         });
 

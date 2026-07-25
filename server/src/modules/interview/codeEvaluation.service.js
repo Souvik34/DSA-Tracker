@@ -39,12 +39,13 @@ export const evaluateCode = async ({
       continue;
     }
 
-    const normalize = (str = "") =>
-      str
-        .trim()
-        .replace(/\r/g, "")
-        .replace(/\s+/g, " ");
-
+   const normalize = (str) =>
+  String(str ?? "")
+    .trim()
+    .replace(/\r/g, "")
+    .replace(/\s+/g, " ");
+console.log("Execution Result:");
+console.dir(execution, { depth: null });
     const userOutput =
       normalize(execution.output);
 

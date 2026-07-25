@@ -61,6 +61,7 @@ export const sendInterviewMessage =
       const {
         sessionId,
         message,
+        code,
       } = req.body;
 
 
@@ -79,6 +80,7 @@ export const sendInterviewMessage =
         await sendInterviewMessageService({
           sessionId,
           message,
+          code,
         });
 
 

@@ -16,9 +16,10 @@ export const executeCode = async ({
       python: 71,
       java: 62
     };
+    // console.log("Judge0 Key:", process.env.JUDGE0_KEY);
 
-    const response = await axios.post(
-      "https://judge0-ce.p.rapidapi.com/submissions",
+  const response = await axios.post(
+  "http://localhost:2358/submissions?base64_encoded=false&wait=false",
       {
         language_id: languageMap[language] || 63,
         source_code: code,
@@ -26,10 +27,8 @@ export const executeCode = async ({
       },
       {
         headers: {
-          "Content-Type": "application/json",
-          "X-RapidAPI-Key": process.env.JUDGE0_KEY,
-          "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-        }
+  "Content-Type": "application/json"
+}
       }
     );
 
@@ -40,10 +39,18 @@ export const executeCode = async ({
 
     return result;
 
-  } catch (err) {
-    console.error("Code execution error:", err.message);
-    throw new Error("Code execution failed");
+} catch (err) {
+  console.error("Judge0 Error:");
+
+  if (err.response) {
+    console.error("Status:", err.response.status);
+    console.error("Data:", err.response.data);
+  } else {
+    console.error(err);
   }
+
+  throw new Error("Code execution failed");
+}
 };
 
 
@@ -52,17 +59,11 @@ export const executeCode = async ({
  */
 const pollResult = async (token) => {
 
-  const url = `https://judge0-ce.p.rapidapi.com/submissions/${token}`;
+  const url = `http://localhost:2358/submissions/${token}?base64_encoded=false`;
 
   for (let i = 0; i < 10; i++) {
 
-    const res = await axios.get(url, {
-      headers: {
-        "X-RapidAPI-Key": process.env.JUDGE0_KEY,
-        "X-RapidAPI-Host": "judge0-ce.p.rapidapi.com"
-      }
-    });
-
+  const res = await axios.get(url);
     if (res.data.status.id <= 2) {
       // still processing
       await new Promise(r => setTimeout(r, 1000));

@@ -1,28 +1,81 @@
-/**
- * Placeholder interface for future AI Interview integration.
- * Implementations will live behind this contract so UI stays decoupled.
- * No chatbot UI is mounted yet — only the architectural seam.
- */
+/* eslint-disable prettier/prettier */
+
+import { api } from "@/lib/api";
+
 export interface InterviewSession {
-  id: string;
-  topic: string;
-  startedAt: string;
+    id: string;
+    status: string;
+    phase: string;
 }
 
-export interface AIInterviewService {
-  startSession(topic: string): Promise<InterviewSession>;
-  submitAnswer(sessionId: string, answer: string): Promise<{ feedback: string }>;
-  endSession(sessionId: string): Promise<void>;
+export interface StartSessionPayload {
+    type: string;
+    difficulty: string;
+    language: string;
 }
 
-export const aiInterviewService: AIInterviewService = {
-  async startSession(topic) {
-    throw new Error(`AI interview not yet wired (topic: ${topic})`);
-  },
-  async submitAnswer() {
-    throw new Error("AI interview not yet wired");
-  },
-  async endSession() {
-    throw new Error("AI interview not yet wired");
-  },
+export const aiInterviewService = {
+
+    async startSession(payload: StartSessionPayload) {
+
+        const { data } =
+            await api.post(
+                "/interview/start",
+                payload
+            );
+
+        return data;
+
+    },
+
+    async sendMessage(
+
+        sessionId: string,
+
+        message: string
+
+    ) {
+
+        const { data } =
+            await api.post(
+                "/interview/message",
+                {
+                    sessionId,
+                    message
+                }
+            );
+
+        return data;
+
+    },
+
+    async getInterviewState(
+        sessionId: string
+    ) {
+
+        const { data } =
+            await api.get(
+                `/interview/${sessionId}`
+            );
+
+        return data;
+
+    },
+
+    async endSession(
+        sessionId: string
+    ) {
+
+        const { data } =
+            await api.post(
+                "/interview/end",
+                {
+                    sessionId
+                }
+            );
+
+        return data;
+
+    }
+
 };

@@ -1,13 +1,14 @@
 /* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
-import { interviewService } from "@/services/interviewService";
+import interviewService from "@/services/interviewService";
 import {
     CodeEditor,
     SUPPORTED_LANGUAGES,
     STARTER_CODE,
     type SupportedLanguageId
 } from "@/features/editor/code-editor";
-
+import { socket } from "@/socket/socket";
+import {useInterviewSocket} from "../../socket/interviewSocketProvider";
 
 interface Message {
     role: "INTERVIEWER" | "CANDIDATE";
@@ -20,9 +21,15 @@ interface Problem {
 
     description:string;
 
-    examples:string;
+    examples:{
+        input:string;
+        output:string;
+        explanation?:string;
+    }[];
 
-    constraints:string;
+    constraints:string[];
+
+    starterCode?:string;
 
 }
 
@@ -90,6 +97,8 @@ const [phase,setPhase] =
     "FEEDBACK"
     >("INTRODUCTION");
 
+    const [problem, setProblem] =
+    useState<Problem | null>(null);
 
 const [time,setTime] =
     useState(45 * 60);
@@ -115,6 +124,44 @@ useState({
     complexityAnswered:false
 });
 
+const interviewSocket = useInterviewSocket();
+useEffect(() => {
+
+    if (!interviewSocket) return;
+
+    interviewSocket.joinInterview(sessionId);
+
+    return () => {
+
+        interviewSocket.leaveInterview();
+
+    };
+
+}, [interviewSocket, sessionId]);
+useEffect(() => {
+
+    const handleAIResponse = async (data: any) => {
+
+        setPhase(data.phase);
+
+        await typeAIMessage(data.message);
+
+    };
+
+   socket.on(
+    "interviewer-message",
+    handleAIResponse
+);
+
+    return () => {
+socket.off(
+    "interviewer-message",
+    handleAIResponse
+);
+
+    };
+
+}, [sessionId]);
 const [currentQuestion,setCurrentQuestion] =
     useState("");
 
@@ -178,31 +225,30 @@ const formatTime=(seconds:number)=>{
 
 
 
-    const loadInterview = async()=>{
+const loadInterview = async () => {
 
-        try{
+    try {
 
-            const res =
-                await interviewService
-                .getInterviewState(sessionId);
+        const res =
+            await interviewService.getInterviewState(sessionId);
 
+        const data = res.data;
 
-            setMessages(
-                res.data.messages || []
-            );
-
-
-        }catch(err){
-
-            console.log(err);
-
+        if (data.session?.phase) {
+            setPhase(data.session.phase);
         }
 
-    };
+        if (data.firstQuestion) {
+            setProblem(data.firstQuestion);
+        }
 
+    } catch (err) {
 
+        console.log(err);
 
+    }
 
+};
 
     // Start interview
 
@@ -213,32 +259,26 @@ try{
 
 setLoading(true);
 
-
 const res =
-await interviewService
-.startInterview(sessionId);
+await interviewService.startAISession({
+    type: "DSA",
+    difficulty: "MEDIUM",
+    language,
+});
+
+const interview =
+res;
 
 
 
-const aiResponse =
-res.data;
-
-
-
-setPhase(
-aiResponse.phase
-);
-
-
+setPhase(interview.session.phase);
 
 setProblem(
-aiResponse.problem
+    interview.firstQuestion
 );
 
-
-
 await typeAIMessage(
-aiResponse.message
+    "Can you explain the problem in your own words?"
 );
 
 
@@ -258,50 +298,33 @@ setLoading(false);
 };
 
 
-const typeAIMessage = async(
-    text:string
-)=>{
-
+const typeAIMessage = async (
+    text: string
+) => {
 
     setTyping(true);
 
+    let output = "";
 
-    let output="";
-
-
-    for(const char of text){
+    for (const char of text) {
 
         output += char;
 
-
         setCurrentQuestion(output);
 
-
-        await new Promise(
-            resolve =>
-            setTimeout(resolve,20)
+        await new Promise(resolve =>
+            setTimeout(resolve, 20)
         );
 
     }
 
-
-
-    const aiResponse =
-    res.data as AIResponse;
-
-
-
-setPhase(
-    aiResponse.phase
-);
-
-
-
-await typeAIMessage(
-    aiResponse.message
-);
-
-
+    setMessages(prev => [
+        ...prev,
+        {
+            role: "INTERVIEWER",
+            content: text,
+        },
+    ]);
 
     setCurrentQuestion("");
 
@@ -337,55 +360,35 @@ await typeAIMessage(
 
 
 
-        try{
+     try {
 
-            setLoading(true);
+    setLoading(true);
 
-setInterviewContext(prev=>({
+    setInterviewContext(prev => ({
 
-    ...prev,
+        ...prev,
 
-    explainedApproach:true
+        explainedApproach: true
 
-}));
-            const res =
-                await interviewService
-                .sendMessage(
-                    sessionId,
-                    {
-                        message:userMessage
-                    }
-                );
+    }));
 
-
-
-         const aiResponse =
-res.data as AIResponse;
-
-
-
-setPhase(
-    aiResponse.phase
-);
-
-
-
-await typeAIMessage(
-    aiResponse.message
-);
-
-
-
-        }catch(err){
-
-            console.log(err);
-
+  await interviewService.submitAIResponse(
+        sessionId,
+        {
+            message: userMessage,
+            code
         }
-        finally{
+    );
 
-            setLoading(false);
+} catch (err) {
 
-        }
+    console.log(err);
+
+} finally {
+
+    setLoading(false);
+
+}
 
     };
 

@@ -10,7 +10,7 @@ import {
     recordInterruptRepo,
     resetInterruptRepo
 } from "./interview.repository.js";
-
+import { getIO } from "../../socket.js";
 
 import { generateStructuredQuestion } from "./questionGenerator.ai.js";
 
@@ -208,12 +208,20 @@ export const sendInterviewMessageService = async ({
     //--------------------------------------------------
     // Detect whether candidate sent code
     //--------------------------------------------------
+console.log("=================================");
+console.log("Candidate message:");
+console.log(message);
 
-    const submissionType =
-        detectSubmissionType(message);
+const submissionType =
+    detectSubmissionType(message);
 
-    const codeDetected =
-        submissionType === SubmissionType.CODE;
+console.log("Submission type:", submissionType);
+
+const codeDetected =
+    submissionType === SubmissionType.CODE;
+
+console.log("Code detected:", codeDetected);
+console.log("=================================");
 
     let evaluation = null;
 
@@ -227,6 +235,7 @@ export const sendInterviewMessageService = async ({
         codeDetected &&
         session.type === "DSA"
     ) {
+        console.log("Entered CODE analysis block");
 
         codeAnalysis =
             analyzeCodeProgress({
@@ -342,94 +351,76 @@ export const sendInterviewMessageService = async ({
     // Decide interrupt reason
     //--------------------------------------------------
 
-    let interruptReason = null;
+ let interruptReason = null;
 
-    if (interrupt) {
+if (interrupt) {
 
-        interruptReason =
-            getInterruptReason({
+    interruptReason =
+        getInterruptReason({
+            phase: nextPhase,
+            evaluation,
+            codeAnalysis
+        });
 
-                phase:
-                    nextPhase,
+    await recordInterruptRepo({
+        sessionId,
+        codeVersion:
+            session.code_version +
+            (codeDetected ? 1 : 0)
+    });
 
-                evaluation,
+}
 
-                codeAnalysis
+// OUTSIDE the if
 
-            });
+const rawResponse =
+    await generateInterviewerResponse({
+
+        phase: nextPhase,
+
+        interviewGuide:
+            interviewPackage.interviewGuide,
+
+        expectedConcepts:
+            interviewPackage.expectedConcepts,
+
+        conversation,
+
+        candidateMessage: message,
+
+        evaluation,
+
+        interruptReason
+
+    });
+try {
+
+    const cleaned =
+        rawResponse
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+
+    const parsed =
+        JSON.parse(cleaned);
+
+    aiReply =
+        parsed.reply;
+
+} catch (err) {
+
+    console.error(
+        "Interviewer response parse failed",
+        rawResponse
+    );
+
+    aiReply =
+        "Can you explain your reasoning behind this step?";
+}
             //--------------------------------------------------
 // Generate interviewer response
 //--------------------------------------------------
 
-if (interrupt) {
-
-    const rawResponse =
-        await generateInterviewerResponse({
-
-            phase: nextPhase,
-
-            interviewGuide:
-                interviewPackage.interviewGuide,
-
-            expectedConcepts:
-                interviewPackage.expectedConcepts,
-
-            conversation,
-
-            candidateMessage: message,
-
-            evaluation,
-
-            interruptReason
-
-        });
-
-    try {
-
-        const cleaned =
-            rawResponse
-                .replace(/```json/g, "")
-                .replace(/```/g, "")
-                .trim();
-
-        const parsed =
-            JSON.parse(cleaned);
-
-        aiReply =
-            parsed.reply;
-
-    } catch (err) {
-
-        console.error(
-            "Interviewer response parse failed",
-            rawResponse
-        );
-
-        aiReply =
-            "Can you explain your reasoning behind this step?";
-    }
-
-    //--------------------------------------------------
-    // Record interruption
-    //--------------------------------------------------
-
-    await recordInterruptRepo({
-
-        sessionId,
-
-        codeVersion:
-            session.code_version +
-            (codeDetected ? 1 : 0)
-
-    });
-
-}
-else {
-
-    aiReply =
-        "Continue.";
-
-}
 
 //--------------------------------------------------
 // Save AI message
@@ -444,6 +435,16 @@ await insertInterviewMessageRepo({
     message: aiReply
 
 });
+const io = getIO();
+
+io.to(`interview-${sessionId}`).emit(
+    "interviewer-message",
+    {
+        message: aiReply,
+        phase: nextPhase,
+        evaluation,
+    }
+);
 
 //--------------------------------------------------
 // Return
@@ -465,7 +466,7 @@ return {
 
 };
 
-    }
+    
     
 export const endInterviewService = async (sessionId) => {
 

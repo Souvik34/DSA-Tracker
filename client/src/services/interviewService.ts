@@ -32,7 +32,9 @@ export const interviewService = {
     );
 
 },
-
+getInterviewState: async (sessionId: string) => {
+    return api.get(`/interview/${sessionId}`);
+},
 
 
 evaluateCode: async(data:{

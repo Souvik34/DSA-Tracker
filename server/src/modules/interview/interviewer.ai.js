@@ -91,10 +91,25 @@ Return ONLY JSON.
 }
 `;
 
-   const result = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
-    contents: prompt,
-});
+try {
+
+    const result = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+    });
+
+    return result.text;
+
+} catch (err) {
+
+    console.error("Interviewer AI Error:", err);
+
+    return JSON.stringify({
+        reply: "Could you explain your reasoning a little more?",
+        nextFocus: "discussion"
+    });
+
+}
 
 return result.text;
 };

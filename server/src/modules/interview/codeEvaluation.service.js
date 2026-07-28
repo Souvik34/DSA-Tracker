@@ -8,7 +8,8 @@ import { executeCode } from "./codeExecution.js";
 export const evaluateCode = async ({
   language,
   code,
-  testCases = []
+  testCases = [],
+  problem
 }) => {
 
   const results = [];
@@ -19,12 +20,14 @@ export const evaluateCode = async ({
 
     const { input, expectedOutput } = tc;
 
-    const execution = await executeCode({
-      language,
-      code,
-      input
+ const execution = await executeCode({
+  language,
+  code,
+  input,
+  problem
     });
-
+console.log("PROBLEM METADATA");
+console.log(problem);
     // runtime / compile error
     if (execution.error) {
 

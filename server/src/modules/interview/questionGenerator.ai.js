@@ -34,6 +34,21 @@ Generate:
 
 9. Interview guide.
 
+IMPORTANT:
+starterCode only contains function/class skeleton.
+Never generate Main class.
+starterCode must not contain execution code.
+
+executionMetadata must contain only:
+- inputFormat
+- outputFormat
+- parameterMapping
+
+Do NOT generate javaInvoker.
+Do NOT generate cppInvoker.
+Do NOT generate pythonInvoker.
+
+The backend will generate Judge0 wrapper code automatically.
 The interview guide should help the AI know:
 
 - how to start
@@ -86,7 +101,26 @@ JSON FORMAT:
     "cpp": "",
     "python": "",
     "javascript": ""
-}
+},
+
+    "functionSignature": {
+  "name": "",
+  "returnType": "",
+  "parameters": [
+    {
+      "name": "",
+      "type": ""
+    }
+  ]
+},
+"executionMetadata": {
+  "inputFormat": "",
+  "outputFormat": "",
+  "parameterMapping": []
+},
+
+
+
 
   "visibleTestCases": [
     {
@@ -166,10 +200,26 @@ interviewGuide:
 
 2. Constraints should be realistic.
 
-3. starterCode should:
-- include function signature
-- include empty implementation
+3.starterCode should:
+- contain only the class/function skeleton
+- NOT contain main function
+- NOT contain input reading logic
+- NOT contain test execution logic
+- include the exact function signature
+
+functionSignature rules:
+- Generate the exact function name
+- Generate return type
+- Generate parameter names and types
+- This will be used by an automated execution wrapper
+
+executionMetadata rules:
+- inputFormat describes stdin format
+- outputFormat describes expected stdout format
+- parameterMapping contains function parameters in order
+- invoker fields contain executable wrapper code only
 - match ${language}
+
 
 4. Avoid impossible or ambiguous problems.
 
@@ -187,6 +237,28 @@ interviewGuide:
 - dynamic programming
 
 6. Keep problem interview-oriented and solvable within 30-40 minutes.
+
+
+IMPORTANT TESTCASE FORMAT:
+
+All visibleTestCases and hiddenTestCases input values MUST be raw stdin only.
+
+NEVER include parameter names, "=" signs, or descriptive text.
+
+For example, if parameters are:
+nums (int[])
+k (int)
+
+WRONG:
+nums = [1,5,4,2,9,9,9]
+k = 3
+
+CORRECT:
+[1,5,4,2,9,9,9]
+3
+
+The testcase input MUST be directly consumable by the generated language parser.
+The order MUST exactly match functionSignature.parameters.
 
 IMPORTANT:
 
@@ -233,6 +305,22 @@ codingTriggers MUST be an array of objects like:
   "question": ""
 }
 
+IMPORTANT FOR EXECUTION:
+
+The candidate will only write the function implementation.
+
+The platform will automatically generate:
+- main method (Java/C++)
+- input parsing
+- function invocation
+- output printing
+
+Therefore never include:
+- public static void main()
+- Scanner
+- BufferedReader
+- input parsing
+- print statements
 Return ONLY valid JSON.
 `;
 // const result = await ai.models.generateContent({
@@ -241,7 +329,40 @@ Return ONLY valid JSON.
 //   // contents: "Generate an easy array interview problem in JSON."   
 // });
 
-return await generateAI(prompt);
+const result = await generateAI(prompt);
+
+const problem = JSON.parse(result);
+
+// const invokers = [
+//     problem.executionMetadata?.javaInvoker,
+//     problem.executionMetadata?.cppInvoker,
+//     problem.executionMetadata?.pythonInvoker
+// ];
+
+// const forbidden = [
+//     "...",
+//     "TODO",
+//     "YOUR_ARGUMENTS",
+//     "PLACEHOLDER",
+//     "System.out.println(sol.",
+//     "sol."
+// ];
+
+// for (const invoker of invokers) {
+
+//     if (!invoker) {
+//         throw new Error("Missing execution invoker");
+//     }
+
+//     for (const word of forbidden) {
+//         if (invoker.includes(word)) {
+//             throw new Error(
+//                 `Invalid AI generated invoker: ${word}`
+//             );
+//         }
+//     }
+// }
+return problem;
 
 // return result.text;
   };

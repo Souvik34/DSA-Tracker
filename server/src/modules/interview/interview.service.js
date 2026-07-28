@@ -50,13 +50,17 @@ export const startInterviewService = async ({
             difficulty,
             language
         });
+        const questionText =
+    typeof rawQuestion === "string"
+        ? rawQuestion
+        : JSON.stringify(rawQuestion);
         console.log("2. Question generated");
 console.log(rawQuestion);
 let question;
 
 try {
     
-    const cleaned = rawQuestion
+    const cleaned = questionText
     .replace(/```json/g, "")
     .replace(/```/g, "")
     .trim();
@@ -116,24 +120,7 @@ console.log("3. Parsed question");
 
     );
 
-    // await insertInterviewMessageRepo({
-
-    //     sessionId: session.id,
-
-    //     sender: "ai",
-
-    //     message:
-    //         question.interviewGuide
-    //             .openingQuestion
-
-    // });
-await insertInterviewMessageRepo({
-    sessionId: session.id,
-    sender: "ai",
-    message:
-        question.interviewGuide?.openingQuestion ||
-        "Let's begin. Can you explain the problem in your own words?"
-});
+  
    const responseQuestion = {
     ...question
 };
@@ -166,6 +153,8 @@ export const sendInterviewMessageService = async ({
     console.log(">>> sendInterviewMessageService called");
     const session =
         await getInterviewSessionRepo(sessionId);
+        const isInterviewStart =
+    message === "__INTERVIEW_START__";
 
     if (!session) {
         throw new Error(
@@ -206,7 +195,57 @@ export const sendInterviewMessageService = async ({
         await getInterviewMessagesRepo(
             sessionId
         );
+if (isInterviewStart) {
 
+    const openingMessage = `
+Hi, I'm Antonio and I'll be your interviewer today.
+
+We'll spend around 45 minutes together.
+
+Let's begin.
+
+Could you briefly introduce yourself?
+`;
+
+    await insertInterviewMessageRepo({
+    sessionId,
+    sender: "ai",
+    message: openingMessage
+});
+
+const io = getIO();
+
+io.to(`interview-${sessionId}`).emit(
+    "interviewer-message",
+    {
+        message: openingMessage,
+        phase: session.phase,
+        evaluation: null
+    }
+);
+
+return {
+    aiReply: openingMessage,
+    phase: session.phase,
+    evaluation: null,
+    codeAnalysis: null,
+    interrupted: false
+};
+    return {
+
+        aiReply: openingMessage,
+
+        phase: session.phase,
+
+        evaluation: null,
+
+        codeAnalysis: null,
+
+        interrupted: false
+
+    };
+
+}
     //--------------------------------------------------
     // Detect whether candidate sent code
     //--------------------------------------------------
@@ -267,16 +306,19 @@ console.log("=================================");
         ];
 
         evaluation =
-            await evaluateCode({
+ await evaluateCode({
+    language:
+        session.language,
 
-                language:
-                    session.language,
+    code: candidateContent,
 
-                code: candidateContent,
+    testCases,
 
-                testCases
-
-            });
+    problem: interviewPackage
+});
+            console.log("========== EVALUATION ==========");
+console.dir(evaluation, {depth:null});
+console.log("================================");
 
         await updateCodeSnapshotRepo({
 
@@ -394,29 +436,51 @@ const rawResponse =
 
         candidateMessage: message,
 
+        candidateCode:
+            codeDetected ? candidateContent : null,
+
         evaluation,
+
+        codeAnalysis,
 
         interruptReason
 
     });
 try {
+    let parsed;
 
-    const cleaned =
-        rawResponse
+    if (typeof rawResponse === "string") {
+        const cleaned = rawResponse
             .replace(/```json/g, "")
             .replace(/```/g, "")
             .trim();
 
-    const parsed =
-        JSON.parse(cleaned);
+        parsed = JSON.parse(cleaned);
+    } else {
+        parsed = rawResponse;
+    }
 
-    aiReply =
-        parsed.reply;
+    aiReply = parsed.reply;
+
+    if (!aiReply) {
+        throw new Error("AI response missing reply");
+    }
+
+    await insertInterviewMessageRepo({
+        sessionId,
+        sender: "ai",
+        message: aiReply
+    });
 
 } catch (err) {
 
     console.error(
-        "Interviewer response parse failed",
+        "Interviewer response parse failed:",
+        err
+    );
+
+    console.error(
+        "Raw AI response:",
         rawResponse
     );
 
@@ -432,15 +496,7 @@ try {
 // Save AI message
 //--------------------------------------------------
 
-await insertInterviewMessageRepo({
 
-    sessionId,
-
-    sender: "ai",
-
-    message: aiReply
-
-});
 const io = getIO();
 
 io.to(`interview-${sessionId}`).emit(
@@ -478,6 +534,7 @@ export const endInterviewService = async (sessionId) => {
 
     const session =
         await getInterviewSessionRepo(sessionId);
+
 
     if (!session) {
         throw new Error("Interview session not found");

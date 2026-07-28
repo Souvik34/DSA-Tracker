@@ -50,9 +50,21 @@ useEffect(() => {
 
     joinInterview(sessionId);
 
+    const start = async () => {
+
+        await interviewService.submitAIResponse(
+            sessionId,
+            {
+                message: "__INTERVIEW_START__",
+                code: ""
+            }
+        );
+
+    };
+
+    start();
+
 }, [sessionId]);
-
-
 useEffect(() => {
 const loadInterview = async () => {
     try {
@@ -103,10 +115,31 @@ const loadInterview = async () => {
   //   }
   // };
 
-  const onSubmit = async () => {
-  console.log(code);
-};
+const onSubmit = async () => {
 
+  try {
+
+    setSubmitting(true);
+
+    await interviewService.submitAIResponse(
+      sessionId,
+      {
+        message: "I have completed my implementation.",
+        code
+      }
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+  } finally {
+
+    setSubmitting(false);
+
+  }
+
+};
   if (loading) {
   return (
     <div className="flex h-screen items-center justify-center">

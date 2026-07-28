@@ -14,8 +14,7 @@ interface Props {
 
 interface InterviewSocketContextType {
 
-    joinInterview: (sessionId: string) => void;
-
+  joinInterview: (sessionId: string) => Promise<void>;
     leaveInterview: () => void;
 
 }
@@ -54,14 +53,22 @@ export function InterviewSocketProvider({
 
     }, []);
 
-    const joinInterview = (sessionId: string) => {
+   const joinInterview = async (sessionId: string) => {
 
-        socket.emit(
-            "join-interview",
-            sessionId
-        );
+    socket.emit(
+        "join-interview",
+        sessionId
+    );
 
-    };
+    socket.emit(
+        "interview-message",
+        {
+            sessionId,
+            message: "__INTERVIEW_START__"
+        }
+    );
+
+};
 
     const leaveInterview = () => {
 

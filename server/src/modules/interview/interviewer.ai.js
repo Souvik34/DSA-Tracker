@@ -4,22 +4,16 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
 });
 export const generateInterviewerResponse = async ({
-
     phase,
-
     interviewGuide,
-
     expectedConcepts,
-
     conversation,
-
     candidateMessage,
-
+    candidateCode,
     evaluation,
-
+    codeAnalysis,
     interruptReason
-
-}) => {
+})=> {
 
     const history = conversation
         .map(
@@ -47,6 +41,14 @@ ${history}
 Latest Candidate Message:
 
 ${candidateMessage}
+
+Candidate Code:
+
+${candidateCode || "No code submitted"}
+
+Code Analysis:
+
+${JSON.stringify(codeAnalysis)}
 
 Current Interview Phase:
 
@@ -82,6 +84,11 @@ Rules:
 
 6. If candidate is correct,
 push toward optimization.
+8. The candidate code is provided above.
+9. Never ask the candidate to share code again.
+10. If code is submitted, review the implementation.
+11. If evaluation has errors, ask about debugging or correctness.
+12. Ask follow-up questions based on the code, not generic questions.
 
 Return ONLY JSON.
 

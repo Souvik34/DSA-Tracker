@@ -125,9 +125,10 @@ useState({
 });
 
 const interviewSocket = useInterviewSocket();
+
 useEffect(() => {
 
-    if (!interviewSocket) return;
+    if (!interviewSocket || !sessionId) return;
 
     interviewSocket.joinInterview(sessionId);
 
@@ -137,16 +138,22 @@ useEffect(() => {
 
     };
 
-}, [interviewSocket, sessionId]);
+}, [sessionId]);
 useEffect(() => {
 
-    const handleAIResponse = async (data: any) => {
+   const handleAIResponse = async (data: any) => {
 
-        setPhase(data.phase);
+    setPhase(data.phase);
 
-        await typeAIMessage(data.message);
+    await typeAIMessage(
 
-    };
+        data.aiReply ??
+        data.message ??
+        ""
+
+    );
+
+};
 
    socket.on(
     "interviewer-message",
@@ -249,53 +256,26 @@ const loadInterview = async () => {
     }
 
 };
+useEffect(() => {
 
+    if (!sessionId) return;
+
+    const start = async () => {
+
+        await interviewService.submitAIResponse(
+            sessionId,
+            {
+                message: "__INTERVIEW_START__",
+                code: ""
+            }
+        );
+
+    };
+
+    start();
+
+}, [sessionId]);
     // Start interview
-
-const startInterview = async()=>{
-
-try{
-
-
-setLoading(true);
-
-const res =
-await interviewService.startAISession({
-    type: "DSA",
-    difficulty: "MEDIUM",
-    language,
-});
-
-const interview =
-res;
-
-
-
-setPhase(interview.session.phase);
-
-setProblem(
-    interview.firstQuestion
-);
-
-await typeAIMessage(
-    "Can you explain the problem in your own words?"
-);
-
-
-
-}
-catch(err){
-
-console.log(err);
-
-}
-finally{
-
-setLoading(false);
-
-}
-
-};
 
 
 const typeAIMessage = async (
@@ -372,14 +352,13 @@ const typeAIMessage = async (
 
     }));
 
-  await interviewService.submitAIResponse(
-        sessionId,
-        {
-            message: userMessage,
-            code
-        }
-    );
-
+ await interviewService.submitAIResponse(
+    sessionId,
+    {
+        message: userMessage,
+        code: interviewContext.submittedCode ? code : ""
+    }
+);
 } catch (err) {
 
     console.log(err);

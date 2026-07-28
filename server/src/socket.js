@@ -17,13 +17,41 @@ io.on("connection", (socket) => {
 
   registerInterviewSockets(socket);
 
-  socket.on("join-interview", (sessionId) => {
+ socket.on("join-interview", async (sessionId) => {
 
-    console.log("Joined interview:", sessionId);
+  console.log("Joined interview:", sessionId);
 
-    socket.join(`interview-${sessionId}`);
+  socket.join(`interview-${sessionId}`);
 
-  });
+  try {
+
+    const result =
+      await sendInterviewMessageService({
+        sessionId,
+        message: "__INTERVIEW_START__",
+        code: ""
+      });
+
+    getIO()
+      .to(`interview-${sessionId}`)
+      .emit(
+    "interviewer-message",
+    {
+        message: result.aiReply,
+        phase: result.phase,
+        evaluation: result.evaluation
+    }
+);  
+
+  } catch (err) {
+
+    socket.emit("interview-error", {
+      message: err.message,
+    });
+
+  }
+
+});
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected");

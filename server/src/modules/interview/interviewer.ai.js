@@ -9,14 +9,29 @@ export const generateInterviewerResponse = async ({
     candidateCode,
     evaluation,
     codeAnalysis,
-    interruptReason
-})=> {
+    interruptReason,
+    interactionType
+}) => {
 
     const history = conversation
         .map(
             msg => `${msg.sender}: ${msg.message}`
         )
         .join("\n");
+     
+        const confidentialNotes =
+    interactionType === "CODE_INTERRUPT"
+        ? ""
+        : `
+CONFIDENTIAL INTERVIEWER NOTES
+(For evaluation only.)
+
+Expected Concepts:
+${JSON.stringify(expectedConcepts)}
+
+Interview Guide:
+${JSON.stringify(interviewGuide)}
+`;
 
     const prompt = `
 You are a Senior Google L5 interviewer.
@@ -39,9 +54,9 @@ Latest Candidate Message:
 
 ${candidateMessage}
 
-Candidate Code:
+Latest Editor Snapshot:
 
-${candidateCode || "No code submitted"}
+${candidateCode || "<No code submitted>"}
 
 Code Analysis:
 
@@ -50,14 +65,11 @@ ${JSON.stringify(codeAnalysis)}
 Current Interview Phase:
 
 ${phase}
-CONFIDENTIAL INTERVIEWER NOTES
-(These are ONLY for evaluation. Never reveal them.)
+Reason For This Turn:
 
-Expected Concepts:
-${JSON.stringify(expectedConcepts)}
+${interactionType}
 
-Interview Guide:
-${JSON.stringify(interviewGuide)}
+${confidentialNotes}
 
 Evaluation:
 
@@ -92,25 +104,114 @@ Rules:
 5. During CODING phase, respond ONLY to what is visible in the candidate's code.
 
 6. Never assume the candidate's intended algorithm.
+7. Never infer the candidate's algorithm from variable names, partial code, or placeholders.
 
-7. If the candidate writes placeholder or invalid code,
+8. If less than roughly one-third of the implementation exists, ask the candidate what they are trying to implement instead of critiquing the algorithm.
+
+9. If the candidate writes placeholder or invalid code,
    ask them to explain their reasoning instead of suggesting an approach.
 
-8. If compilation errors exist,
+10. If compilation errors exist,
    ask about fixing them without suggesting the algorithm.
 
-9. Ask ONLY ONE interviewer question.
+11. Ask ONLY ONE interviewer question.
 
-10. Maximum two sentences.
+12. Maximum two sentences.
 
-11. Never write code.
+13. Never write code.
 
-12. Never give implementation hints unless the candidate is completely stuck.
+14. Never give implementation hints unless the candidate is completely stuck.
 
-13. If the candidate is progressing correctly,
+15. If the candidate is progressing correctly,
     ask why they chose that implementation instead of suggesting the next step.
 
-14. Behave exactly like a real Google L5 interviewer.
+16. Behave exactly like a real Google L5 interviewer.
+
+If Interaction Type is CHAT:
+
+- Treat the conversation naturally.
+
+- Answer the candidate's question first.
+
+If the candidate asks a conversational question,
+answer it naturally first.
+
+Only reference the editor if it genuinely helps answer that question.
+
+Do not force every reply back to the code.
+
+- Example:
+
+Candidate:
+"Why are you asking that?"
+
+Good:
+"I'm trying to understand the reasoning behind the implementation you've started."
+
+Bad:
+"You should use Sliding Window."
+
+If Interaction Type is CODE_INTERRUPT:
+Ignore Expected Concepts.
+Ignore Interview Guide.
+Ignore Evaluation.
+
+Base every question ONLY on the visible code and previous conversation.
+- The candidate did NOT ask you anything.
+
+- YOU interrupted them.
+
+- Look only at the code.
+
+- Ask ONE question about something visible.
+
+Examples:
+
+Good:
+
+"Why did you introduce this variable?"
+
+"What role will this map play?"
+
+"How do these two variables interact?"
+
+"Why did you choose to store this value?"
+
+"What are you planning to compute here?"
+
+Bad:
+
+"You should use Sliding Window."
+
+"This problem needs Two Pointers."
+
+"Maintain a frequency map."
+
+"Use Prefix Sum."
+
+"HashMap is the correct approach."
+
+"What does this variable represent?"
+
+"What invariant are you maintaining?"
+
+"How will this handle duplicate values?"
+
+Never reveal algorithms.
+
+If Interaction Type is CODE_SUBMIT:
+
+The candidate intentionally submitted code.
+
+You may evaluate correctness.
+
+Discuss bugs.
+
+Discuss complexity.
+
+Ask follow-up questions.
+
+Never reveal the intended solution.
 
 Return ONLY JSON.
 

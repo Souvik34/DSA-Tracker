@@ -436,35 +436,56 @@ if (interrupt || !codeDetected) {
 
         candidateMessage: message,
 
-        candidateCode:
-            codeDetected ? candidateContent : null,
+      candidateCode:
+    session.last_code || null,
 
         evaluation,
 
         codeAnalysis,
 
-        interruptReason
+        interruptReason,
+
+       interactionType: codeDetected
+    ? "CODE_SUBMIT"
+    : "CHAT",
 
     });
 }
 try {
+
     let parsed;
 
     if (typeof rawResponse === "string") {
+
         const cleaned = rawResponse
             .replace(/```json/g, "")
             .replace(/```/g, "")
             .trim();
 
-        parsed = JSON.parse(cleaned);
+        try {
+
+            parsed = JSON.parse(cleaned);
+
+            aiReply = parsed.reply;
+
+            if (!aiReply) {
+                throw new Error("Missing reply");
+            }
+
+        } catch {
+
+            // Gemini returned plain text instead of JSON.
+            // Use it directly.
+            aiReply = cleaned;
+        }
+
     } else {
-        parsed = rawResponse;
-    }
 
-    aiReply = parsed.reply;
+        aiReply = rawResponse.reply;
 
-    if (!aiReply) {
-        throw new Error("AI response missing reply");
+        if (!aiReply) {
+            throw new Error("Missing reply");
+        }
     }
 
     await insertInterviewMessageRepo({
@@ -892,7 +913,9 @@ console.log("Calling Gemini...");
 
             codeAnalysis,
 
-            interruptReason
+            interruptReason,
+
+            interactionType: "CODE_INTERRUPT"
 
         });
 
@@ -900,33 +923,46 @@ console.log("Calling Gemini...");
         console.log(rawResponse);
     let aiReply;
 
-    try {
+  try {
 
-        let parsed;
+    if (typeof rawResponse === "string") {
 
-        if (typeof rawResponse === "string") {
+        const cleaned = rawResponse
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
-            parsed = JSON.parse(
-                rawResponse
-                    .replace(/```json/g, "")
-                    .replace(/```/g, "")
-                    .trim()
-            );
+        try {
 
-        } else {
+            const parsed = JSON.parse(cleaned);
 
-            parsed = rawResponse;
+            aiReply = parsed.reply;
 
+            if (!aiReply) {
+                throw new Error();
+            }
+
+        } catch {
+
+            aiReply = cleaned;
         }
 
-        aiReply = parsed.reply;
+    } else {
 
-    } catch {
+        aiReply = rawResponse.reply;
 
-        aiReply =
-            "Can you explain what you just changed?";
+        if (!aiReply) {
+            throw new Error();
+        }
 
     }
+
+} catch {
+
+    aiReply =
+        "Can you explain what you just changed?";
+
+}
 
     /*
     ======================================

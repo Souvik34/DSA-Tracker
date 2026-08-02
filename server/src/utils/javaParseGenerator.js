@@ -6,24 +6,31 @@ Scanner sc = new Scanner(System.in);
 
 for(const param of parameters){
 
-    if(param.type === "int[]"){
+  if (param.type === "int[]") {
 
-        code += `
-String[] ${param.name}Input =
+    code += `
+String line_${param.name} =
     sc.nextLine()
-    .replace("[","")
-    .replace("]","")
-    .split(",");
+      .replace("[", "")
+      .replace("]", "")
+      .replace(",", " ")
+      .trim();
 
-int[] ${param.name} = new int[${param.name}Input.length];
+String[] ${param.name}Input =
+    line_${param.name}.isEmpty()
+        ? new String[0]
+        : line_${param.name}.split("\\\\s+");
 
-for(int i=0;i<${param.name}Input.length;i++){
+int[] ${param.name} =
+    new int[${param.name}Input.length];
+
+for (int i = 0; i < ${param.name}Input.length; i++) {
     ${param.name}[i] =
-    Integer.parseInt(${param.name}Input[i].trim());
+        Integer.parseInt(${param.name}Input[i]);
 }
 `;
 
-    }
+}   
 
     else if(param.type === "int"){
 

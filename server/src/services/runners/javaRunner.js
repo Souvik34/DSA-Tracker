@@ -1,6 +1,8 @@
 import { generateJavaParser } from "../../utils/javaParseGenerator.js";
 
 export const prepareJavaCode = ({ code, problem }) => {
+      console.log("FUNCTION SIGNATURE");
+    console.dir(problem.functionSignature, { depth: null });
     const parserCode = generateJavaParser(
         problem.functionSignature.parameters
     );

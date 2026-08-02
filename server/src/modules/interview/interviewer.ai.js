@@ -1,8 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-});
+import { generateWithGemini }
+from "../ai/providers/gemini.provider.js";
 export const generateInterviewerResponse = async ({
     phase,
     interviewGuide,
@@ -53,13 +50,13 @@ ${JSON.stringify(codeAnalysis)}
 Current Interview Phase:
 
 ${phase}
+CONFIDENTIAL INTERVIEWER NOTES
+(These are ONLY for evaluation. Never reveal them.)
 
 Expected Concepts:
-
 ${JSON.stringify(expectedConcepts)}
 
 Interview Guide:
-
 ${JSON.stringify(interviewGuide)}
 
 Evaluation:
@@ -72,23 +69,48 @@ ${interruptReason}
 
 Rules:
 
-1. Ask ONLY ONE interviewer question.
+1. You are an interviewer, NOT a tutor.
 
-2. Keep it short.
+2. Never reveal the intended algorithm, data structure, or solution.
 
-3. Maximum 2 sentences.
+3. The Expected Concepts and Interview Guide are confidential interviewer notes.
+   Never mention or paraphrase them.
 
-4. Challenge the candidate.
+4. Never say words like:
+   Sliding Window,
+   Two Pointers,
+   Binary Search,
+   Prefix Sum,
+   HashMap,
+   Heap,
+   DFS,
+   BFS,
+   Dynamic Programming,
+   Greedy,
+   unless the candidate has already explicitly mentioned or implemented them.
 
-5. Never give hints unless candidate is completely stuck.
+5. During CODING phase, respond ONLY to what is visible in the candidate's code.
 
-6. If candidate is correct,
-push toward optimization.
-8. The candidate code is provided above.
-9. Never ask the candidate to share code again.
-10. If code is submitted, review the implementation.
-11. If evaluation has errors, ask about debugging or correctness.
-12. Ask follow-up questions based on the code, not generic questions.
+6. Never assume the candidate's intended algorithm.
+
+7. If the candidate writes placeholder or invalid code,
+   ask them to explain their reasoning instead of suggesting an approach.
+
+8. If compilation errors exist,
+   ask about fixing them without suggesting the algorithm.
+
+9. Ask ONLY ONE interviewer question.
+
+10. Maximum two sentences.
+
+11. Never write code.
+
+12. Never give implementation hints unless the candidate is completely stuck.
+
+13. If the candidate is progressing correctly,
+    ask why they chose that implementation instead of suggesting the next step.
+
+14. Behave exactly like a real Google L5 interviewer.
 
 Return ONLY JSON.
 
@@ -100,20 +122,46 @@ Return ONLY JSON.
 
 try {
 
-    const result = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-    });
+   const text =
+    await generateWithGemini(prompt);
 
-    return result.text;
+return text;
+}
 
-} catch (err) {
+catch (err) {
 
     console.error("Interviewer AI Error:", err);
 
+    let reply;
+
+    switch (interruptReason) {
+
+        case "USER_IMPLEMENTED_MAIN_ALGORITHM":
+            reply =
+                "I noticed you've started implementing the core logic. Can you explain why you chose this approach?";
+            break;
+
+        case "FIRST_WORKING_IMPLEMENTATION":
+            reply =
+                "Walk me through the implementation you've written so far.";
+            break;
+
+        case "FAILED_HIDDEN_TESTCASE":
+            reply =
+                "Your approach seems close. Which edge cases do you think could still fail?";
+            break;
+
+        default:
+            reply =
+                "Continue coding. I'll interrupt if I notice something important.";
+    }
+
     return JSON.stringify({
-        reply: "Could you explain your reasoning a little more?",
+
+        reply,
+
         nextFocus: "discussion"
+
     });
 
 }

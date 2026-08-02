@@ -116,6 +116,7 @@ const [isSubmitted,setIsSubmitted] =
 const [typing,setTyping] =
     useState(false);
 
+
     const [interviewContext,setInterviewContext] =
 useState({
     askedQuestion:false,
@@ -139,6 +140,25 @@ useEffect(() => {
     };
 
 }, [sessionId]);
+
+useEffect(() => {
+
+    if (!sessionId) return;
+    if (!code.trim()) return;
+
+    const timer = setTimeout(() => {
+
+        socket.emit("code-update", {
+            sessionId,
+            code
+        });
+
+    }, 2000);
+
+    return () => clearTimeout(timer);
+
+}, [code, sessionId]);
+
 useEffect(() => {
 
    const handleAIResponse = async (data: any) => {
@@ -256,25 +276,7 @@ const loadInterview = async () => {
     }
 
 };
-useEffect(() => {
 
-    if (!sessionId) return;
-
-    const start = async () => {
-
-        await interviewService.submitAIResponse(
-            sessionId,
-            {
-                message: "__INTERVIEW_START__",
-                code: ""
-            }
-        );
-
-    };
-
-    start();
-
-}, [sessionId]);
     // Start interview
 
 

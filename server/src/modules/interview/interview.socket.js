@@ -1,7 +1,7 @@
 import {
-  sendInterviewMessageService,
+    sendInterviewMessageService,
+    realtimeCodeUpdateService
 } from "./interview.service.js";
-
 import {
   getIO,
 } from "../../socket.js";
@@ -21,6 +21,7 @@ export const registerInterviewSockets =
           const {
             sessionId,
             message,
+            code
           } = payload;
 
 
@@ -29,6 +30,7 @@ export const registerInterviewSockets =
             await sendInterviewMessageService({
               sessionId,
               message,
+              code
             });
 
 
@@ -53,4 +55,36 @@ export const registerInterviewSockets =
         }
       }
     );
+
+    socket.on(
+    "code-update",
+    async (payload) => {
+      console.log("Backend received code-update");
+console.log(payload);
+
+        try {
+
+            const {
+                sessionId,
+                code
+            } = payload;
+
+         await realtimeCodeUpdateService({
+    sessionId,
+    code
+});
+
+        } catch (err) {
+
+            socket.emit(
+                "interview-error",
+                {
+                    message: err.message
+                }
+            );
+
+        }
+
+    }
+);
 };

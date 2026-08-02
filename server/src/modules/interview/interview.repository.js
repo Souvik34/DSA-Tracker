@@ -178,7 +178,7 @@ export const updateInterviewPhaseRepo = async (
     phase
 ) => {
 
-    await pool.query(
+    const { rows } = await pool.query(
         `
         UPDATE interview_sessions
         SET
@@ -186,10 +186,14 @@ export const updateInterviewPhaseRepo = async (
             interruption_count = 0,
             last_interrupt_at_version = NULL
         WHERE id = $1
+        RETURNING phase
         `,
         [sessionId, phase]
     );
 
+    console.log("DB Phase:", rows[0]?.phase);
+
+    return rows[0];
 };
 
 

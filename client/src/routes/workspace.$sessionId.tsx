@@ -46,25 +46,7 @@ function WorkspacePage() {
   const [problem, setProblem] = useState<any>(null);
 const [loading, setLoading] = useState(true);
 
-useEffect(() => {
 
-    joinInterview(sessionId);
-
-    const start = async () => {
-
-        await interviewService.submitAIResponse(
-            sessionId,
-            {
-                message: "__INTERVIEW_START__",
-                code: ""
-            }
-        );
-
-    };
-
-    start();
-
-}, [sessionId]);
 useEffect(() => {
 const loadInterview = async () => {
     try {
@@ -275,7 +257,14 @@ const onSubmit = async () => {
             </Button>
           </div>
           <div className="min-h-0 flex-1">
-            <CodeEditor language={language} value={code} onChange={setCode} />
+           <CodeEditor
+    language={language}
+    value={code}
+    onChange={(value) => {
+        // console.log("EDITOR:", value);
+        setCode(value);
+    }}
+/>
           </div>
         </section>
 

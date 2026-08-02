@@ -32,13 +32,13 @@ export function InterviewSocketProvider({
 
         socket.on("connect", () => {
 
-            console.log("✅ Connected:", socket.id);
+            console.log("Connected:", socket.id);
 
         });
 
         socket.on("disconnect", () => {
 
-            console.log("❌ Disconnected");
+            console.log(" Disconnected");
 
         });
 

@@ -34,14 +34,13 @@ export const shouldInterrupt = ({
             }
 
             // Nothing meaningful changed
-            if (
-                !codeAnalysis?.criticalLogicAdded &&
-                !codeAnalysis?.edgeCaseAdded &&
-                !codeAnalysis?.returnAdded &&
-                !(evaluation && evaluation.failed > 0)
-            ) {
-                return false;
-            }
+         if (
+    codeAnalysis.addedLines < 3 &&
+    !codeAnalysis.returnAdded &&
+    !(evaluation && evaluation.failed > 0)
+) {
+    return false;
+}
 
             return true;
 

@@ -420,9 +420,9 @@ if (interrupt) {
 }
 
 // OUTSIDE the if
-
-const rawResponse =
-    await generateInterviewerResponse({
+let rawResponse = null;
+if (interrupt || !codeDetected) {
+    rawResponse = await generateInterviewerResponse({
 
         phase: nextPhase,
 
@@ -446,6 +446,7 @@ const rawResponse =
         interruptReason
 
     });
+}
 try {
     let parsed;
 
@@ -688,4 +689,298 @@ export const getInterviewByIdService = async (sessionId) => {
         },
         firstQuestion: question,
     };
+};
+
+export const realtimeCodeUpdateService = async ({
+    sessionId,
+    code
+}) => {
+
+    try
+    {
+  console.log("======== REALTIME SERVICE START ========");
+
+    const session = await getInterviewSessionRepo(sessionId);
+
+    if (!session) {
+        return;
+    }
+
+    console.log("Current phase:", session.phase);
+
+    const interviewPackage =
+        JSON.parse(session.current_question);
+
+    const codeAnalysis =
+        analyzeCodeProgress({
+
+            previousCode:
+                session.last_code || "",
+
+            currentCode: code,
+
+            interviewGuide:
+                interviewPackage.interviewGuide
+
+        });
+
+    console.log("Code Analysis:");
+    console.dir(codeAnalysis, { depth: null });
+
+    const saveSnapshot = async () => {
+
+        await updateCodeSnapshotRepo({
+            sessionId,
+            code
+        });
+
+    };
+
+    /*
+    ======================================
+    Nothing changed
+    ======================================
+    */
+
+    if (!codeAnalysis.changed) {
+        return;
+    }
+
+    /*
+    ======================================
+    AUTO MOVE APPROACH -> CODING
+    ======================================
+    */
+
+    if (
+        session.phase === InterviewPhase.APPROACH &&
+        codeAnalysis.changed
+    ) {
+
+        const updated =
+            await updateInterviewPhaseRepo(
+                sessionId,
+                InterviewPhase.CODING
+            );
+
+        session.phase = updated.phase;
+
+        console.log(" Phase switched -> CODING");
+        console.log("Phase after switch:", session.phase);
+        console.log("I AM HERE 111111111");
+    }
+
+    /*
+    ======================================
+    Ignore until coding phase
+    ======================================
+    */
+
+    if (session.phase !== InterviewPhase.CODING) {
+
+        await saveSnapshot();
+
+        return;
+    }
+
+    /*
+    ======================================
+    Ignore insignificant edits
+    ======================================
+    */
+
+   if (
+    codeAnalysis.addedLines < 3 &&
+    !codeAnalysis.returnAdded
+) {
+
+    await saveSnapshot();
+
+    return;
+
+}
+
+    /*
+    ======================================
+    Should interrupt?
+    ======================================
+    */
+   console.log("Calling shouldInterrupt...");
+
+    const interrupt =
+        shouldInterrupt({
+
+            phase: session.phase,
+
+            evaluation: null,
+
+            interruptionCount:
+                session.interruption_count,
+
+            codeAnalysis,
+
+            lastInterruptAtVersion:
+                session.last_interrupt_at_version,
+
+            currentCodeVersion:
+                session.code_version + 1
+
+        });
+console.log("Interrupt =", interrupt);
+
+    if (!interrupt) {
+
+        await saveSnapshot();
+
+        return;
+    }
+
+    /*
+    ======================================
+    Record interrupt
+    ======================================
+    */
+
+    await recordInterruptRepo({
+
+        sessionId,
+
+        codeVersion:
+            session.code_version + 1
+
+    });
+
+    const conversation =
+        await getInterviewMessagesRepo(sessionId);
+
+    const interruptReason =
+        getInterruptReason({
+
+            phase: session.phase,
+
+            evaluation: null,
+
+            codeAnalysis
+
+        });
+
+    /*
+    ======================================
+    Generate AI response
+    ======================================
+    */
+console.log("Calling Gemini...");
+
+    const rawResponse =
+        await generateInterviewerResponse({
+
+            phase: session.phase,
+
+            interviewGuide:
+                interviewPackage.interviewGuide,
+
+            expectedConcepts:
+                interviewPackage.expectedConcepts,
+
+            conversation,
+
+            candidateMessage: "",
+
+            candidateCode: code,
+
+            evaluation: null,
+
+            codeAnalysis,
+
+            interruptReason
+
+        });
+
+        console.log("Gemini replied.");
+        console.log(rawResponse);
+    let aiReply;
+
+    try {
+
+        let parsed;
+
+        if (typeof rawResponse === "string") {
+
+            parsed = JSON.parse(
+                rawResponse
+                    .replace(/```json/g, "")
+                    .replace(/```/g, "")
+                    .trim()
+            );
+
+        } else {
+
+            parsed = rawResponse;
+
+        }
+
+        aiReply = parsed.reply;
+
+    } catch {
+
+        aiReply =
+            "Can you explain what you just changed?";
+
+    }
+
+    /*
+    ======================================
+    Save AI message
+    ======================================
+    */
+
+    await insertInterviewMessageRepo({
+
+        sessionId,
+
+        sender: "ai",
+
+        message: aiReply
+
+    });
+
+    /*
+    ======================================
+    Save latest code snapshot
+    ======================================
+    */
+
+    await saveSnapshot();
+
+    /*
+    ======================================
+    Emit socket event
+    ======================================
+    */
+   console.log("Emitting interviewer-message...");
+console.log(aiReply);
+
+    getIO()
+        .to(`interview-${sessionId}`)
+        .emit(
+            "interviewer-message",
+            {
+                message: aiReply,
+                phase: session.phase,
+                evaluation: null
+            }
+        );
+
+    console.log("Realtime Analysis:");
+    console.dir(codeAnalysis, {
+        depth: null
+    });
+    }
+
+     catch (err) {
+        console.error("REALTIME ERROR:");
+        console.error(err);
+    }
+  
+
 };

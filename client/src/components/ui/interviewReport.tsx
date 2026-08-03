@@ -47,10 +47,23 @@ export default function InterviewReport() {
             //   success:true,
             //   feedback:{...}
             // }
+setReport({
+    overallScore: res.data.overall_score,
+    communicationScore: res.data.communication_score,
+    problemSolvingScore: res.data.problem_solving_score,
+    optimizationScore: res.data.optimization_score,
 
-            setReport(res.feedback);
+    strengths: Array.isArray(res.data.strengths)
+        ? res.data.strengths
+        : [res.data.strengths],
 
-        } catch (err) {
+    weaknesses: Array.isArray(res.data.weaknesses)
+        ? res.data.weaknesses
+        : [res.data.weaknesses],
+
+    finalFeedback: res.data.final_feedback
+});
+   } catch (err) {
 
             console.error(err);
 

@@ -68,16 +68,17 @@ evaluateCode: async(data:{
     return data;
   },
 
-  getInterviewReport: async(
-sessionId:string
+ getInterviewReport: async(
+    sessionId: string
 )=>{
 
-return api.get(
-`/interview/report/${sessionId}`
-);
+    const { data } = await api.get(
+        `/interview/report/${sessionId}`
+    );
 
-}, 
+    return data;
 
+},
   async submitAIResponse(sessionId: string, payload: any) {
     const { data } = await api.post(
       `/interview/message`,

@@ -5,7 +5,7 @@ import {
 import {
   sendInterviewMessageService, getInterviewByIdService,
 } from "./interview.service.js";
-
+import { getInterviewReportService } from "./interview.service.js";
 import {
   endInterviewService,
 } from "./interview.service.js";
@@ -140,6 +140,34 @@ export const endInterview =
         success: false,
         message: err.message,
       });
+    }
+};
+
+export const getInterviewReport = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+
+        const report = await getInterviewReportService(sessionId);
+
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                message: "Interview report not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: report
+        });
+
+    } catch (error) {
+        console.error("Get interview report error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch interview report"
+        });
     }
 };
 

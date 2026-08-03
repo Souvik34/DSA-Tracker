@@ -26,23 +26,24 @@ export const registerInterviewSockets =
 
 
 
-          const result =
-            await sendInterviewMessageService({
-              sessionId,
-              message,
-              code
-            });
+     const result =
+    await sendInterviewMessageService({
+        sessionId,
+        message,
+        code
+    });
 
+const room = getIO().to(`interview-${sessionId}`);
 
+room.emit("interviewer-message", result);
 
-          getIO()
-            .to(
-              `interview-${sessionId}`
-            )
-            .emit(
-              "ai-response",
-              result
-            );
+if (result.interviewEnded) {
+
+    room.emit("interview-ended", {
+        sessionId,
+    });
+
+}
 
         } catch (err) {
 

@@ -3,13 +3,18 @@ import {protect} from "../../middlewares/auth.middleware.js";
 import {
   startInterview,
   sendInterviewMessage,
-  endInterview, getInterviewById
+  endInterview, getInterviewById, getInterviewReport
 } from "./interview.controller.js";
 
 const router = express.Router();
-router.get("/:id", protect,getInterviewById);
 router.post("/start", protect, startInterview);
 router.post("/message", protect, sendInterviewMessage);
 router.post("/end", protect, endInterview);
+router.get(
+  "/report/:sessionId",
+  protect,
+  getInterviewReport
+);
+router.get("/:id", protect,getInterviewById);
 
 export default router;

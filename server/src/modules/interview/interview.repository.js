@@ -248,3 +248,40 @@ export const resetInterruptRepo = async (
     );
 
 };
+
+export const markOptimizationCompletedRepo = async (
+    sessionId
+) => {
+
+    await pool.query(
+        `
+        UPDATE interview_sessions
+        SET optimization_completed = TRUE
+        WHERE id = $1
+        `,
+        [sessionId]
+    );
+
+};
+
+export const getInterviewReportRepo = async (sessionId) => {
+
+    const query = `
+        SELECT
+            session_id,
+            overall_score,
+            communication_score,
+            problem_solving_score,
+            optimization_score,
+            strengths,
+            weaknesses,
+            final_feedback,
+            created_at
+        FROM interview_feedback
+        WHERE session_id = $1
+    `;
+
+    const result = await pool.query(query, [sessionId]);
+
+    return result.rows[0];
+};

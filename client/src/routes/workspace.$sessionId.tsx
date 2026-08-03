@@ -8,6 +8,18 @@ import { useInterviewSocket } from "@/socket/useInterviewSocket";
 import { requireAuth } from "@/lib/route-guard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "@tanstack/react-router";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -45,6 +57,8 @@ function WorkspacePage() {
  const { sessionId } = Route.useParams();
   const [problem, setProblem] = useState<any>(null);
 const [loading, setLoading] = useState(true);
+const navigate = useNavigate();
+const [endingInterview, setEndingInterview] = useState(false);
 
 
 useEffect(() => {
@@ -125,6 +139,35 @@ console.log(response);
   }
 
 };
+
+const onEndInterview = async () => {
+
+    try {
+
+        setEndingInterview(true);
+
+        await interviewService.endInterview(sessionId);
+
+     await navigate({
+    to: "/interview/$sessionId/report",
+    params: {
+        sessionId,
+    },
+});
+
+    } catch (err) {
+
+        console.error(err);
+
+        toast.error("Failed to generate interview report.");
+
+    } finally {
+
+        setEndingInterview(false);
+
+    }
+
+};
   if (loading) {
   return (
     <div className="flex h-screen items-center justify-center">
@@ -158,6 +201,7 @@ console.log(response);
       {/* Topbar */}
       <header className="flex items-center justify-between border-b border-border/60 bg-card/40 px-4 py-3">
         <div className="flex items-center gap-3">
+          
           <Link
             to="/problems"
             className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -172,6 +216,75 @@ console.log(response);
             {problem.topic}
           </Badge>
         </div>
+
+        <AlertDialog>
+
+    <AlertDialogTrigger asChild>
+
+        <Button
+            variant="destructive"
+            size="sm"
+        >
+            End Interview
+        </Button>
+
+    </AlertDialogTrigger>
+
+    <AlertDialogContent>
+
+        <AlertDialogHeader>
+
+            <AlertDialogTitle>
+
+                End Interview?
+
+            </AlertDialogTitle>
+
+            <AlertDialogDescription>
+
+                This will permanently end the interview.
+
+                Your performance report will be generated immediately.
+
+                This action cannot be undone.
+
+            </AlertDialogDescription>
+
+        </AlertDialogHeader>
+
+        <AlertDialogFooter>
+
+            <AlertDialogCancel>
+
+                Continue Interview
+
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+
+                onClick={onEndInterview}
+
+                disabled={endingInterview}
+
+            >
+
+                {
+
+                    endingInterview
+
+                        ? "Generating Report..."
+
+                        : "End Interview"
+
+                }
+
+            </AlertDialogAction>
+
+        </AlertDialogFooter>
+
+    </AlertDialogContent>
+
+</AlertDialog>
     
       </header>
 

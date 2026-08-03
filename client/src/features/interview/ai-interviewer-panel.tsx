@@ -9,7 +9,7 @@ import {
 } from "@/features/editor/code-editor";
 import { socket } from "@/socket/socket";
 import {useInterviewSocket} from "../../socket/interviewSocketProvider";
-
+import { useNavigate } from "@tanstack/react-router";
 interface Message {
     role: "INTERVIEWER" | "CANDIDATE";
     content: string;
@@ -126,7 +126,7 @@ useState({
 });
 
 const interviewSocket = useInterviewSocket();
-
+const navigate = useNavigate();
 useEffect(() => {
 
     if (!interviewSocket || !sessionId) return;
@@ -136,6 +136,39 @@ useEffect(() => {
     return () => {
 
         interviewSocket.leaveInterview();
+
+    };
+
+}, [sessionId]);
+
+useEffect(() => {
+
+    const handleInterviewEnded = () => {
+
+        setTimeout(() => {
+
+            navigate({
+                to: "/interview/$sessionId/report",
+                params: {
+                    sessionId,
+                },
+            });
+
+        }, 2000);
+
+    };
+
+    socket.on(
+        "interview-ended",
+        handleInterviewEnded
+    );
+
+    return () => {
+
+        socket.off(
+            "interview-ended",
+            handleInterviewEnded
+        );
 
     };
 
@@ -161,20 +194,39 @@ useEffect(() => {
 
 useEffect(() => {
 
-   const handleAIResponse = async (data: any) => {
+
+const handleAIResponse = async (data: any) => {
 
     setPhase(data.phase);
 
     await typeAIMessage(
-
         data.aiReply ??
         data.message ??
         ""
-
     );
 
-};
+    if (data.phase === "FINISHED") {
 
+        try {
+
+            await interviewService.endInterview(sessionId);
+
+            await navigate({
+                to: "/interview/$sessionId/report",
+                params: {
+                    sessionId,
+                },
+            });
+
+        } catch (err) {
+
+            console.error(err);
+
+        }
+
+    }
+
+};
    socket.on(
     "interviewer-message",
     handleAIResponse
@@ -188,7 +240,7 @@ socket.off(
 
     };
 
-}, [sessionId]);
+}, [sessionId, navigate]);
 const [currentQuestion,setCurrentQuestion] =
     useState("");
 

@@ -67,16 +67,9 @@ export const decideNextPhase = ({
 
             return InterviewPhase.DEBUGGING;
 
-        case InterviewPhase.OPTIMIZATION:
+   case InterviewPhase.OPTIMIZATION:
 
-            if (
-                evaluation &&
-                evaluation.failed === 0
-            ) {
-                return InterviewPhase.FINISHED;
-            }
-
-            return InterviewPhase.OPTIMIZATION;
+    return InterviewPhase.OPTIMIZATION;
 
         default:
             return currentPhase;

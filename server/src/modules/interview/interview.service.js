@@ -8,10 +8,12 @@ import {
     updateInterviewPhaseRepo,
     updateCodeSnapshotRepo,
     recordInterruptRepo,
+    markOptimizationCompletedRepo,
     resetInterruptRepo
 } from "./interview.repository.js";
 import { getIO } from "../../socket.js";
 
+import { getInterviewReportRepo } from "./interview.repository.js";
 import { generateStructuredQuestion } from "./questionGenerator.ai.js";
 
 import { evaluateCode } from "./codeEvaluation.service.js";
@@ -38,6 +40,13 @@ import {
     generateInterviewerResponse
 } from "./interviewer.ai.js";
 
+
+export const getInterviewReportService = async (sessionId) => {
+
+    const report = await getInterviewReportRepo(sessionId);
+
+    return report;
+};
 export const startInterviewService = async ({
     userId,
     type,
@@ -160,6 +169,17 @@ export const sendInterviewMessageService = async ({
         throw new Error(
             "Interview session not found."
         );
+    }
+       if (session.phase === InterviewPhase.FINISHED) {
+
+        return {
+            aiReply:
+                "The interview has concluded and my evaluation has already been submitted. Thank you for your time and best of luck.",
+            phase: InterviewPhase.FINISHED,
+            evaluation: null,
+            codeAnalysis: null,
+            interrupted: false
+        };
     }
 
     // Save user message
@@ -348,6 +368,15 @@ console.log("================================");
                 !codeDetected
 
         });
+if (
+    session.phase === InterviewPhase.OPTIMIZATION &&
+    session.optimization_completed === false &&
+    !codeDetected &&
+    message.trim().length > 20
+) {
+    await markOptimizationCompletedRepo(sessionId);
+}
+
 
     if (
         nextPhase !== session.phase
@@ -437,7 +466,14 @@ rawResponse = await generateInterviewerResponse({
     evaluation,
     codeAnalysis,
     interruptReason,
-    interactionType: codeDetected ? "CODE_SUBMIT" : "CHAT"
+    interactionType: codeDetected ? "CODE_SUBMIT" : "CHAT",
+    optimizationCompleted:
+    session.optimization_completed ||
+    (
+        session.phase === InterviewPhase.OPTIMIZATION &&
+        !codeDetected &&
+        message.trim().length > 20
+    ),
 });
 
 console.timeEnd("AI");
@@ -458,6 +494,25 @@ try {
             parsed = JSON.parse(cleaned);
 
             aiReply = parsed.reply;
+      
+            if (parsed.optimizationCompleted) {
+
+    await markOptimizationCompletedRepo(sessionId);
+
+    await endInterviewService(sessionId);
+
+ await endInterviewService(sessionId);
+
+return {
+    interviewEnded: true,
+    aiReply,
+    phase: InterviewPhase.FINISHED,
+    evaluation,
+    codeAnalysis,
+    interrupted: false
+};
+
+}
 
             if (!aiReply) {
                 throw new Error("Missing reply");
@@ -668,6 +723,10 @@ export const endInterviewService = async (sessionId) => {
 
     });
 
+    await updateInterviewPhaseRepo(
+    sessionId,
+    InterviewPhase.FINISHED
+);
     await endInterviewSessionRepo(
         sessionId
     );

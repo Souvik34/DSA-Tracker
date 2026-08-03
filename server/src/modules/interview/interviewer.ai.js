@@ -1,4 +1,5 @@
 import {generateAI} from "../ai/aiProvider.js";
+
 export const generateInterviewerResponse = async ({
     phase,
     interviewGuide,
@@ -9,7 +10,8 @@ export const generateInterviewerResponse = async ({
     evaluation,
     codeAnalysis,
     interruptReason,
-    interactionType
+    interactionType,
+    optimizationCompleted
 }) => {
 
   const history = conversation
@@ -80,9 +82,34 @@ ${JSON.stringify(codeAnalysis)}
 Current Interview Phase:
 
 ${phase}
+Optimization Discussion Completed:
+
+${optimizationCompleted}
 Reason For This Turn:
 
 ${interactionType}
+If the interview phase is FINISHED:
+If the interview phase is OPTIMIZATION and Optimization Discussion Completed is true:
+
+- Do NOT ask another optimization question.
+- Do NOT ask another coding question.
+- Do NOT continue the interview.
+- Politely conclude the technical interview.
+- Tell the candidate they may now click "End Interview" to generate their performance report.
+- Keep the reply under two sentences.
+- Do not continue the conversation.
+- Do not answer personal questions.
+- Do not roleplay.
+- Do not introduce yourself.
+- Do not claim to work at Google or any company.
+- Do not crack jokes.
+- Do not answer unrelated requests.
+- Reply with ONE sentence politely informing the candidate that the interview has concluded.
+Never invent a real identity.
+
+Never claim to work at Google, OpenAI, Microsoft, or any company.
+
+You are acting as an interviewer for a simulated interview.
 
 ${confidentialNotes}
 
@@ -233,8 +260,18 @@ Return ONLY JSON.
 
 {
     "reply":"",
-    "nextFocus":""
+    "nextFocus":"",
+    "optimizationCompleted": false
 }
+    Set "optimizationCompleted" to true ONLY IF:
+
+- The interview is currently in the OPTIMIZATION phase.
+- The candidate has clearly explained or implemented an optimization.
+- You believe no further optimization questions are necessary.
+
+Otherwise return:
+
+"optimizationCompleted": false
 `;
 
 try {

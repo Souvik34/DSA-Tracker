@@ -1,5 +1,4 @@
-import { generateWithGemini }
-from "../ai/providers/gemini.provider.js";
+import {generateAI} from "../ai/aiProvider.js";
 export const generateInterviewerResponse = async ({
     phase,
     interviewGuide,
@@ -13,11 +12,10 @@ export const generateInterviewerResponse = async ({
     interactionType
 }) => {
 
-    const history = conversation
-        .map(
-            msg => `${msg.sender}: ${msg.message}`
-        )
-        .join("\n");
+  const history = conversation
+.slice(-8)
+.map(msg => `${msg.sender}: ${msg.message}`)
+.join("\n");
      
         const confidentialNotes =
     interactionType === "CODE_INTERRUPT"
@@ -32,6 +30,23 @@ ${JSON.stringify(expectedConcepts)}
 Interview Guide:
 ${JSON.stringify(interviewGuide)}
 `;
+
+const evaluationSummary = evaluation
+? {
+    passed: evaluation.passed,
+    total: evaluation.total,
+    failed: evaluation.failed,
+    successRate: evaluation.successRate,
+    failedCases: evaluation.results
+        .filter(r => !r.isCorrect)
+        .map(r => ({
+            input: r.input,
+            expected: r.expectedOutput,
+            got: r.userOutput,
+            error: r.error
+        }))
+}
+: null;
 
     const prompt = `
 You are a Senior Google L5 interviewer.
@@ -73,7 +88,8 @@ ${confidentialNotes}
 
 Evaluation:
 
-${JSON.stringify(evaluation)}
+
+${JSON.stringify(evaluationSummary)}
 
 Interrupt Reason:
 
@@ -224,7 +240,7 @@ Return ONLY JSON.
 try {
 
    const text =
-    await generateWithGemini(prompt);
+    await generateAI(prompt);
 
 return text;
 }

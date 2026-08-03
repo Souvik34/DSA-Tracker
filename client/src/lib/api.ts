@@ -5,7 +5,7 @@ import { toast } from "sonner";
 export const api = axios.create({
   baseURL: "http://localhost:5000/api/v1",
   withCredentials: false,
-  timeout: 60000,
+  timeout: 120000,
 });
 
 api.interceptors.request.use((config) => {

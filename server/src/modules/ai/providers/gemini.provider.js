@@ -6,7 +6,6 @@ const ai = new GoogleGenAI({
 
 const MODELS = [
     "gemini-3.5-flash",
-    "gemini-2.5-flash",
     "gemini-flash-latest"
 ];
 
@@ -22,30 +21,27 @@ export async function generateWithGemini(prompt) {
 
             const result =
                 await ai.models.generateContent({
-
                     model,
-
                     contents: prompt
-
                 });
 
             console.log(`Success: ${model}`);
 
             return result.text;
 
-        } catch (err) {
+            }catch (err) {
 
-            console.log(`Failed: ${model}`);
+    console.log(`Failed: ${model}`);
 
-            lastError = err;
+    lastError = err;
 
-           if (err.status === 503) {
-    continue;
+    // Continue to next model for quota, overload, or retired model
+    if ([404, 429, 500, 503].includes(err.status)) {
+        continue;
+    }
+
+    throw err;
 }
-
-throw err;
-        }
-
     }
 
     throw lastError;

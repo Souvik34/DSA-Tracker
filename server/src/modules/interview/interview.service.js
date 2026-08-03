@@ -305,17 +305,17 @@ console.log("=================================");
 
         ];
 
-        evaluation =
- await evaluateCode({
-    language:
-        session.language,
+console.time("Judge0");
 
+evaluation = await evaluateCode({
+    language: session.language,
     code: candidateContent,
-
     testCases,
-
     problem: interviewPackage
 });
+
+console.timeEnd("Judge0");
+
             console.log("========== EVALUATION ==========");
 console.dir(evaluation, {depth:null});
 console.log("================================");
@@ -422,34 +422,25 @@ if (interrupt) {
 // OUTSIDE the if
 let rawResponse = null;
 if (interrupt || !codeDetected) {
-    rawResponse = await generateInterviewerResponse({
+   console.time("AI");
 
-        phase: nextPhase,
+rawResponse = await generateInterviewerResponse({
+    phase: nextPhase,
+    interviewGuide: interviewPackage.interviewGuide,
+    expectedConcepts: interviewPackage.expectedConcepts,
+    conversation,
+    candidateMessage: message,
+    candidateCode:
+    codeDetected
+        ? candidateContent
+        : session.last_code || null,
+    evaluation,
+    codeAnalysis,
+    interruptReason,
+    interactionType: codeDetected ? "CODE_SUBMIT" : "CHAT"
+});
 
-        interviewGuide:
-            interviewPackage.interviewGuide,
-
-        expectedConcepts:
-            interviewPackage.expectedConcepts,
-
-        conversation,
-
-        candidateMessage: message,
-
-      candidateCode:
-    session.last_code || null,
-
-        evaluation,
-
-        codeAnalysis,
-
-        interruptReason,
-
-       interactionType: codeDetected
-    ? "CODE_SUBMIT"
-    : "CHAT",
-
-    });
+console.timeEnd("AI");
 }
 try {
 

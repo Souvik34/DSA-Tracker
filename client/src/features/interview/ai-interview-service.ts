@@ -29,21 +29,17 @@ export const aiInterviewService = {
     },
 
     async sendMessage(
-
-        sessionId: string,
-
-        message: string
-
-    ) {
+    sessionId: string,
+    message: string,
+    code?: string
+){
 
         const { data } =
-            await api.post(
-                "/interview/message",
-                {
-                    sessionId,
-                    message
-                }
-            );
+await api.post("/interview/message",{
+    sessionId,
+    message,
+    code
+});
 
         return data;
 

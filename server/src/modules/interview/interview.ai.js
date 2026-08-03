@@ -1,11 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { INTERVIEW_PROMPTS } from "./interview.prompt.js";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
-});
+import { generateAI } from "../ai/aiProvider.js";
 
 export const generateInterviewQuestion = async ({
   type,
@@ -19,12 +13,7 @@ export const generateInterviewQuestion = async ({
     language,
   });
 
-const result = await ai.models.generateContent({
-    model: "gemini-3-flash",
-    contents: prompt,
-});
-
-return result.text;
+  return await generateAI(prompt);
 };
 
 export const generateFollowUpQuestion = async ({
@@ -33,8 +22,8 @@ export const generateFollowUpQuestion = async ({
   messages,
 }) => {
 
-  const formattedConversation = messages
-    .map((msg) => `${msg.sender}: ${msg.message}`)
+  const formattedConversation = (messages ?? [])
+    .map(msg => `${msg.sender}: ${msg.message}`)
     .join("\n");
 
   const prompt = INTERVIEW_PROMPTS.FOLLOW_UP({
@@ -43,22 +32,20 @@ export const generateFollowUpQuestion = async ({
     conversation: formattedConversation,
   });
 
-const result = await ai.models.generateContent({
-    model: "gemini-3-flash",
-    contents: prompt,
-});
-
-return result.text;
+  return await generateAI(prompt);
 };
 
 export const generateInterviewFeedback = async ({
   type,
   difficulty,
-  messages,
+  conversation = [],
+  expectedConcepts = [],
+  expectedComplexity = {},
+  interviewGuide = {},
 }) => {
 
-  const formattedConversation = messages
-    .map((msg) => `${msg.sender}: ${msg.message}`)
+  const formattedConversation = conversation
+    .map(msg => `${msg.sender}: ${msg.message}`)
     .join("\n");
 
   const prompt = `
@@ -69,14 +56,30 @@ Evaluate this interview.
 Interview Type: ${type}
 Difficulty: ${difficulty}
 
+Expected Concepts:
+${JSON.stringify(expectedConcepts)}
+
+Expected Complexity:
+${JSON.stringify(expectedComplexity)}
+
+Interview Guide:
+${JSON.stringify(interviewGuide)}
+
 Conversation:
 ${formattedConversation}
 
+Score the candidate based on:
+- Communication
+- Problem Solving
+- Code Quality
+- Optimization
+- Overall Performance
+
 CRITICAL RULES:
-- Return ONLY valid JSON
-- No markdown
-- No explanation text
-- No extra characters
+- Return ONLY valid JSON.
+- No markdown.
+- No explanation.
+- No code fences.
 
 JSON FORMAT:
 {
@@ -84,15 +87,15 @@ JSON FORMAT:
   "communicationScore": 0,
   "problemSolvingScore": 0,
   "optimizationScore": 0,
-  "strengths": "",
-  "weaknesses": "",
+  "strengths": [
+    ""
+  ],
+  "weaknesses": [
+    ""
+  ],
   "finalFeedback": ""
 }
 `;
-const result = await ai.models.generateContent({
-    model: "gemini-3-flash",
-    contents: prompt,
-});
 
-return result.text;
+  return await generateAI(prompt);
 };

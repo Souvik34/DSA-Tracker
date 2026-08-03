@@ -103,13 +103,16 @@ const onSubmit = async () => {
 
     setSubmitting(true);
 
+ const response =
     await interviewService.submitAIResponse(
-      sessionId,
-      {
-        message: "I have completed my implementation.",
-        code
-      }
+        sessionId,
+        {
+            message: "I have completed my implementation.",
+            code
+        }
     );
+
+console.log(response);
 
   } catch (err) {
 

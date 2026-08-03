@@ -74,21 +74,20 @@ export const sendInterviewMessage =
         });
       }
 
+const data =
+    await sendInterviewMessageService({
+        sessionId,
+        message,
+        code,
+    });
 
+console.log("RETURNING TO FRONTEND");
+console.dir(data, { depth: null });
 
-      const data =
-        await sendInterviewMessageService({
-          sessionId,
-          message,
-          code,
-        });
-
-
-
-      res.json({
-        success: true,
-        data,
-      });
+res.json({
+    success: true,
+    data,
+});
 
     } catch (err) {
 

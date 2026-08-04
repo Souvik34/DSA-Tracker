@@ -333,7 +333,11 @@ evaluation = await evaluateCode({
     testCases,
     problem: interviewPackage
 });
-
+console.log("========== JUDGE0 ==========");
+console.log("Passed:", evaluation.passed);
+console.log("Failed:", evaluation.failed);
+console.log("Total:", evaluation.total);
+console.log("============================");
 console.timeEnd("Judge0");
 
             console.log("========== EVALUATION ==========");
@@ -353,48 +357,61 @@ console.log("================================");
     //--------------------------------------------------
     // Decide Interview Phase
     //--------------------------------------------------
+let optimizationCompleted =
+    session.optimization_completed;
 
-    const nextPhase =
-        decideNextPhase({
-
-            currentPhase:
-                session.phase,
-
-            evaluation,
-
-            codeDetected,
-
-            approachAccepted:
-                !codeDetected
-
-        });
 if (
     session.phase === InterviewPhase.OPTIMIZATION &&
-    session.optimization_completed === false &&
+    !optimizationCompleted &&
     !codeDetected &&
     message.trim().length > 20
 ) {
     await markOptimizationCompletedRepo(sessionId);
+
+    optimizationCompleted = true;
 }
 
+const nextPhase =
+    decideNextPhase({
 
-    if (
-        nextPhase !== session.phase
-    ) {
+        currentPhase:
+            session.phase,
 
-        await updateInterviewPhaseRepo(
+        evaluation,
 
-            sessionId,
+        codeDetected,
 
-            nextPhase
+        approachAccepted:
+            !codeDetected,
 
-        );
+        optimizationCompleted
 
-        await resetInterruptRepo(
-            sessionId
-        );
+    });
+    console.log("========== PHASE ==========");
+console.log("Current:", session.phase);
+console.log("Next:", nextPhase);
+console.log("===========================");
+console.log("Phase before:", session.phase);
+console.log("Evaluation failed:", evaluation?.failed);
+console.log("Next phase:", nextPhase);
 
-    }
+if (
+    nextPhase !== session.phase
+) {
+
+    await updateInterviewPhaseRepo(
+
+        sessionId,
+
+        nextPhase
+
+    );
+
+    await resetInterruptRepo(
+        sessionId
+    );
+
+}
 
     //--------------------------------------------------
     // Decide whether interviewer should interrupt
@@ -496,9 +513,13 @@ try {
             aiReply = parsed.reply;
       
             if (parsed.optimizationCompleted) {
-
+console.log("ENTERED OPTIMIZATION CHECK");
+console.log("phase =", session.phase);
+console.log("optimization_completed =", session.optimization_completed);
+console.log("message =", message);
     await markOptimizationCompletedRepo(sessionId);
 
+console.log("Marked optimization completed");
     await endInterviewService(sessionId);
 
  await endInterviewService(sessionId);

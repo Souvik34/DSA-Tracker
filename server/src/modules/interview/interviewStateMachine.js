@@ -15,15 +15,11 @@ export const InterviewPhase = {
 };
 
 export const decideNextPhase = ({
-
     currentPhase,
-
     evaluation,
-
     codeDetected,
-
-    approachAccepted
-
+    approachAccepted,
+    optimizationCompleted = false
 }) => {
 
     switch (currentPhase) {
@@ -67,12 +63,13 @@ export const decideNextPhase = ({
 
             return InterviewPhase.DEBUGGING;
 
-   case InterviewPhase.OPTIMIZATION:
+  case InterviewPhase.OPTIMIZATION:
+
+    if (optimizationCompleted) {
+        return InterviewPhase.FINISHED;
+    }
 
     return InterviewPhase.OPTIMIZATION;
-
-        default:
-            return currentPhase;
-    }
+}
 
 };

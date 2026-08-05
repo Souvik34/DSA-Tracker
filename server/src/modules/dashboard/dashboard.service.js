@@ -3,6 +3,7 @@ import redisClient from "../../config/redis.js";
 import { getDueRevisionsRepo } from "../revision/revision.repository.js";
 import {
   getWeakTopicRepo,
+  getStrongTopicsRepo,
   getRecommendedProblemsRepo,
   getDailySolveRepo,
   getTopicDistributionRepo,
@@ -42,9 +43,9 @@ const calculateStreak = (dailyData) => {
 
 
 export const getDashboardService = async (userId) => {
-  if (!userId || isNaN(userId)) {
+ if (!userId) {
     throw new Error("Valid userId is required");
-  }
+}
 
   const cacheKey = `dashboard:${userId}`;
 
@@ -57,20 +58,21 @@ export const getDashboardService = async (userId) => {
 
   console.log("DASHBOARD CACHE MISS");
 
-  const [
-    revisions,
-    weak,
-    dailySolve,
-    topicDist,
-    difficultyDist,
-  ] = await Promise.all([
-    getDueRevisionsRepo(userId),
-    getWeakTopicRepo(userId),
-    getDailySolveRepo(userId),
-    getTopicDistributionRepo(userId),
-    getDifficultyDistributionRepo(userId),
-  ]);
-
+ const [
+  revisions,
+  weak,
+  dailySolve,
+  topicDist,
+  difficultyDist,
+  strongTopics,
+] = await Promise.all([
+  getDueRevisionsRepo(userId),
+  getWeakTopicRepo(userId),
+  getDailySolveRepo(userId),
+  getTopicDistributionRepo(userId),
+  getDifficultyDistributionRepo(userId),
+  getStrongTopicsRepo(userId),
+]);
   const weakTopic = weak?.topic || null;
 
   const recommendedProblems =
@@ -79,21 +81,105 @@ export const getDashboardService = async (userId) => {
   const { streak, longestStreak } = calculateStreak(dailySolve);
 
  
-  const response = {
+const totalSolved =
+    dailySolve.reduce(
+        (acc, day) => acc + Number(day.count),
+        0
+    );
+
+const easy = Number(
+    difficultyDist.find(d => d.difficulty === "Easy")?.count || 0
+);
+
+const medium = Number(
+    difficultyDist.find(d => d.difficulty === "Medium")?.count || 0
+);
+
+const hard = Number(
+    difficultyDist.find(d => d.difficulty === "Hard")?.count || 0
+);
+
+    let readiness = 0;
+
+readiness += Math.min(totalSolved / 5, 40);
+
+readiness += Math.min(streak * 2, 20);
+
+readiness += Math.min(
+    revisions.length === 0
+        ? 20
+        : Math.max(20 - revisions.length, 5),
+    20
+);
+
+readiness += Math.min(hard * 5,20);
+
+readiness = Math.min(
+    Math.round(readiness),
+    100
+);
+
+const response = {
+
+    stats: {
+
+        solved: totalSolved,
+
+       easy,
+medium,
+hard,
+
+        revisionPending: revisions.length,
+
+        streak,
+
+        longestStreak,
+
+    },
+    readiness: {
+
+    score: readiness,
+
+    level:
+        readiness >= 90
+            ? "Excellent"
+
+            : readiness >= 75
+            ? "Strong Candidate"
+
+            : readiness >= 60
+            ? "Interview Ready"
+
+            : readiness >= 40
+            ? "Developing"
+
+            : "Beginner"
+
+},
+
     revision: {
-      dueCount: revisions.length,
-      items: revisions,
+
+        dueCount: revisions.length,
+
+        items: revisions,
+
     },
+
     weakTopic,
+
     recommendedProblems,
+strongTopics,
     analytics: {
-      streak,
-      longestStreak,
-      dailySolve,
-      topicDistribution: topicDist,
-      difficultyDistribution: difficultyDist,
+
+        dailySolve,
+
+        topicDistribution: topicDist,
+
+        difficultyDistribution: difficultyDist,
+
     },
-  };
+
+};
 
   await redisClient.setEx(
     cacheKey,

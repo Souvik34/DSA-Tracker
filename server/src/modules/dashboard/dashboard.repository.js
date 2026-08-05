@@ -67,3 +67,36 @@ export const getDifficultyDistributionRepo = async (userId) => {
 
   return result.rows;
 };
+
+export const getStrongTopicsRepo =
+async (userId) => {
+
+const result =
+await pool.query(
+
+`
+SELECT
+p.topic,
+COUNT(*)::int AS solved
+
+FROM solved_problems sp
+
+JOIN problems p
+ON p.id = sp.problem_id
+
+WHERE sp.user_id = $1
+
+GROUP BY p.topic
+
+ORDER BY solved DESC
+
+LIMIT 5
+`,
+
+[userId]
+
+);
+
+return result.rows;
+
+};

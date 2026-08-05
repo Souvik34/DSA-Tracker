@@ -8,6 +8,7 @@ import {
   getDailySolveRepo,
   getTopicDistributionRepo,
   getDifficultyDistributionRepo,
+  getRecentActivityRepo,
 } from "./dashboard.repository.js";
 
 
@@ -58,21 +59,28 @@ export const getDashboardService = async (userId) => {
 
   console.log("DASHBOARD CACHE MISS");
 
- const [
-  revisions,
-  weak,
-  dailySolve,
-  topicDist,
-  difficultyDist,
-  strongTopics,
+const [
+
+revisions,
+weak,
+dailySolve,
+topicDist,
+difficultyDist,
+strongTopics,
+recentActivity,
+
 ] = await Promise.all([
-  getDueRevisionsRepo(userId),
-  getWeakTopicRepo(userId),
-  getDailySolveRepo(userId),
-  getTopicDistributionRepo(userId),
-  getDifficultyDistributionRepo(userId),
-  getStrongTopicsRepo(userId),
+
+getDueRevisionsRepo(userId),
+getWeakTopicRepo(userId),
+getDailySolveRepo(userId),
+getTopicDistributionRepo(userId),
+getDifficultyDistributionRepo(userId),
+getStrongTopicsRepo(userId),
+getRecentActivityRepo(userId),
+
 ]);
+
   const weakTopic = weak?.topic || null;
 
   const recommendedProblems =
@@ -176,8 +184,9 @@ strongTopics,
         topicDistribution: topicDist,
 
         difficultyDistribution: difficultyDist,
-
-    },
+        
+      },
+      recentActivity,
 
 };
 

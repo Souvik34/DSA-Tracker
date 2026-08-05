@@ -1,50 +1,376 @@
-import { Progress } from "@/components/ui/progress";
-import { Binary, GitBranch, Network, Layers } from "lucide-react";
+/* eslint-disable prettier/prettier */
+
+import {
+    Binary,
+    GitBranch,
+    Network,
+    Layers,
+    CheckCircle2,
+    Brain,
+} from "lucide-react";
+
+import { motion } from "framer-motion";
+
 import type { LucideIcon } from "lucide-react";
 
-interface TopicStat {
-  topic: string;
-  solved: number;
-  total: number;
-  icon: LucideIcon;
-  tint: string;
+interface TopicCard {
+    topic: string;
+    solved: number;
+    icon: LucideIcon;
+    tint: string;
 }
 
-const stats: TopicStat[] = [
-  { topic: "Arrays & Strings", solved: 84, total: 120, icon: Layers, tint: "var(--primary)" },
-  { topic: "Trees & Graphs", solved: 42, total: 95, icon: Network, tint: "var(--accent)" },
-  { topic: "Dynamic Programming", solved: 21, total: 70, icon: GitBranch, tint: "var(--chart-5)" },
-  { topic: "Bit Manipulation", solved: 14, total: 28, icon: Binary, tint: "var(--success)" },
+const ICONS: Record<string, LucideIcon> = {
+    array: Layers,
+    "binary search": Binary,
+    "two pointers": Network,
+    stack: GitBranch,
+    graph: Network,
+    tree: Network,
+    dp: GitBranch,
+};
+
+const COLORS = [
+    "#8b5cf6",
+    "#22c55e",
+    "#f59e0b",
+    "#3b82f6",
+    "#ec4899",
 ];
 
-export function ProgressCards() {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {stats.map((s) => {
-        const pct = Math.round((s.solved / s.total) * 100);
-        return (
-          <div
-            key={s.topic}
-            className="group rounded-2xl border border-border p-5 transition-all hover:-translate-y-0.5 hover:border-primary/40"
-            style={{ background: "var(--gradient-card)", boxShadow: "var(--shadow-card)" }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <div
-                className="grid h-9 w-9 place-items-center rounded-lg"
-                style={{ background: `color-mix(in oklab, ${s.tint} 18%, transparent)`, color: s.tint }}
-              >
-                <s.icon className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">{pct}%</span>
-            </div>
-            <div className="text-sm font-medium text-foreground">{s.topic}</div>
-            <div className="mb-3 mt-0.5 text-xs text-muted-foreground">
-              {s.solved} of {s.total} solved
-            </div>
-            <Progress value={pct} className="h-1.5" />
-          </div>
-        );
-      })}
-    </div>
-  );
+interface ProgressCardsProps {
+    dashboard: any;
+}
+
+export function ProgressCards({
+    dashboard,
+}: ProgressCardsProps) {
+
+    if (!dashboard) return null;
+
+    const cards: TopicCard[] =
+        dashboard.strongTopics.map((t: any, index: number) => ({
+            topic: t.topic,
+            solved: Number(t.solved),
+            icon:
+                ICONS[t.topic.toLowerCase()] ??
+                Layers,
+            tint:
+                COLORS[index % COLORS.length],
+        }));
+
+    const totalSolved =
+        dashboard.stats.solved || 1;
+
+    return (
+
+<div
+className="
+grid
+grid-cols-1
+sm:grid-cols-2
+xl:grid-cols-4
+gap-6
+"
+>
+
+{cards.map((card, index) => {
+
+const pct = Math.round(
+(card.solved / totalSolved) * 100
+);
+
+const level =
+pct >= 35
+? "Master"
+
+: pct >= 20
+? "Strong"
+
+: pct >= 10
+? "Growing"
+
+: "Needs Practice";
+
+const isWeak =
+dashboard.weakTopic?.toLowerCase() ===
+card.topic.toLowerCase();
+
+return (
+
+<motion.div
+
+key={card.topic}
+
+initial={{
+opacity:0,
+y:20,
+}}
+
+animate={{
+opacity:1,
+y:0,
+}}
+
+transition={{
+duration:.45,
+delay:index*.08,
+}}
+
+whileHover={{
+scale:1.04,
+rotateX:4,
+rotateY:-4,
+}}
+
+className="
+relative
+overflow-hidden
+rounded-3xl
+border
+border-zinc-800
+bg-zinc-950
+p-6
+cursor-pointer
+transition-all
+"
+
+>
+
+{/* Glow */}
+
+<div
+
+className="
+absolute
+right-0
+top-0
+h-40
+w-40
+rounded-full
+blur-[80px]
+opacity-20
+"
+
+style={{
+background:card.tint,
+}}
+
+/>
+
+{/* AI Badge */}
+
+{isWeak && (
+
+<div
+className="
+absolute
+right-4
+top-4
+rounded-full
+bg-red-500/15
+border
+border-red-500/20
+px-3
+py-1
+text-[10px]
+font-bold
+text-red-400
+flex
+items-center
+gap-1
+"
+>
+
+<Brain size={11}/>
+
+AI Focus
+
+</div>
+
+)}
+
+<div
+className="
+relative
+flex
+justify-between
+items-center
+"
+>
+
+<div
+
+className="
+h-12
+w-12
+rounded-2xl
+flex
+items-center
+justify-center
+"
+
+style={{
+background:`${card.tint}25`,
+}}
+
+>
+
+<card.icon
+
+size={22}
+
+style={{
+color:card.tint,
+}}
+
+/>
+
+</div>
+
+<div
+className="
+rounded-full
+border
+border-zinc-700
+bg-zinc-900
+px-3
+py-1
+text-xs
+font-bold
+text-zinc-300
+"
+>
+
+#{index+1}
+
+</div>
+
+</div>
+
+<h2
+className="
+mt-6
+capitalize
+text-xl
+font-bold
+"
+>
+
+{card.topic}
+
+</h2>
+
+<div
+className="
+mt-3
+flex
+items-center
+gap-2
+text-zinc-400
+"
+>
+
+<CheckCircle2
+size={16}
+style={{
+color:card.tint,
+}}
+/>
+
+<span>
+
+{card.solved} Problems Solved
+
+</span>
+
+</div>
+
+{/* Progress */}
+
+<div
+className="
+mt-6
+h-3
+overflow-hidden
+rounded-full
+bg-zinc-800
+"
+>
+
+<motion.div
+
+initial={{
+width:0,
+}}
+
+animate={{
+width:`${pct}%`,
+}}
+
+transition={{
+duration:1.2,
+ease:"easeOut",
+}}
+
+className="
+h-full
+rounded-full
+"
+
+style={{
+background:card.tint,
+}}
+
+/>
+
+</div>
+
+<div
+className="
+mt-3
+flex
+justify-between
+items-center
+"
+>
+
+<p
+className="
+text-sm
+font-semibold
+"
+style={{
+color:card.tint,
+}}
+>
+
+{level}
+
+</p>
+
+<p
+className="
+text-xs
+font-medium
+text-zinc-500
+"
+>
+
+{pct}% of solved
+
+</p>
+
+</div>
+
+</motion.div>
+
+);
+
+})}
+
+</div>
+
+    );
+
 }

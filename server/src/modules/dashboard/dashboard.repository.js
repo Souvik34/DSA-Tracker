@@ -100,3 +100,39 @@ LIMIT 5
 return result.rows;
 
 };
+
+export const getRecentActivityRepo = async (userId) => {
+
+const result = await pool.query(
+
+`
+SELECT
+
+sp.solved_at,
+
+p.title,
+
+p.difficulty,
+
+p.topic
+
+FROM solved_problems sp
+
+JOIN problems p
+
+ON p.id = sp.problem_id
+
+WHERE sp.user_id = $1
+
+ORDER BY sp.solved_at DESC
+
+LIMIT 8
+`,
+
+[userId]
+
+);
+
+return result.rows;
+
+};

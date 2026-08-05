@@ -11,7 +11,8 @@ import { RevisionGate } from "@/features/dashboard/revision-gate";
 import { requireRevisionCheck } from "@/lib/revision-guard";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
+import InterviewReadinessCard from "@/features/dashboard/InterviewReadinessCard";
+import { useDashboard } from "@/hooks/useDashboard";
 import { dashboardService } from "@/services/dashboardService";
 
 import { DashboardData } from "@/types/dashboard";
@@ -31,6 +32,13 @@ beforeLoad: async ({ location }) => {
 });
 
 function DashboardPage() {
+
+    const {
+        data,
+        isLoading,
+        error,
+    } = useDashboard();
+    console.log(data);
   // // const blocked = true;
 
   // const revisions = [
@@ -88,18 +96,28 @@ const loadDashboard = async () => {
     }
 };
 
-if (loading) {
-
+if (isLoading) {
     return (
-
         <DashboardShell>
-
-            Loading Dashboard...
-
+            <div className="flex h-[70vh] items-center justify-center">
+                <div className="text-zinc-400 text-lg">
+                    Loading Dashboard...
+                </div>
+            </div>
         </DashboardShell>
-
     );
+}
 
+if (error) {
+    return (
+        <DashboardShell>
+            <div className="flex h-[70vh] items-center justify-center">
+                <div className="text-red-400 text-lg">
+                    Failed to load dashboard.
+                </div>
+            </div>
+        </DashboardShell>
+    );
 }
   return (
     <DashboardShell>
@@ -107,7 +125,10 @@ if (loading) {
        {dashboard && (
     <WelcomeCard dashboard={dashboard} />
 )}
-        <ProgressCards />
+<InterviewReadinessCard dashboard={dashboard} />
+        <ProgressCards
+    dashboard={data}
+/>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <RecentActivity />

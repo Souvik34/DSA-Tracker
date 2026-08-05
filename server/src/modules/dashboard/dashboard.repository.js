@@ -136,3 +136,59 @@ LIMIT 8
 return result.rows;
 
 };
+
+export const getTopicStrengthRepo = async (userId) => {
+
+const result = await pool.query(
+
+`
+SELECT
+
+p.topic,
+
+COUNT(*)::int AS solved,
+
+MAX(sp.solved_at) AS last_solved,
+
+SUM(
+CASE 
+WHEN LOWER(sp.difficulty)='hard'
+THEN 1
+ELSE 0
+END
+)::int AS hard,
+
+SUM(
+CASE 
+WHEN LOWER(sp.difficulty)='medium'
+THEN 1
+ELSE 0
+END
+)::int AS medium
+
+
+FROM solved_problems sp
+
+
+JOIN problems p
+
+ON p.id = sp.problem_id
+
+
+WHERE sp.user_id=$1
+
+
+GROUP BY p.topic
+
+ORDER BY solved DESC
+
+`,
+
+[userId]
+
+);
+
+
+return result.rows;
+
+};

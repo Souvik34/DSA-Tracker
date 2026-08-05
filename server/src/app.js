@@ -29,6 +29,9 @@ app.use("/api/v1/progress", progressRoutes);
 import dashboardRoutes from "./modules/dashboard/dashboard.route.js";
 app.use("/api/v1/dashboard", dashboardRoutes);
 
+import mentorRoutes from "./modules/mentor/mentor.route.js";
+app.use("/api/v1/mentor",mentorRoutes);
+
 import aiRoutes from "./modules/ai/ai.route.js";
 app.use("/api/v1/ai", aiRoutes);
 

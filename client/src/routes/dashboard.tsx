@@ -131,7 +131,7 @@ if (error) {
 />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <RecentActivity />
+           <RecentActivity dashboard={dashboard} />
           </div>
           <div className="space-y-6">
             <StreakWidget />

@@ -10,7 +10,13 @@ import { UpcomingInterview } from "@/features/dashboard/upcoming-interview";
 import { RevisionGate } from "@/features/dashboard/revision-gate";
 import { requireRevisionCheck } from "@/lib/revision-guard";
 import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
+import { dashboardService } from "@/services/dashboardService";
+
+import { DashboardData } from "@/types/dashboard";
+
+import { useAuthStore } from "@/store/auth-store";
 export const Route = createFileRoute("/dashboard")({
 beforeLoad: async ({ location }) => {
   await requireAuth(location);
@@ -47,10 +53,60 @@ function DashboardPage() {
   //     priorityLabel: "Medium",
   //   },
   // ];
+
+  const user = useAuthStore(
+    s => s.user
+);
+
+const [dashboard, setDashboard] =
+useState<DashboardData | null>(null);
+
+const [loading, setLoading] =
+useState(true);
+
+useEffect(() => {
+
+    if (!user?.id) return;
+
+    loadDashboard();
+
+}, [user]);
+
+const loadDashboard = async () => {
+    try {
+        console.log("Fetching dashboard...");
+
+        const data = await dashboardService.getDashboard(user!.id);
+
+        console.log("Dashboard API Response:", data);
+
+        setDashboard(data);
+    } catch (err) {
+        console.log(err);
+    } finally {
+        setLoading(false);
+    }
+};
+
+if (loading) {
+
+    return (
+
+        <DashboardShell>
+
+            Loading Dashboard...
+
+        </DashboardShell>
+
+    );
+
+}
   return (
     <DashboardShell>
       <div className="space-y-6">
-        <WelcomeCard />
+       {dashboard && (
+    <WelcomeCard dashboard={dashboard} />
+)}
         <ProgressCards />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">

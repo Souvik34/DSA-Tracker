@@ -7,7 +7,31 @@ export const getAllProblems = async (filters) => {
 export const getProblemById = async (id) => {
   return await problemRepository.getProblemByIdRepo(id);
 };
+export const startProblemAttempt = async(
+userId,
+problemId
+)=>{
 
+return await problemRepository.startProblemAttemptRepo(
+userId,
+problemId
+);
+
+};
+
+
+
+export const completeProblemAttempt = async(
+userId,
+problemId
+)=>{
+
+return await problemRepository.completeProblemAttemptRepo(
+userId,
+problemId
+);
+
+};
 export const createProblem = async (data) => {
   const {
     title,

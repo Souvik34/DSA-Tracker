@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
 import {
   Bookmark,
   BookmarkCheck,
@@ -54,8 +55,20 @@ export function ProblemsTable() {
 
   
   const byId = useProblemsStore((s) => s.byId);
+  const startProblem = useProblemsStore((s) => s.startProblem);
+const activeProblemId = useProblemsStore((s) => s.activeProblemId);
+
+const removeStartedProblem = useProblemsStore(
+  (s) => s.removeStartedProblem
+);
+const clearActiveProblem = useProblemsStore(
+  (s) => s.clearActiveProblem
+);
 
 const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+const startedProblems = useProblemsStore((s)=>s.startedProblems);
+
+
 const toggleRevision = useProblemsStore((s) => s.toggleRevision);
 const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
 
@@ -73,6 +86,7 @@ const hydrateRevision = useProblemsStore((s) => s.hydrateRevision);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [page, setPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [warningProblem, setWarningProblem] = useState<Problem | null>(null);
 const LIMIT = 50;
 const formatDifficulty = (d?: string): Difficulty => {
   if (!d) return "Easy";
@@ -85,7 +99,17 @@ const formatDifficulty = (d?: string): Difficulty => {
 
   return "Easy";
 };
+useEffect(() => {
+  if (warningProblem) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
 
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [warningProblem]);
 useEffect(() => {
   const check = async () => {
     const res = await revisionService.getDueRevisions();
@@ -210,23 +234,112 @@ const hasNextPage = problems.length === LIMIT;
 
 
 const navigate = useNavigate(); 
+const handleOpenProblem = async (p: Problem) => {
 
-const handleSolve = async (p: Problem) => {
+  if (
+    activeProblemId &&
+    activeProblemId !== String(p.id)
+  ) {
+
+    const previous =
+      problems.find(
+        (item) =>
+          String(item.id) === activeProblemId
+      );
+
+    if (previous) {
+      setWarningProblem(previous);
+      return;
+    }
+  }
+
+
   try {
-    const res = await problemService.markSolved(p.id, p.difficulty);
 
-    // optimistic UI update
+    await problemService.startProblem(p.id);
+
+    startProblem(p.id);
+
+    window.open(
+      p.leetcodeUrl,
+      "_blank"
+    );
+
+  } catch(err){
+
+    console.error(
+      "Start problem failed",
+      err
+    );
+
+  }
+
+};
+const handleSolve = async (p: Problem) => {
+
+  try {
+
+    const startTime =
+      startedProblems[String(p.id)];
+
+
+    if (!startTime) {
+
+      toast.error(
+        "Open the problem first before marking it solved."
+      );
+
+      return;
+
+    }
+
+
+    const timeTaken =
+      Math.floor(
+        (Date.now() - startTime) / 60000
+      );
+console.log("SOLVING", {
+  id: p.id,
+  difficulty: p.difficulty
+});
+
+    const res =
+      await problemService.markSolved(
+        p.id,
+        p.difficulty,
+        timeTaken
+      );
+
+
     toggleSolved(p.id);
 
-    // IMPORTANT: refresh revision state (THIS WAS MISSING)
+
+    removeStartedProblem(p.id);
+
+    clearActiveProblem();
+
+
     await revisionService.getDueRevisions();
 
+
     if (res?.blocked) {
-      navigate({ to: "/revisions" });
+
+      navigate({
+        to: "/revisions"
+      });
+
     }
-  } catch (err) {
-    console.error("Solve failed:", err);
+
+
+  } catch(err){
+
+    console.error(
+      "Solve failed:",
+      err
+    );
+
   }
+
 };
   return (
     <div className="space-y-6">
@@ -332,7 +445,23 @@ const handleSolve = async (p: Problem) => {
                   <TableCell className="pl-4">
                  <Checkbox
   checked={!!st?.solved}
-  onCheckedChange={() => handleSolve(p)}
+onCheckedChange={() => {
+
+const started = startedProblems[p.id];
+
+if(!started){
+
+toast.error(
+"Open the problem first before marking it solved"
+);
+
+return;
+
+}
+
+handleSolve(p);
+
+}}
   aria-label="Mark solved"
 />
                   </TableCell>
@@ -430,11 +559,14 @@ toggleRevision(p.id);
                         <FileText className="h-4 w-4" />
                       </IconAction>
                     
-                      <Button variant="ghost" size="icon" asChild title="Open on LeetCode">
-                        <a href={p.leetcodeUrl} target="_blank" rel="noreferrer noopener">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
+                 <Button
+  variant="ghost"
+  size="icon"
+  title="Open on LeetCode"
+  onClick={() => handleOpenProblem(p)}
+>
+  <ExternalLink className="h-4 w-4" />
+</Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -458,8 +590,63 @@ toggleRevision(p.id);
         open={!!notesFor}
         onOpenChange={(o) => !o && setNotesFor(null)}
       />
+{warningProblem &&
+  createPortal(
+    <div
+      className="
+        fixed
+        inset-0
+        z-[999999]
+        flex
+        items-center
+        justify-center
+        bg-black/60
+        backdrop-blur-sm
+      "
+    >
+      <div className="w-[400px] rounded-xl border bg-background p-6 shadow-xl">
 
-      <div className="mt-6 flex items-center justify-center gap-4">
+        <h2 className="text-lg font-semibold">
+          Previous problem unfinished
+        </h2>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          You started "{warningProblem.title}".
+          Please solve or mark it before starting another problem.
+        </p>
+
+        <div className="mt-5 flex justify-end gap-3">
+
+          <Button
+            variant="outline"
+            onClick={() => setWarningProblem(null)}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={() => {
+              startProblem(warningProblem.id);
+
+              window.open(
+                warningProblem.leetcodeUrl,
+                // document.body.style.overflow = "hidden";
+                "_blank"
+              );
+
+              setWarningProblem(null);
+            }}
+          >
+            Continue Previous
+          </Button>
+
+        </div>
+
+      </div>
+    </div>,
+    document.body
+  )}
+    <div className="mt-6 flex items-center justify-center gap-4">
 <Button
   variant="outline"
   disabled={page === 1}

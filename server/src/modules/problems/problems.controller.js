@@ -18,7 +18,7 @@ topic: topic ? topic.split(",") : [],
       data: problems,
     });
   } catch (err) {
-  console.error("🔥 getAllProblems ERROR:", err);
+  console.error(" getAllProblems ERROR:", err);
   res.status(500).json({
     message: err.message,
     stack: err.stack,
@@ -35,7 +35,7 @@ export const getProblemById = async (req, res) => {
     }
     res.status(200).json(problem);
   } catch (err) {
-    console.error("🔥 getProblemById ERROR:", err);
+    console.error(" getProblemById ERROR:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -52,6 +52,13 @@ export const createProblem = async (req, res) => {
 export const markProblemSolved = async (req, res) => {
   try {
    const userId = req.user.id;
+    const { problemId, difficulty, timeTaken } = req.body;
+    console.log("CONTROLLER DATA", {
+      userId,
+      problemId,
+      difficulty,
+      timeTaken
+    });
     const dueRevisions = await getDueRevisionsService(userId);
 
 if (dueRevisions.length > 0) {
@@ -62,7 +69,7 @@ if (dueRevisions.length > 0) {
     revisions: dueRevisions.length,
   });
 }
-    const { problemId, difficulty } = req.body;
+  // const { problemId, difficulty, timeTaken } = req.body;
 
     if (!problemId || !difficulty) {
   return res.status(400).json({
@@ -70,11 +77,29 @@ if (dueRevisions.length > 0) {
     message: "Invalid input",
   });
 }
+const attempt =
+await problemService.completeProblemAttempt(
+userId,
+problemId
+);
 
+
+if(!attempt){
+
+return res.status(400).json({
+
+success:false,
+
+message:
+"Start the problem before marking solved"
+
+});
+
+}
   
 const job = await solveQueue.add(
   "solve-job",
-  { userId, problemId, difficulty },
+  { userId, problemId, difficulty, timeTaken },
   {
     jobId: `${userId}-${problemId}`,
     attempts: 3,
@@ -94,12 +119,14 @@ res.status(200).json({
 });
   
 
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  }catch (err) {
+  console.error("MARK SOLVED CONTROLLER ERROR:", err);
+
+  res.status(500).json({
+    success: false,
+    message: err.message,
+  });
+}
 };
 
 export const getProgress = async (req, res) => {
@@ -241,4 +268,51 @@ export const getProblemNotes = async (req, res) => {
       message: err.message,
     });
   }
+};
+
+export const startProblem = async(req,res)=>{
+
+try{
+
+const userId=req.user.id;
+const problemId=Number(req.params.id);
+
+
+const data =
+await problemService.startProblemAttempt(
+userId,
+problemId
+);
+
+
+if(data.blocked){
+
+return res.status(403).json({
+
+success:false,
+
+message:
+"Complete your current problem first"
+
+});
+
+}
+
+
+res.json({
+
+success:true,
+attempt:data.attempt
+
+});
+
+
+}catch(err){
+
+res.status(500).json({
+message:err.message
+});
+
+}
+
 };

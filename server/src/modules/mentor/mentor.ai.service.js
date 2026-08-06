@@ -5,43 +5,144 @@ import {
 
 export const generateMentorAdvice =
 async(profile)=>{
-
+const mentorContext = {
+    recommendation: profile.recommendation,
+    focusTopic: profile.focusTopic,
+    strongTopics: profile.strongTopics,
+    difficulty: profile.difficulty,
+    recentProblems: profile.recentProblems
+};
 
 const prompt = `
 
-You are an expert DSA interview mentor.
+You are an elite FAANG DSA mentor.
 
-Analyze this candidate profile.
+Your audience is preparing for Microsoft, Google, Amazon, Atlassian, Visa, Mastercard and Amex interviews.
 
-Your job:
-- identify the next best learning direction
-- explain the reason
-- create a practical 7 day plan
-- give interview preparation advice
+You are NOT ChatGPT.
+
+You are a dashboard mentor.
+
+The user will only spend 10-15 seconds reading your advice.
+
+Therefore:
+
+- Keep every answer concise.
+- Never write long paragraphs.
+- Never repeat information already present in the profile.
+- Never mention "based on the profile" or similar phrases.
+- Do not use markdown.
+Return a single valid JSON object.
+
+Do not wrap it in markdown.
+Do not add explanations.
+Do not add notes.
+Do not output anything except JSON.
+- Every field must be actionable.
+- Every sentence must be under 20 words.
 
 
-Candidate profile:
+The analytics engine has already identified the user's focus topic.
 
-${JSON.stringify(profile,null,2)}
+Do NOT change the focus topic.
+
+Do NOT recommend a different topic.
+
+Only expand the recommendation with:
+- a headline
+- one insight
+- one reason
+- a 7-day roadmap
+- one interview tip.
+Candidate Profile:
+
+${JSON.stringify(mentorContext, null, 2)}
+
+Rules: 
+1. headline
+- Maximum 8 words.
+- Strong action-oriented title.
+
+Example:
+"Master Stack This Week"
+
+2. insight
+- Maximum 18 words.
+- One sentence.
+
+Example:
+"Stack is currently your biggest interview gap."
+
+3. reason
+- Maximum 18 words.
+
+Example:
+"Only one Stack problem solved in recent practice."
+
+4. roadmap
+- Exactly 7 items.
+- Each item under 12 words.
+Each roadmap item should contain either:
+- one LeetCode problem name, OR
+- one DSA pattern.
+
+Never include explanations.
+
+5. tip
+- Maximum 18 words.
+- One interview tip only.
+Output must be valid JSON.
+Never invent statistics.
+
+Only use information present in the Candidate Profile.
+No json fences.
+No markdown.
+No explanations.
+No extra text before or after the JSON.
 
 
+Roadmap should progress from beginner to advanced.
+Days 1-2: fundamentals
+Days 3-5: medium patterns
+Days 6-7: interview-level practice
 
-Return JSON only:
+The recommendation below is FINAL.
+
+Do not modify it.
+Do not contradict it.
+Do not recommend another topic.
+Only enrich it with:
+- headline
+- insight
+- reason
+- roadmap
+- tip.
+
+The recommendation title and priority are fixed.
+
+Use them to create the headline and roadmap.
+Example:
+
+"Explain why LIFO fits before writing code."
+
+Return ONLY this JSON:
 
 {
- "summary":"",
- "priority":"",
- "reason":"",
- "sevenDayPlan":[
+  "headline":"",
+  "insight":"",
+  "reason":"",
+  "roadmap":[
+    "",
+    "",
+    "",
+    "",
     "",
     "",
     ""
- ],
- "interviewAdvice":""
+  ],
+  "tip":""
 }
-
 `;
-
 
 
 const response =
@@ -52,36 +153,58 @@ await generateAI(prompt);
 try{
 
 
-return JSON.parse(response);
+const cleaned = response
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+return JSON.parse(cleaned);
 
 
 }
 
-catch(error){
+catch (error) {
+console.error("Mentor AI JSON parse failed");
 
+console.error(response);
 
-console.log(
-"Mentor AI JSON parse failed"
-);
+    const topic =
+        profile.focusTopic?.topic ?? "Arrays";
 
+    return {
 
-return {
+        headline:
+            `Master ${topic}`,
 
-summary:
-response,
+        insight:
+            `${topic} is your current focus area.`,
 
-priority:
-profile.focusTopic?.topic || "General",
+     reason:
+profile.recommendation?.summary ??
+"Continue consistent practice.",
 
-reason:
-"AI generated recommendation",
+        roadmap: [
 
-sevenDayPlan:[],
+            `Learn ${topic} basics`,
 
-interviewAdvice:"Keep practicing consistently"
+            `Easy ${topic} problem`,
 
-};
+            `Medium ${topic} problem`,
 
+            `Revise ${topic} patterns`,
+
+            "Timed practice",
+
+            "Review mistakes",
+
+            "Mock interview"
+
+        ],
+
+        tip:
+            "Explain your approach before writing code."
+
+    };
 
 }
 

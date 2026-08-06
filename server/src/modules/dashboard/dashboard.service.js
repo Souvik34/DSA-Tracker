@@ -10,7 +10,7 @@ import {
   getDifficultyDistributionRepo,
   getRecentActivityRepo,
 } from "./dashboard.repository.js";
-
+import { getMentorRecommendation } from "../mentor/mentor.service.js";
 
 const calculateStreak = (dailyData) => {
   if (!dailyData.length) return { streak: 0, longestStreak: 0 };
@@ -58,7 +58,7 @@ export const getDashboardService = async (userId) => {
   }
 
   console.log("DASHBOARD CACHE MISS");
-
+console.log("Before Promise.all");
 const [
 
 revisions,
@@ -68,6 +68,7 @@ topicDist,
 difficultyDist,
 strongTopics,
 recentActivity,
+mentor,
 
 ] = await Promise.all([
 
@@ -79,8 +80,11 @@ getDifficultyDistributionRepo(userId),
 getStrongTopicsRepo(userId),
 getRecentActivityRepo(userId),
 
-]);
+getMentorRecommendation(userId),
 
+]);
+console.log("After Promise.all");
+console.log(mentor);
   const weakTopic = weak?.topic || null;
 
   const recommendedProblems =
@@ -187,6 +191,12 @@ strongTopics,
         
       },
       recentActivity,
+      recommendation: mentor.recommendation,
+
+aiAdvice: mentor.aiAdvice,
+
+mentorProblems: mentor.mentorProblems,
+profile: mentor.profile,
 
 };
 

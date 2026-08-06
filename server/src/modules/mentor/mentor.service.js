@@ -1,3 +1,5 @@
+import redisClient from "../../config/redis.js";
+
 import {
     getTopicStrengthRepo,
     getStrongTopicsRepo,
@@ -5,7 +7,9 @@ import {
     getTopicDistributionRepo,
     getRecentActivityRepo
 } from "../dashboard/dashboard.repository.js";
-
+import {
+   getMentorProblemsRepo
+} from "../problems/problems.repository.js";
 import {
     generateMentorAdvice
 } from "./mentor.ai.service.js";
@@ -14,187 +18,238 @@ import {
     findFocusTopic
 } from "./topicScore.js";
 
+export const getMentorRecommendation = async (userId) => {
 
+    const [
 
-export const getMentorRecommendation =
-async(userId)=>{
+        topicStrength,
 
+        strongTopics,
 
-const [
+        difficulty,
 
-topicStrength,
+        topics,
 
-strongTopics,
+        recentActivity
 
-difficulty,
+    ] = await Promise.all([
 
-topics,
+        getTopicStrengthRepo(userId),
 
-recentActivity
+        getStrongTopicsRepo(userId),
 
-]=await Promise.all([
+        getDifficultyDistributionRepo(userId),
 
+        getTopicDistributionRepo(userId),
 
-getTopicStrengthRepo(userId),
+        getRecentActivityRepo(userId)
 
-getStrongTopicsRepo(userId),
+    ]);
 
-getDifficultyDistributionRepo(userId),
 
-getTopicDistributionRepo(userId),
+   const focusTopic =
+    findFocusTopic(topicStrength);
 
-getRecentActivityRepo(userId)
+console.log("FOCUS TOPIC:", focusTopic);
 
 
-]);
+console.log(
+    "FETCHING MENTOR PROBLEMS",
+    userId,
+    focusTopic.topic
+);
 
 
+const mentorProblems =
+    focusTopic
+        ? await getMentorProblemsRepo(
+              userId,
+              focusTopic.topic,
+              5
+          )
+        : [];
 
-const focusTopic =
-findFocusTopic(topicStrength);
 
+console.log(
+    "MENTOR PROBLEMS RESULT",
+    mentorProblems
+);
+    /* ---------------- Recommendation ---------------- */
 
-const aiProfile = {
+    let recommendation;
 
-focusTopic,
+    if (!focusTopic) {
 
-strongTopics:
-strongTopics.slice(0,3),
+        recommendation = {
 
-difficulty,
+            title: "Start your DSA journey",
 
-recentProblems:
-recentActivity.slice(0,5),
+            summary:
+                "Begin solving problems to unlock personalized guidance.",
 
-topics:
-topics.slice(0,5)
+            priority: "Getting Started",
 
-};
-const aiAdvice =
-await generateMentorAdvice(aiProfile);
-let recommendation;
+            actions: [
 
+                "Practice arrays and strings",
 
+                "Build daily solving habit"
 
-if(!focusTopic){
+            ]
 
+        };
 
-recommendation={
+    }
 
-title:"Start your DSA journey",
+    else if (focusTopic.type === "coverage_gap") {
 
-summary:
-"Begin solving problems to unlock personalized guidance.",
+        recommendation = {
 
-priority:"Getting Started",
+            title: `Explore ${focusTopic.topic}`,
 
-actions:[
+            summary:
+                `You have limited practice in ${focusTopic.topic}. Build more exposure before evaluating mastery.`,
 
-"Practice arrays and strings",
+            priority: focusTopic.topic,
 
-"Build daily solving habit"
+            confidence: focusTopic.confidence,
 
-]
+            actions: [
 
-};
+                `Solve beginner ${focusTopic.topic} problems`,
 
+                `Learn common ${focusTopic.topic} patterns`,
 
-}
+                `Add this topic to your revision cycle`
 
+            ]
 
+        };
 
-else{
+    }
 
+    else {
 
-if(focusTopic.type==="coverage_gap"){
+        recommendation = {
 
+            title: `Improve ${focusTopic.topic}`,
 
-recommendation={
+            summary:
+                `You have practiced ${focusTopic.topic}, but your performance needs improvement.`,
 
-title:`Explore ${focusTopic.topic}`,
+            priority: focusTopic.topic,
 
-summary:
-`You have limited practice in ${focusTopic.topic}. Build more exposure before evaluating mastery.`,
+            confidence: focusTopic.confidence,
 
-priority:focusTopic.topic,
+            actions: [
 
-confidence:focusTopic.confidence,
+                "Review mistakes",
 
-actions:[
+                "Solve medium level problems",
 
-`Solve beginner ${focusTopic.topic} problems`,
+                "Attempt timed practice"
 
-`Learn common ${focusTopic.topic} patterns`,
+            ]
 
-`Add this topic to your revision cycle`
+        };
 
-]
+    }
 
-};
 
+    /* ---------------- AI Profile ---------------- */
 
-}
+ const aiProfile = {
 
+    recommendation,
 
-else if(focusTopic.type==="weakness"){
+    focusTopic,
 
+    strongTopics:
+        strongTopics.slice(0,3),
 
-recommendation={
+    difficulty,
 
-title:`Improve ${focusTopic.topic}`,
+    recentProblems:
+        recentActivity.slice(0,5),
 
-summary:
-`You have practiced ${focusTopic.topic}, but your performance needs improvement.`,
-
-priority:focusTopic.topic,
-
-confidence:focusTopic.confidence,
-
-actions:[
-
-`Review mistakes`,
-
-`Solve medium level problems`,
-
-`Attempt timed practice`
-
-]
-
-};
-
-
-}
-
-}
-
-
-
-
-return {
-
-
-recommendation,
-
-aiAdvice,
-
-profile:{
-
-
-focusTopic,
-
-strongTopics,
-
-difficulty,
-
-topics,
-
-recentActivity
-
-
-}
-
+    topics:
+        topics.slice(0,5)
 
 };
 
+
+    /* ---------------- Dynamic Cache Key ---------------- */
+
+   const cacheKey = [
+    "mentor-ai",
+    userId,
+    focusTopic?.topic ?? "none",
+    focusTopic?.type ?? "none",
+    focusTopic?.score ?? 0,
+    focusTopic?.confidence ?? 0
+].join(":");
+
+
+    /* ---------------- AI Cache ---------------- */
+
+    let aiAdvice;
+
+    const cachedAdvice =
+        await redisClient.get(cacheKey);
+
+    if (cachedAdvice) {
+
+        console.log("MENTOR AI CACHE HIT");
+
+        aiAdvice =
+            JSON.parse(cachedAdvice);
+
+    }
+
+    else {
+
+        console.log("MENTOR AI CACHE MISS");
+
+        aiAdvice =
+            await generateMentorAdvice(aiProfile);
+
+        await redisClient.setEx(
+
+            cacheKey,
+
+            60 * 60 * 24,
+
+            JSON.stringify(aiAdvice)
+
+        );
+
+    }
+
+
+    /* ---------------- Response ---------------- */
+
+   return {
+
+    recommendation,
+
+    aiAdvice,
+
+    mentorProblems,
+
+    profile: {
+
+        focusTopic,
+
+        strongTopics,
+
+        difficulty,
+
+        topics,
+
+        recentActivity
+
+    }
+
+};
 
 };

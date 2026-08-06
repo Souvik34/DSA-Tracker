@@ -304,3 +304,168 @@ export const getProblemNotesRepo = async (userId, problemId) => {
 
   return result.rows[0] || null;
 };
+
+export const getMentorProblemsRepo = async (
+    userId,
+    topic,
+    limit = 3
+) => {
+
+    try {
+
+        console.log("MENTOR QUERY PARAMS", {
+            userId,
+            topic,
+            limit
+        });
+
+        const result = await pool.query(
+            `
+            SELECT
+                p.id,
+                p.title,
+                p.difficulty,
+                p.topic,
+                p.question_link
+
+            FROM problems p
+
+            WHERE LOWER(p.topic) = LOWER($2)
+
+            AND p.id NOT IN (
+
+                SELECT problem_id
+
+                FROM solved_problems
+
+                WHERE user_id = $1
+
+            )
+
+        ORDER BY
+
+    CASE p.difficulty::text
+
+        WHEN 'easy' THEN 1
+        WHEN 'medium' THEN 2
+        WHEN 'hard' THEN 3
+
+        ELSE 4
+
+    END,
+
+    p.id
+
+            LIMIT $3
+            `,
+            [
+                userId,
+                topic,
+                limit
+            ]
+        );
+
+        console.log(
+            "MENTOR PROBLEMS FOUND",
+            result.rows
+        );
+
+        return result.rows;
+
+
+    } catch(err){
+
+        console.log(
+            "MENTOR PROBLEM QUERY FAILED",
+            err
+        );
+
+        throw err;
+
+    }
+
+};
+
+    export const startProblemAttemptRepo = async (
+    userId,
+    problemId
+) => {
+
+    const active = await pool.query(
+        `
+        SELECT *
+        FROM problem_attempts
+        WHERE user_id=$1
+        AND status='STARTED'
+        `,
+        [userId]
+    );
+
+
+    if(active.rows.length > 0){
+
+        return {
+            blocked:true,
+            attempt:active.rows[0]
+        };
+
+    }
+
+
+    const result = await pool.query(
+        `
+     INSERT INTO problem_attempts
+(
+ user_id,
+ problem_id,
+ status
+)
+VALUES($1,$2,'STARTED')
+RETURNING *
+        `,
+        [
+            userId,
+            problemId
+        ]
+    );
+
+
+    return {
+        blocked:false,
+        attempt:result.rows[0]
+    };
+
+};
+export const completeProblemAttemptRepo = async (
+    userId,
+    problemId
+)=>{
+
+const result = await pool.query(
+`
+UPDATE problem_attempts
+
+SET 
+status='COMPLETED',
+completed_at=CURRENT_TIMESTAMP
+
+WHERE user_id=$1
+AND problem_id=$2
+AND status='STARTED'
+
+RETURNING 
+EXTRACT(EPOCH FROM 
+(completed_at-started_at)
+)/60 AS minutes
+
+`,
+[
+userId,
+problemId
+]
+);
+
+
+return result.rows[0];
+
+};

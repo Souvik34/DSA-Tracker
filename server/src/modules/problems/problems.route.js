@@ -4,6 +4,7 @@ import { getAllProblems,getProblemById, createProblem, getProgress, addBookmark,
   getBookmarks, saveNotes,
 getNotes,
 getProblemNotes,} from "./problems.controller.js";
+import { startProblem } from "./problems.controller.js";
 import { markProblemSolved } from "./problems.controller.js";
 import { revisionMiddleware } from "../../middlewares/revision.middleware.js";
 import { protect } from "../../middlewares/auth.middleware.js";
@@ -48,6 +49,11 @@ router.get(
   getNotes
 );
 
+router.post(
+"/:id/start",
+protect,
+startProblem
+);
 router.get(
   "/:id/notes",
   protect,

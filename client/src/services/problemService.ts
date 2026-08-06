@@ -36,10 +36,15 @@ export const problemService = {
     return data.problem ?? data.data!;
   },
 
-async markSolved(problemId: number | string, difficulty: string) {
+async markSolved(
+  problemId: number | string,
+  difficulty: string,
+  timeTaken: number
+) {
   const res = await api.post("/problems/solve", {
     problemId,
     difficulty,
+    timeTaken,
   });
 
   return res.data;
@@ -48,6 +53,15 @@ async markSolved(problemId: number | string, difficulty: string) {
     const res = await api.post(`/problems/${id}/bookmark`);
     return res.data;
   },
+  async startProblem(id:number|string){
+
+ const res = await api.post(
+   `/problems/${id}/start`
+ );
+
+ return res.data;
+
+},
 
   async toggleRevision(id: number | string) {
     const res = await api.post(`/problems/${id}/revision`);

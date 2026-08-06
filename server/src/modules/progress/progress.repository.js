@@ -37,12 +37,50 @@ export const getUserProgressRepo = async (userId) => {
 export const insertSolvedProblemRepo = async (
   userId,
   problemId,
-  difficulty
+  difficulty,
+  timeTaken
+) => {
+  console.log("INSERT DATA", {
+ userId,
+ problemId,
+ difficulty,
+ timeTaken
+});
+  await pool.query(
+    `INSERT INTO solved_problems 
+(
+ user_id,
+ problem_id,
+ difficulty,
+ time_taken_minutes
+)
+VALUES ($1, $2, $3, $4)
+     ON CONFLICT (user_id, problem_id) DO NOTHING`,
+    [
+ userId,
+ problemId,
+ difficulty,
+ timeTaken 
+]
+  );
+};
+
+export const updateConfidenceRepo = async (
+  userId,
+  problemId,
+  confidence
 ) => {
   await pool.query(
-    `INSERT INTO solved_problems (user_id, problem_id, difficulty)
-     VALUES ($1, $2, $3)
-     ON CONFLICT (user_id, problem_id) DO NOTHING`,
-    [userId, problemId, difficulty]
+    `
+    UPDATE solved_problems
+    SET confidence_rating = $1
+    WHERE user_id = $2
+      AND problem_id = $3
+    `,
+    [
+      confidence,
+      userId,
+      problemId,
+    ]
   );
 };

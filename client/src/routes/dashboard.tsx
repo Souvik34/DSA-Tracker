@@ -13,6 +13,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import InterviewReadinessCard from "@/features/dashboard/InterviewReadinessCard";
 import { useDashboard } from "@/hooks/useDashboard";
+import  AIMentorCard  from "../features/dashboard/aiMentorCard";
 import { dashboardService } from "@/services/dashboardService";
 
 import { DashboardData } from "@/types/dashboard";
@@ -126,6 +127,7 @@ if (error) {
     <WelcomeCard dashboard={dashboard} />
 )}
 <InterviewReadinessCard dashboard={dashboard} />
+<AIMentorCard dashboard={dashboard} />
         <ProgressCards
     dashboard={data}
 />

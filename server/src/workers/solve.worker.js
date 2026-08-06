@@ -7,8 +7,13 @@ import redisClient from "../config/redis.js";
 export const solveWorker = new Worker(
   "solve-problem",
   async (job) => {
-    const { userId, problemId, difficulty } = job.data;
-
+    const { userId, problemId, difficulty, timeTaken } = job.data;
+console.log("WORKER DATA", {
+ userId,
+ problemId,
+ difficulty,
+ timeTaken
+});
     console.log("Processing job:", job.id);
 
     /* ---------- VALIDATION ---------- */
@@ -18,15 +23,23 @@ export const solveWorker = new Worker(
 
     try {
       /* ---------- CORE LOGIC ---------- */
-      await addSolvedProblemService(userId, problemId, difficulty);
+      await addSolvedProblemService(userId, problemId, difficulty , timeTaken);
       await insertRevisionRepo(userId, problemId);
 
-      /* ---------- CACHE INVALIDATION ---------- */
-      await redisClient.del(`progress:stats:${userId}`);
-      await redisClient.del(`revision:due:${userId}`);
-      await redisClient.del(`revision:all:${userId}`);
-      await redisClient.del(`dashboard:${userId}`);
+    /* ---------- CACHE INVALIDATION ---------- */
+await Promise.all([
 
+    redisClient.del(`progress:stats:${userId}`),
+
+    redisClient.del(`revision:due:${userId}`),
+
+    redisClient.del(`revision:all:${userId}`),
+
+    redisClient.del(`dashboard:${userId}`),
+
+    redisClient.del(`mentor-ai:${userId}`),
+
+]);
       console.log(
         `Job completed: ${job.id} | user ${userId} solved problem ${problemId}`
       );

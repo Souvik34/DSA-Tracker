@@ -49,5 +49,32 @@ export interface DashboardData {
             count: string;
         }[];
     };
+ recommendation?: {
+    title:string;
+    summary:string;
+    priority:string;
+    confidence?:number;
+};
 
+aiAdvice?: {
+    headline:string;
+    insight:string;
+    reason:string;
+};
+
+profile?: {
+    focusTopic?: {
+        topic:string;
+        confidence:number;
+        type:string;
+    };
+};
+
+mentorProblems?: {
+    id:number;
+    title:string;
+    difficulty:string;
+    topic:string;
+    question_link:string;
+}[];
 }

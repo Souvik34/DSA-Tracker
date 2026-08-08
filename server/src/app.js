@@ -32,6 +32,9 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 import mentorRoutes from "./modules/mentor/mentor.route.js";
 app.use("/api/v1/mentor",mentorRoutes);
 
+import leetcodeRoutes from "./modules/integrations/leetcode/leetcode.route.js";
+app.use("/api/v1/leetcode", leetcodeRoutes);
+
 import aiRoutes from "./modules/ai/ai.route.js";
 app.use("/api/v1/ai", aiRoutes);
 

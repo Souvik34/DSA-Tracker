@@ -1,691 +1,522 @@
 /* eslint-disable prettier/prettier */
-import { useEffect, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import interviewService from "@/services/interviewService";
-import {
-    CodeEditor,
-    SUPPORTED_LANGUAGES,
-    STARTER_CODE,
-    type SupportedLanguageId
-} from "@/features/editor/code-editor";
-import { socket } from "@/socket/socket";
-import {useInterviewSocket} from "../../socket/interviewSocketProvider";
 import { useNavigate } from "@tanstack/react-router";
+import { useInterviewSocket } from "../../socket/interviewSocketProvider";
+import { socket } from "@/socket/socket";
+import { Bot, UserRound } from "lucide-react";
+import type { SupportedLanguageId } from "@/features/editor/code-editor";
+
 interface Message {
-    role: "INTERVIEWER" | "CANDIDATE";
-    content: string;
+  role: "INTERVIEWER" | "CANDIDATE";
+  content: string;
 }
 
 interface Problem {
+  title: string;
+  description: string;
 
-    title:string;
+  examples: {
+    input: string;
+    output: string;
+    explanation?: string;
+  }[];
 
-    description:string;
+  constraints: string[];
 
-    examples:{
-        input:string;
-        output:string;
-        explanation?:string;
-    }[];
-
-    constraints:string[];
-
-    starterCode?:string;
-
-}
-
-interface AIResponse {
-
-phase:
-"INTRODUCTION" |
-"CODING" |
-"OPTIMIZATION" |
-"FEEDBACK";
-
-
-message:string;
-
-
-score?:{
-
-correctness:number;
-
-communication:number;
-
-optimization:number;
-
-};
-
+  starterCode?: string;
 }
 
 interface Props {
-    sessionId: string;
-
-    language: SupportedLanguageId;
-
-    code: string;
-
-    onSubmit: () => Promise<void>;
-
-    onRun: () => Promise<void>;
+  sessionId: string;
+  language: SupportedLanguageId;
+  code: string;
 }
 
+type InterviewPhase =
+  | "INTRODUCTION"
+  | "UNDERSTANDING"
+  | "CODING"
+  | "OPTIMIZATION"
+  | "FEEDBACK"
+  | "FINISHED";
 
 export default function AIInterviewerPanel({
-    sessionId,
-    language,
-    code,
-    onSubmit,
-    onRun
+  sessionId,
+  language,
+  code,
 }: Props) {
+  const [phase, setPhase] =
+    useState<InterviewPhase>("INTRODUCTION");
 
+  const [time, setTime] = useState(45 * 60);
 
+  const [messages, setMessages] =
+    useState<Message[]>([]);
 
-   
+  const [typingMessage, setTypingMessage] =
+    useState("");
 
+  const [input, setInput] = useState("");
 
-const [running,setRunning] =
-useState(false);
+  const [loading, setLoading] = useState(false);
 
-const [submitting,setSubmitting] =
-    useState(false);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-const [phase,setPhase] =
-    useState<
-    "INTRODUCTION" |
-    "CODING" |
-    "OPTIMIZATION" |
-    "FEEDBACK"
-    >("INTRODUCTION");
+  const interviewSocket = useInterviewSocket();
+  const navigate = useNavigate();
 
-    const [problem, setProblem] =
-    useState<Problem | null>(null);
-
-const [time,setTime] =
-    useState(45 * 60);
-
-const [score,setScore]=useState({
-    correctness:0,
-    communication:0,
-    optimization:0
-});
-const [isSubmitted,setIsSubmitted] =
-    useState(false);
-
-
-
-const [typing,setTyping] =
-    useState(false);
-
-
-    const [interviewContext,setInterviewContext] =
-useState({
-    askedQuestion:false,
-    explainedApproach:false,
-    submittedCode:false,
-    complexityAnswered:false
-});
-
-const interviewSocket = useInterviewSocket();
-const navigate = useNavigate();
-useEffect(() => {
-
+  /*
+   * Join interview room
+   */
+  useEffect(() => {
     if (!interviewSocket || !sessionId) return;
 
     interviewSocket.joinInterview(sessionId);
 
     return () => {
-
-        interviewSocket.leaveInterview();
-
+      interviewSocket.leaveInterview();
     };
+  }, [sessionId]);
 
-}, [sessionId]);
-
-useEffect(() => {
-
-    const handleInterviewEnded = () => {
-
-        setTimeout(() => {
-
-            navigate({
-                to: "/interview/$sessionId/report",
-                params: {
-                    sessionId,
-                },
-            });
-
-        }, 2000);
-
-    };
-
-    socket.on(
-        "interview-ended",
-        handleInterviewEnded
-    );
-
-    return () => {
-
-        socket.off(
-            "interview-ended",
-            handleInterviewEnded
-        );
-
-    };
-
-}, [sessionId]);
-
-useEffect(() => {
-
+  /*
+   * Load interview state
+   */
+  useEffect(() => {
     if (!sessionId) return;
-    if (!code.trim()) return;
 
-    const timer = setTimeout(() => {
-
-        socket.emit("code-update", {
-            sessionId,
-            code
-        });
-
-    }, 2000);
-
-    return () => clearTimeout(timer);
-
-}, [code, sessionId]);
-
-useEffect(() => {
-
-
-const handleAIResponse = async (data: any) => {
-
-    setPhase(data.phase);
-
-    await typeAIMessage(
-        data.aiReply ??
-        data.message ??
-        ""
-    );
-
-    if (data.phase === "FINISHED") {
-
-        try {
-
-            await interviewService.endInterview(sessionId);
-
-            await navigate({
-                to: "/interview/$sessionId/report",
-                params: {
-                    sessionId,
-                },
-            });
-
-        } catch (err) {
-
-            console.error(err);
-
-        }
-
-    }
-
-};
-   socket.on(
-    "interviewer-message",
-    handleAIResponse
-);
-
-    return () => {
-socket.off(
-    "interviewer-message",
-    handleAIResponse
-);
-
-    };
-
-}, [sessionId, navigate]);
-const [currentQuestion,setCurrentQuestion] =
-    useState("");
-
-    const [messages,setMessages] =
-        useState<Message[]>([]);
-
-
-    const [input,setInput] =
-        useState("");
-
-
-    const [loading,setLoading] =
-        useState(false);
-
-useEffect(()=>{
-
-    const timer =
-    setInterval(()=>{
-
-        setTime(prev=>{
-
-            if(prev<=0)
-                return 0;
-
-            return prev-1;
-
-        });
-
-
-    },1000);
-
-
-    return ()=>clearInterval(timer);
-
-
-},[]);
-
-
-const formatTime=(seconds:number)=>{
-
-    const min =
-    Math.floor(seconds/60);
-
-
-    const sec =
-    seconds%60;
-
-
-    return `${min}:${sec
-    .toString()
-    .padStart(2,"0")}`;
-
-};
-    // Load existing interview state
-
-    useEffect(()=>{
-
-        loadInterview();
-
-    },[]);
-
-
-
-const loadInterview = async () => {
-
-    try {
-
+    const loadInterview = async () => {
+      try {
         const res =
-            await interviewService.getInterviewState(sessionId);
+          await interviewService.getInterviewState(
+            sessionId
+          );
 
         const data = res.data;
 
         if (data.session?.phase) {
-            setPhase(data.session.phase);
+          setPhase(data.session.phase);
         }
 
         if (data.firstQuestion) {
-            setProblem(data.firstQuestion);
+          // Keeping this available for future interview logic.
+          // We don't render it separately in the chat.
+          console.log(
+            "FIRST QUESTION:",
+            data.firstQuestion
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Failed to load interview:",
+          err
+        );
+      }
+    };
+
+    loadInterview();
+  }, [sessionId]);
+
+  /*
+   * Interview timer
+   */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime((prev) => {
+        if (prev <= 0) {
+          return 0;
         }
 
-    } catch (err) {
+        return prev - 1;
+      });
+    }, 1000);
 
-        console.log(err);
+    return () => clearInterval(timer);
+  }, []);
 
-    }
+  /*
+   * Auto scroll to newest message
+   */
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, typingMessage]);
 
-};
+  /*
+   * Handle interview-ended event
+   */
+  useEffect(() => {
+    const handleInterviewEnded = () => {
+      setTimeout(() => {
+        navigate({
+          to: "/interview/$sessionId/report",
+          params: {
+            sessionId,
+          },
+        });
+      }, 2000);
+    };
 
-    // Start interview
+    socket.on(
+      "interview-ended",
+      handleInterviewEnded
+    );
 
+    return () => {
+      socket.off(
+        "interview-ended",
+        handleInterviewEnded
+      );
+    };
+  }, [sessionId, navigate]);
 
-const typeAIMessage = async (
-    text: string
-) => {
+  /*
+   * Send code changes to backend
+   */
+  useEffect(() => {
+    if (!sessionId) return;
+    if (!code.trim()) return;
 
-    setTyping(true);
+    const timer = setTimeout(() => {
+      socket.emit("code-update", {
+        sessionId,
+        code,
+      });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [code, sessionId]);
+
+  /*
+   * Type AI message
+   *
+   * IMPORTANT:
+   * The temporary typing message is rendered INSIDE
+   * the conversation instead of above the conversation.
+   */
+  const typeAIMessage = async (text: string) => {
+    if (!text) return;
+
+    setTypingMessage("");
 
     let output = "";
 
     for (const char of text) {
+      output += char;
 
-        output += char;
+      setTypingMessage(output);
 
-        setCurrentQuestion(output);
-
-        await new Promise(resolve =>
-            setTimeout(resolve, 20)
-        );
-
+      await new Promise((resolve) =>
+        setTimeout(resolve, 18)
+      );
     }
 
-    setMessages(prev => [
-        ...prev,
-        {
-            role: "INTERVIEWER",
-            content: text,
-        },
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "INTERVIEWER",
+        content: text,
+      },
     ]);
 
-    setCurrentQuestion("");
+    setTypingMessage("");
+  };
 
-    setTyping(false);
+  /*
+   * Receive AI response
+   */
+  useEffect(() => {
+    const handleAIResponse = async (data: any) => {
+      if (data.phase) {
+        setPhase(data.phase);
+      }
 
-};
+      await typeAIMessage(
+        data.aiReply ??
+          data.message ??
+          ""
+      );
 
-    // Send candidate answer
+      if (data.phase === "FINISHED") {
+        try {
+          await interviewService.endInterview(
+            sessionId
+          );
 
-    const sendMessage = async()=>{
-
-
-        if(!input.trim())
-            return;
-
-
-
-        const userMessage = input;
-
-
-
-        setMessages(prev=>[
-            ...prev,
-            {
-                role:"CANDIDATE",
-                content:userMessage
-            }
-        ]);
-
-
-
-        setInput("");
-
-
-
-     try {
-
-    setLoading(true);
-
-    setInterviewContext(prev => ({
-
-        ...prev,
-
-        explainedApproach: true
-
-    }));
-
- await interviewService.submitAIResponse(
-    sessionId,
-    {
-        message: userMessage,
-        code: interviewContext.submittedCode ? code : ""
-    }
-);
-} catch (err) {
-
-    console.log(err);
-
-} finally {
-
-    setLoading(false);
-
-}
-
+          await navigate({
+            to: "/interview/$sessionId/report",
+            params: {
+              sessionId,
+            },
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      }
     };
 
-
-
-return (
-
-<div className="
-h-full
-grid
-grid-cols-2
-bg-black
-text-white
-">
-
-
-
-
-{/* LEFT : CHAT */}
-
-<div className="
-flex
-flex-col
-border-r
-border-gray-800
-">
-
-
-{/* Header */}
-
-<div className="
-p-4
-border-b
-border-gray-800
-flex
-justify-between
-">
-
-
-<div>
-
-<h2 className="
-text-xl
-font-semibold
-">
-
-AI Interviewer
-
-</h2>
-
-
-<p className="
-text-sm
-text-gray-400
-">
-
-<div className="
-px-3
-py-1
-rounded
-bg-violet-900
-text-violet-300
-text-sm
-">
-
-{phase}
-
-</div>
-
-</p>
-
-</div>
-
-
-
-<div className="
-bg-gray-900
-px-4
-py-2
-rounded
-">
-
-⏱ {formatTime(time)}
-
-</div>
-
-
-</div>
-
-
-
-
-
-{/* Question Card */}
-
-{
-currentQuestion &&
-
-<div className="
-m-4
-p-4
-rounded-xl
-bg-gray-900
-border
-border-gray-700
-">
-
-
-<p className="
-text-sm
-text-violet-400
-mb-2
-">
-
-Interviewer
-
-</p>
-
-
-<p>
-
-{currentQuestion}
-
-</p>
-
-
-</div>
-
-}
-
-
-
-
-
-{/* Messages */}
-
-<div className="
-flex-1
-overflow-y-auto
-p-4
-space-y-3
-">
-
-
-{
-messages.map((msg,index)=>(
-
-
-<div
-key={index}
-
-className={`
-p-3
-rounded-lg
-max-w-[80%]
-
-${
-msg.role==="INTERVIEWER"
-
-?
-
-"bg-gray-800"
-
-:
-
-"bg-violet-600 ml-auto"
-
-}
-
-`}
->
-
-{msg.content}
-
-
-</div>
-
-
-))
-
-}
-
-
-</div>
-
-{
-typing &&
-
-<div className="
-text-gray-400
-italic
-">
-
-AI is typing...
-
-</div>
-
-}
-
-
-
-
-
-{/* Input */}
-
-<div className="
-p-3
-border-t
-border-gray-800
-flex
-gap-2
-">
-
-
-<input
-
-value={input}
-
-onChange={
-e=>setInput(e.target.value)
-}
-
-className="
-flex-1
-bg-gray-900
-rounded
-px-3
-"
-
-/>
-
-
-
-<button
-
-onClick={sendMessage}
-
-className="
-bg-blue-600
-px-4
-rounded
-"
-
->
-
-Send
-
-</button>
-
-
-</div>
-
-
-
-</div>
-
-
-
-
-
-
-
-
-</div>
-
-);
+    socket.on(
+      "interviewer-message",
+      handleAIResponse
+    );
+
+    return () => {
+      socket.off(
+        "interviewer-message",
+        handleAIResponse
+      );
+    };
+  }, [sessionId, navigate]);
+
+  /*
+   * Send candidate message
+   */
+  const sendMessage = async () => {
+    const userMessage = input.trim();
+
+    if (!userMessage || loading) {
+      return;
+    }
+
+    /*
+     * Immediately put candidate message
+     * into the conversation.
+     */
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "CANDIDATE",
+        content: userMessage,
+      },
+    ]);
+
+    setInput("");
+    setLoading(true);
+
+    try {
+      await interviewService.submitAIResponse(
+        sessionId,
+        {
+          message: userMessage,
+          code,
+        }
+      );
+    } catch (err) {
+      console.error(
+        "Failed to send interview response:",
+        err
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+   * Enter = send
+   * Shift + Enter = new line
+   */
+  const handleInputKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (
+      e.key === "Enter" &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+
+    return `${min}:${sec
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const phaseLabel = phase
+    .replace("_", " ")
+    .toLowerCase()
+    .replace(/^\w/, (c) =>
+      c.toUpperCase()
+    );
+
+  return (
+    <aside className="flex h-full min-h-0 min-w-0 flex-col border-l border-border/60 bg-card/20">
+      {/* ================================================= */}
+      {/* HEADER */}
+      {/* ================================================= */}
+
+      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">
+            AI Interviewer
+          </p>
+
+          <div className="mt-1 flex items-center gap-2">
+            <span className="rounded-md bg-violet-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-400">
+              {phaseLabel}
+            </span>
+          </div>
+        </div>
+
+        <div className="ml-2 shrink-0 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-xs font-medium tabular-nums">
+          ⏱ {formatTime(time)}
+        </div>
+      </div>
+
+      {/* ================================================= */}
+      {/* CHAT */}
+      {/* ================================================= */}
+
+      <div
+        className="interview-chat-scroll min-h-0 flex-1 overflow-y-auto px-3 py-4"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            "rgba(139,92,246,0.45) transparent",
+        }}
+      >
+        <div className="space-y-4">
+        {messages.map((msg, index) => {
+  const isAI = msg.role === "INTERVIEWER";
+
+  return (
+    <div
+      key={`${index}-${msg.role}`}
+      className={`flex items-start gap-2.5 ${
+        isAI ? "justify-start" : "justify-end"
+      }`}
+    >
+      {/* AI avatar */}
+      {isAI && (
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10">
+          <Bot className="h-3.5 w-3.5 text-violet-400" />
+        </div>
+      )}
+
+      <div
+        className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+          isAI
+            ? "rounded-tl-md border border-border/60 bg-card text-foreground"
+            : "rounded-tr-md bg-violet-600 text-white"
+        }`}
+      >
+        {msg.content}
+      </div>
+
+      {/* Candidate avatar */}
+      {!isAI && (
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-600/15">
+          <UserRound className="h-3.5 w-3.5 text-violet-300" />
+        </div>
+      )}
+    </div>
+  );
+})}
+
+          {/* AI currently typing */}
+       {typingMessage && (
+  <div className="flex items-start gap-2.5 justify-start">
+    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10">
+      <Bot className="h-3.5 w-3.5 text-violet-400" />
+    </div>
+
+    <div className="max-w-[82%] rounded-2xl rounded-tl-md border border-border/60 bg-card px-3.5 py-2.5 text-sm leading-relaxed">
+      {typingMessage}
+      <span className="ml-0.5 inline-block animate-pulse">
+        ▋
+      </span>
+    </div>
+  </div>
+)}
+
+          {/* Loading indicator */}
+          {loading && !typingMessage && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl rounded-tl-md border border-border/60 bg-card px-3.5 py-2.5">
+                <div className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+                  <span
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
+                    style={{
+                      animationDelay: "120ms",
+                    }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
+                    style={{
+                      animationDelay: "240ms",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* ================================================= */}
+      {/* INPUT */}
+      {/* ================================================= */}
+
+      <div className="shrink-0 border-t border-border/60 bg-background/60 p-3">
+        <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-card/60 p-2 focus-within:border-violet-500/60">
+          <textarea
+            value={input}
+            onChange={(e) =>
+              setInput(e.target.value)
+            }
+            onKeyDown={handleInputKeyDown}
+            placeholder="Type your response..."
+            rows={1}
+            disabled={loading}
+            className="max-h-32 min-h-[36px] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={
+              loading || !input.trim()
+            }
+            className="shrink-0 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </div>
+
+        <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
+          Enter to send · Shift + Enter for new line
+        </p>
+      </div>
+
+      {/* WebKit scrollbar */}
+      <style>
+        {`
+          .interview-chat-scroll::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .interview-chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          .interview-chat-scroll::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.35);
+            border-radius: 999px;
+          }
+
+          .interview-chat-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.6);
+          }
+        `}
+      </style>
+    </aside>
+  );
 }

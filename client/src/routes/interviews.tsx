@@ -27,6 +27,10 @@ function InterviewsPage() {
 
     const [difficulty, setDifficulty] = useState("Medium");
     const [language, setLanguage] = useState("java");
+    const [company, setCompany] = useState("");
+const [role, setRole] = useState("SDE-1");
+const [questionStrategy, setQuestionStrategy] =
+    useState("RELEVANT");
 
     const [loading, setLoading] = useState(false);
 
@@ -34,11 +38,14 @@ function InterviewsPage() {
         setLoading(true);
 
         try {
-            const res = await interviewService.startAISession({
-                type: "DSA",
-                difficulty,
-                language,
-            });
+           const res = await interviewService.startAISession({
+    type: "DSA",
+    difficulty,
+    language,
+    company: company.trim() || null,
+    role,
+    questionStrategy,
+});
 
             const sessionId =
                 res.data.session.id;
@@ -139,6 +146,87 @@ function InterviewsPage() {
                             </SelectContent>
                         </Select>
                     </div>
+
+                                    <div>
+                    <label className="mb-2 block text-sm font-medium">
+                        Company
+                    </label>
+
+                    <input
+                        value={company}
+                        onChange={(e) =>
+                            setCompany(e.target.value)
+                        }
+                        placeholder="e.g. Microsoft, Google, Amazon (optional)"
+                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-violet-500"
+                    />
+
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Leave blank for a general software engineering interview.
+                    </p>
+                </div>
+
+                <div>
+                    <label className="mb-2 block text-sm font-medium">
+                        Role
+                    </label>
+
+                    <Select
+                        value={role}
+                        onValueChange={setRole}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                            <SelectItem value="SDE-1">
+                                SDE-1
+                            </SelectItem>
+
+                            <SelectItem value="SDE-2">
+                                SDE-2
+                            </SelectItem>
+
+                            <SelectItem value="Senior Software Engineer">
+                                Senior Software Engineer
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div>
+                    <label className="mb-2 block text-sm font-medium">
+                        Question Type
+                    </label>
+
+                    <Select
+                        value={questionStrategy}
+                        onValueChange={setQuestionStrategy}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                            <SelectItem value="RELEVANT">
+                                Interview Relevant
+                            </SelectItem>
+
+                            <SelectItem value="PYQ">
+                                Reported Interview Question
+                            </SelectItem>
+
+                            <SelectItem value="UNSEEN">
+                                Unseen Question
+                            </SelectItem>
+
+                            <SelectItem value="MIXED">
+                                Mixed
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
                     <Button
                         className="w-full"

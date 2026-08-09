@@ -5,7 +5,8 @@ import {
     TrendingUp,
     Trophy,
     CircleCheckBig,
-    AlertCircle
+    AlertCircle,
+    ShieldAlert,
 } from "lucide-react";
 
 interface Props {
@@ -15,34 +16,43 @@ interface Props {
 
 export default function ScoreCard({
     title,
-    score
+    score,
 }: Props) {
+    const safeScore = Math.min(Math.max(Number(score) || 0, 0), 5);
 
-    const percent = Math.min(Math.max(score, 0), 100);
+    const percent = Math.round((safeScore / 5) * 100);
 
-    let color = "#22c55e";
-    let badge = "Excellent";
-    let bg = "from-emerald-500/20 to-emerald-700/10";
+    let color = "#ef4444";
+    let badge = "Needs Work";
+    let badgeIcon = <AlertCircle size={16} />;
+    let gradient =
+        "from-red-500/[0.12] via-zinc-950 to-black";
+    let glow = "shadow-red-500/10";
 
-    if (score < 90) {
+    if (safeScore >= 4) {
+        color = "#22c55e";
+        badge = "Strong";
+        badgeIcon = <Trophy size={16} />;
+        gradient =
+            "from-emerald-500/[0.14] via-zinc-950 to-black";
+        glow = "shadow-emerald-500/10";
+    } else if (safeScore >= 3) {
         color = "#3b82f6";
         badge = "Good";
-        bg = "from-blue-500/20 to-blue-700/10";
+        badgeIcon = <CircleCheckBig size={16} />;
+        gradient =
+            "from-blue-500/[0.14] via-zinc-950 to-black";
+        glow = "shadow-blue-500/10";
+    } else if (safeScore >= 2) {
+        color = "#f59e0b";
+        badge = "Borderline";
+        badgeIcon = <ShieldAlert size={16} />;
+        gradient =
+            "from-amber-500/[0.14] via-zinc-950 to-black";
+        glow = "shadow-amber-500/10";
     }
 
-    if (score < 75) {
-        color = "#facc15";
-        badge = "Average";
-        bg = "from-yellow-500/20 to-yellow-700/10";
-    }
-
-    if (score < 60) {
-        color = "#ef4444";
-        badge = "Needs Work";
-        bg = "from-red-500/20 to-red-700/10";
-    }
-
-    const radius = 44;
+    const radius = 46;
     const circumference = 2 * Math.PI * radius;
 
     const offset =
@@ -50,260 +60,184 @@ export default function ScoreCard({
         (percent / 100) * circumference;
 
     return (
-
         <motion.div
-
             initial={{
                 opacity: 0,
-                y: 25
+                y: 20,
             }}
-
             animate={{
                 opacity: 1,
-                y: 0
+                y: 0,
             }}
-
-            transition={{
-                duration: .45
-            }}
-
             whileHover={{
-                y: -6,
-                scale: 1.02
+                y: -5,
             }}
-
+            transition={{
+                duration: 0.45,
+            }}
             className={`
-            relative
-            overflow-hidden
-            rounded-3xl
-            border
-            border-zinc-800
-            bg-gradient-to-br
-            ${bg}
-            backdrop-blur-xl
-            p-6
-            shadow-xl
-        `}
+                group
+                relative
+                overflow-hidden
+                rounded-[28px]
+                border
+                border-zinc-800/80
+                bg-gradient-to-br
+                ${gradient}
+                p-6
+                shadow-2xl
+                ${glow}
+                backdrop-blur-xl
+            `}
         >
-
-            <div className="absolute right-5 top-5">
-
-                <TrendingUp
-                    className="text-violet-400"
-                    size={20}
-                />
-
-            </div>
-
-            <p
-                className="
-                text-zinc-400
-                uppercase
-                tracking-widest
-                text-xs
-            "
-            >
-
-                {title}
-
-            </p>
-
+            {/* Ambient glow */}
             <div
-                className="
-                mt-6
-                flex
-                items-center
-                justify-between
-            "
-            >
+                className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full blur-3xl opacity-20"
+                style={{
+                    backgroundColor: color,
+                }}
+            />
 
+            {/* Top line */}
+            <div className="relative flex items-center justify-between">
                 <div>
-
-                    <motion.h2
-
-                        initial={{
-                            opacity: 0
-                        }}
-
-                        animate={{
-                            opacity: 1
-                        }}
-
-                        className="
-                        text-5xl
-                        font-black
-                        leading-none
-                    "
-                    >
-
-                        {score}
-
-                    </motion.h2>
-
-                    <p
-                        className="
-                        mt-3
-                        text-sm
-                        font-semibold
-                    "
-                        style={{
-                            color
-                        }}
-                    >
-
-                        {badge}
-
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                        {title}
                     </p>
 
+                    <p className="mt-1 text-xs text-zinc-600">
+                        AI Evaluation
+                    </p>
                 </div>
 
-                <div className="relative">
+                <div
+                    className="rounded-xl border border-zinc-800 bg-black/40 p-2"
+                >
+                    <TrendingUp
+                        size={17}
+                        className="text-violet-400"
+                    />
+                </div>
+            </div>
 
-                    <svg
-                        width="110"
-                        height="110"
+            {/* Main score */}
+            <div className="relative mt-7 flex items-center justify-between gap-5">
+                <div>
+                    <div className="flex items-baseline gap-2">
+                        <motion.span
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.15 }}
+                            className="text-5xl font-black tracking-tight text-white"
+                        >
+                            {safeScore}
+                        </motion.span>
+
+                        <span className="text-sm font-semibold text-zinc-600">
+                            / 5
+                        </span>
+                    </div>
+
+                    <div
+                        className="mt-3 flex items-center gap-2 text-sm font-semibold"
+                        style={{
+                            color,
+                        }}
                     >
+                        {badgeIcon}
+                        {badge}
+                    </div>
+                </div>
 
+                {/* Circular score */}
+                <div className="relative shrink-0">
+                    <svg
+                        width="116"
+                        height="116"
+                        viewBox="0 0 116 116"
+                        className="-rotate-90"
+                    >
                         <circle
-
-                            cx="55"
-
-                            cy="55"
-
+                            cx="58"
+                            cy="58"
                             r={radius}
-
                             stroke="#27272a"
-
-                            strokeWidth="9"
-
+                            strokeWidth="8"
                             fill="none"
-
                         />
 
                         <motion.circle
-
-                            cx="55"
-
-                            cy="55"
-
+                            cx="58"
+                            cy="58"
                             r={radius}
-
                             stroke={color}
-
-                            strokeWidth="9"
-
+                            strokeWidth="8"
                             fill="none"
-
                             strokeLinecap="round"
-
                             strokeDasharray={circumference}
-
                             initial={{
-                                strokeDashoffset: circumference
+                                strokeDashoffset: circumference,
                             }}
-
                             animate={{
-                                strokeDashoffset: offset
+                                strokeDashoffset: offset,
                             }}
-
                             transition={{
-                                duration: 1.2
+                                duration: 1.1,
+                                ease: "easeOut",
                             }}
-
-                            transform="rotate(-90 55 55)"
-
                         />
-
                     </svg>
 
-                    <div
-                        className="
-                        absolute
-                        inset-0
-                        flex
-                        items-center
-                        justify-center
-                        text-xl
-                        font-bold
-                    "
-                    >
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-xl font-black text-white">
+                            {percent}%
+                        </span>
 
-                        {percent}%
-
+                        <span className="text-[9px] uppercase tracking-widest text-zinc-600">
+                            score
+                        </span>
                     </div>
-
                 </div>
-
             </div>
 
-            <div
-                className="
-                mt-7
-                flex
-                items-center
-                justify-between
-                border-t
-                border-zinc-800
-                pt-4
-            "
-            >
+            {/* Bottom metric */}
+            <div className="relative mt-7 border-t border-zinc-800/80 pt-4">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-500">
+                        Performance
+                    </span>
 
-                <div
-                    className="
-                    flex
-                    items-center
-                    gap-2
-                    text-zinc-400
-                    text-sm
-                "
-                >
-
-                    {
-
-                        score >= 90 ?
-
-                            <Trophy
-                                size={16}
-                                className="text-yellow-400"
-                            />
-
-                            :
-
-                            score >= 70 ?
-
-                                <CircleCheckBig
-                                    size={16}
-                                    className="text-green-400"
-                                />
-
-                                :
-
-                                <AlertCircle
-                                    size={16}
-                                    className="text-orange-400"
-                                />
-
-                    }
-
-                    Performance
-
+                    <span
+                        className="text-xs font-semibold"
+                        style={{
+                            color,
+                        }}
+                    >
+                        {percent}/100
+                    </span>
                 </div>
 
-                <span
-                    className="
-                    text-xs
-                    text-zinc-500
-                "
-                >
-
-                    AI Evaluation
-
-                </span>
-
+                {/* Progress bar */}
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-900">
+                    <motion.div
+                        initial={{
+                            width: 0,
+                        }}
+                        animate={{
+                            width: `${percent}%`,
+                        }}
+                        transition={{
+                            duration: 1,
+                            delay: 0.2,
+                        }}
+                        className="h-full rounded-full"
+                        style={{
+                            backgroundColor: color,
+                            boxShadow: `0 0 12px ${color}`,
+                        }}
+                    />
+                </div>
             </div>
-
         </motion.div>
-
     );
-
 }

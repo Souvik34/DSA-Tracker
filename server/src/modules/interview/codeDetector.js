@@ -11,11 +11,9 @@
  */
 
 export const SubmissionType = {
-
     TEXT: "TEXT",
-
-    CODE: "CODE"
-
+    CODE: "CODE",
+    SUBMISSION: "SUBMISSION"
 };
 
 const CODE_KEYWORDS = [
@@ -44,28 +42,27 @@ const CODE_KEYWORDS = [
 
 
 export const detectSubmissionType = (
-    message = ""
+    message = "",
+    isSubmission = false
 ) => {
+
+    if (isSubmission) {
+        return SubmissionType.SUBMISSION;
+    }
 
     const score =
         CODE_KEYWORDS.reduce(
-
             (count, keyword) =>
-
                 message.includes(keyword)
                     ? count + 1
                     : count,
-
             0
         );
 
     return score >= 3
         ? SubmissionType.CODE
         : SubmissionType.TEXT;
-
 };
-
-
 
 export const analyzeCodeProgress = ({
 

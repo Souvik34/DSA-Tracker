@@ -1,32 +1,823 @@
+
 import { generateJavaParser } from "../../utils/javaParseGenerator.js";
 
+
+const generateJavaDataStructures = () => `
+
+/* =========================================================
+   LINKED LIST
+========================================================= */
+
+class ListNode {
+
+    int val;
+    ListNode next;
+
+    ListNode(int val) {
+        this.val = val;
+    }
+
+    ListNode(int val, ListNode next) {
+        this.val = val;
+        this.next = next;
+    }
+}
+
+
+/* =========================================================
+   BINARY TREE
+========================================================= */
+
+class TreeNode {
+
+    int val;
+    TreeNode left;
+    TreeNode right;
+
+    TreeNode(int val) {
+        this.val = val;
+    }
+}
+`;
+
+
+/* =========================================================
+   PARSERS
+========================================================= */
+
+const generateJavaParsers = () => `
+
+static int[] parseIntArray(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return new int[0];
+    }
+
+    String[] parts = input.split(",");
+
+    int[] result = new int[parts.length];
+
+    for (int i = 0; i < parts.length; i++) {
+        result[i] = Integer.parseInt(parts[i].trim());
+    }
+
+    return result;
+}
+
+
+static long[] parseLongArray(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return new long[0];
+    }
+
+    String[] parts = input.split(",");
+
+    long[] result = new long[parts.length];
+
+    for (int i = 0; i < parts.length; i++) {
+        result[i] = Long.parseLong(parts[i].trim());
+    }
+
+    return result;
+}
+
+
+static double[] parseDoubleArray(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return new double[0];
+    }
+
+    String[] parts = input.split(",");
+
+    double[] result = new double[parts.length];
+
+    for (int i = 0; i < parts.length; i++) {
+        result[i] = Double.parseDouble(parts[i].trim());
+    }
+
+    return result;
+}
+
+
+static boolean[] parseBooleanArray(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return new boolean[0];
+    }
+
+    String[] parts = input.split(",");
+
+    boolean[] result = new boolean[parts.length];
+
+    for (int i = 0; i < parts.length; i++) {
+        result[i] = Boolean.parseBoolean(parts[i].trim());
+    }
+
+    return result;
+}
+
+
+static String[] parseStringArray(String input) {
+
+    input = input.trim();
+
+    if (
+        input.isEmpty() ||
+        input.equals("[]")
+    ) {
+        return new String[0];
+    }
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .replace("\\\"", "")
+        .trim();
+
+    String[] parts = input.split(",");
+
+    for (int i = 0; i < parts.length; i++) {
+        parts[i] = parts[i].trim();
+    }
+
+    return parts;
+}
+
+
+static int[][] parseIntMatrix(String input) {
+
+    input = input
+        .replace(" ", "")
+        .trim();
+
+    if (input.equals("[]")) {
+        return new int[0][0];
+    }
+
+    input = input
+        .replace("[[", "")
+        .replace("]]", "");
+
+    if (input.isEmpty()) {
+        return new int[0][0];
+    }
+
+    String[] rows = input.split("\\\\],\\\\[");
+
+    int[][] result = new int[rows.length][];
+
+    for (int i = 0; i < rows.length; i++) {
+
+        String row = rows[i]
+            .replace("[", "")
+            .replace("]", "");
+
+        if (row.isEmpty()) {
+            result[i] = new int[0];
+            continue;
+        }
+
+        String[] values = row.split(",");
+
+        result[i] = new int[values.length];
+
+        for (int j = 0; j < values.length; j++) {
+
+            result[i][j] =
+                Integer.parseInt(values[j].trim());
+        }
+    }
+
+    return result;
+}
+
+
+static List<Integer> parseIntegerList(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    List<Integer> result = new ArrayList<>();
+
+    if (input.isEmpty()) {
+        return result;
+    }
+
+    String[] parts = input.split(",");
+
+    for (String part : parts) {
+
+        result.add(
+            Integer.parseInt(part.trim())
+        );
+    }
+
+    return result;
+}
+
+
+static List<String> parseStringList(String input) {
+
+    input = input.trim();
+
+    List<String> result = new ArrayList<>();
+
+    if (
+        input.equals("[]") ||
+        input.isEmpty()
+    ) {
+        return result;
+    }
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .replace("\\\"", "")
+        .trim();
+
+    String[] parts = input.split(",");
+
+    for (String part : parts) {
+
+        result.add(part.trim());
+    }
+
+    return result;
+}
+
+
+/*
+ * Fallback for signatures where the AI
+ * gives only "List".
+ *
+ * Uses Object so no raw-type warning
+ * is generated by javac.
+ */
+static List<Object> parseGenericList(String input) {
+
+    input = input.trim();
+
+    List<Object> result = new ArrayList<>();
+
+    if (
+        input.equals("[]") ||
+        input.isEmpty()
+    ) {
+        return result;
+    }
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .replace("\\\"", "")
+        .trim();
+
+    String[] parts = input.split(",");
+
+    for (String part : parts) {
+
+        String value = part.trim();
+
+        try {
+
+            result.add(
+                Integer.parseInt(value)
+            );
+
+        } catch (NumberFormatException e) {
+
+            result.add(value);
+        }
+    }
+
+    return result;
+}
+
+
+static List<List<Integer>> parseIntegerMatrixList(
+    String input
+) {
+
+    List<List<Integer>> result =
+        new ArrayList<>();
+
+    input = input
+        .replace(" ", "")
+        .trim();
+
+    if (input.equals("[]")) {
+        return result;
+    }
+
+    input = input
+        .replace("[[", "")
+        .replace("]]", "");
+
+    if (input.isEmpty()) {
+        return result;
+    }
+
+    String[] rows =
+        input.split("\\\\],\\\\[");
+
+    for (String row : rows) {
+
+        List<Integer> current =
+            new ArrayList<>();
+
+        row = row
+            .replace("[", "")
+            .replace("]", "");
+
+        if (!row.isEmpty()) {
+
+            String[] values =
+                row.split(",");
+
+            for (String value : values) {
+
+                current.add(
+                    Integer.parseInt(
+                        value.trim()
+                    )
+                );
+            }
+        }
+
+        result.add(current);
+    }
+
+    return result;
+}
+
+
+static ListNode parseListNode(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return null;
+    }
+
+    String[] values = input.split(",");
+
+    ListNode dummy = new ListNode(0);
+
+    ListNode current = dummy;
+
+    for (String value : values) {
+
+        current.next =
+            new ListNode(
+                Integer.parseInt(value.trim())
+            );
+
+        current = current.next;
+    }
+
+    return dummy.next;
+}
+
+
+static TreeNode parseTreeNode(String input) {
+
+    input = input
+        .replace("[", "")
+        .replace("]", "")
+        .trim();
+
+    if (input.isEmpty()) {
+        return null;
+    }
+
+    String[] values = input.split(",");
+
+    if (
+        values.length == 0 ||
+        values[0].trim().equals("null")
+    ) {
+        return null;
+    }
+
+    TreeNode root =
+        new TreeNode(
+            Integer.parseInt(values[0].trim())
+        );
+
+    Queue<TreeNode> queue =
+        new LinkedList<>();
+
+    queue.offer(root);
+
+    int index = 1;
+
+    while (
+        !queue.isEmpty() &&
+        index < values.length
+    ) {
+
+        TreeNode current = queue.poll();
+
+        String left =
+            values[index++].trim();
+
+        if (!left.equals("null")) {
+
+            current.left =
+                new TreeNode(
+                    Integer.parseInt(left)
+                );
+
+            queue.offer(current.left);
+        }
+
+        if (index >= values.length) {
+            break;
+        }
+
+        String right =
+            values[index++].trim();
+
+        if (!right.equals("null")) {
+
+            current.right =
+                new TreeNode(
+                    Integer.parseInt(right)
+                );
+
+            queue.offer(current.right);
+        }
+    }
+
+    return root;
+}
+`;
+
+
+/* =========================================================
+   SERIALIZERS
+========================================================= */
+
+const generateJavaSerializers = () => `
+
+static void printResult(boolean value) {
+    System.out.println(value);
+}
+
+
+static void printResult(int value) {
+    System.out.println(value);
+}
+
+
+static void printResult(long value) {
+    System.out.println(value);
+}
+
+
+static void printResult(double value) {
+    System.out.println(value);
+}
+
+
+static void printResult(char value) {
+    System.out.println(value);
+}
+
+
+static void printResult(String value) {
+    System.out.println(value);
+}
+
+
+/* =========================================================
+   ARRAY SERIALIZERS
+========================================================= */
+
+static void printResult(int[] arr) {
+
+    if (arr == null) {
+        System.out.println();
+        return;
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+
+        if (i > 0) {
+            System.out.print(",");
+        }
+
+        System.out.print(arr[i]);
+    }
+
+    System.out.println();
+}
+
+
+static void printResult(long[] arr) {
+
+    if (arr == null) {
+        System.out.println();
+        return;
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+
+        if (i > 0) {
+            System.out.print(",");
+        }
+
+        System.out.print(arr[i]);
+    }
+
+    System.out.println();
+}
+
+
+static void printResult(double[] arr) {
+
+    if (arr == null) {
+        System.out.println();
+        return;
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+
+        if (i > 0) {
+            System.out.print(",");
+        }
+
+        System.out.print(arr[i]);
+    }
+
+    System.out.println();
+}
+
+
+static void printResult(String[] arr) {
+
+    if (arr == null) {
+        System.out.println();
+        return;
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+
+        if (i > 0) {
+            System.out.print(",");
+        }
+
+        System.out.print(arr[i]);
+    }
+
+    System.out.println();
+}
+
+
+static void printResult(boolean[] arr) {
+
+    if (arr == null) {
+        System.out.println();
+        return;
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+
+        if (i > 0) {
+            System.out.print(",");
+        }
+
+        System.out.print(arr[i]);
+    }
+
+    System.out.println();
+}
+
+
+/* =========================================================
+   LINKED LIST SERIALIZER
+========================================================= */
+
+static void printResult(ListNode head) {
+
+    if (head == null) {
+        System.out.println();
+        return;
+    }
+
+    boolean first = true;
+
+    while (head != null) {
+
+        if (!first) {
+            System.out.print(",");
+        }
+
+        System.out.print(head.val);
+
+        first = false;
+        head = head.next;
+    }
+
+    System.out.println();
+}
+
+
+/* =========================================================
+   TREE SERIALIZER
+========================================================= */
+
+static void printResult(TreeNode root) {
+
+    if (root == null) {
+        System.out.println();
+        return;
+    }
+
+    Queue<TreeNode> queue =
+        new LinkedList<>();
+
+    queue.offer(root);
+
+    boolean first = true;
+
+    while (!queue.isEmpty()) {
+
+        TreeNode node = queue.poll();
+
+        if (!first) {
+            System.out.print(",");
+        }
+
+        if (node == null) {
+
+            System.out.print("null");
+
+        } else {
+
+            System.out.print(node.val);
+
+            queue.offer(node.left);
+            queue.offer(node.right);
+        }
+
+        first = false;
+    }
+
+    System.out.println();
+}
+
+
+/* =========================================================
+   GENERIC LIST SERIALIZER
+========================================================= */
+
+/*
+ * Use List<?> instead of raw List.
+ *
+ * This prevents:
+ *
+ * "uses unchecked or unsafe operations"
+ *
+ * from javac.
+ */
+static void printResult(List<?> list) {
+
+    if (list == null) {
+        System.out.println();
+        return;
+    }
+
+    System.out.println(list);
+}
+`;
+
+
+/* =========================================================
+   MAIN PREPARATION
+========================================================= */
+
 export const prepareJavaCode = ({ code, problem }) => {
-      console.log("FUNCTION SIGNATURE");
-    console.dir(problem.functionSignature, { depth: null });
-    const parserCode = generateJavaParser(
-        problem.functionSignature.parameters
-    );
 
-    const args = problem.functionSignature.parameters
-        .map(p => p.name)
-        .join(", ");
+    const signature = problem.functionSignature;
 
+    console.log("FUNCTION SIGNATURE");
+    console.dir(signature, { depth: null });
+
+
+    /*
+     * Parser generation is delegated to the existing
+     * parser generator because it already knows how
+     * to map signature parameter types to parser calls.
+     */
+    const parserCode =
+        generateJavaParser(signature.parameters);
+
+
+    /*
+     * Build method arguments.
+     */
+    const args =
+        signature.parameters
+            .map((p) => p.name)
+            .join(", ");
+
+
+    const returnType =
+        signature.returnType;
+
+
+    let outputCode;
+
+
+    /*
+     * Handle void methods.
+     */
+    if (returnType === "void") {
+
+        outputCode = `
+        sol.${signature.name}(${args});
+        `;
+
+    } else {
+
+        /*
+         * Store result and serialize it.
+         */
+        outputCode = `
+        var result =
+            sol.${signature.name}(${args});
+
+        printResult(result);
+        `;
+    }
+
+
+    /*
+     * IMPORTANT:
+     *
+     * ListNode and TreeNode are ALWAYS generated.
+     *
+     * The parser/serializer helper methods are also
+     * always generated, so they must always have their
+     * referenced classes available.
+     *
+     * This avoids:
+     *
+     * cannot find symbol: class ListNode
+     * cannot find symbol: class TreeNode
+     */
     return `
 import java.util.*;
+
+${generateJavaDataStructures()}
 
 ${code}
 
 public class Main {
+
     public static void main(String[] args) {
 
         ${parserCode}
 
-        Solution sol = new Solution();
+        Solution sol =
+            new Solution();
 
-        System.out.println(
-            sol.${problem.functionSignature.name}(${args})
-        );
+        ${outputCode}
     }
+
+
+    ${generateJavaParsers()}
+
+
+    ${generateJavaSerializers()}
 }
 `;
 };

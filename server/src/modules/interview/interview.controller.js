@@ -18,9 +18,12 @@ export const startInterview = async (
   try {
 
 const {
-  type,
-  difficulty,
-  language,
+    type,
+    difficulty,
+    language,
+    company,
+    role,
+    questionStrategy
 } = req.body;
 
 const userId = req.user.id;
@@ -29,10 +32,13 @@ const userId = req.user.id;
 
     const data =
       await startInterviewService({
-        userId,
-        type,
-        difficulty,
-        language,
+          userId,
+    type,
+    difficulty,
+    language,
+    company,
+    role,
+    questionStrategy
       });
 
 
@@ -58,11 +64,12 @@ export const sendInterviewMessage =
 
     try {
 
-      const {
-        sessionId,
-        message,
-        code,
-      } = req.body;
+    const {
+    sessionId,
+    message,
+    code,
+    isSubmission,
+} = req.body;
 
 
 
@@ -79,8 +86,8 @@ const data =
         sessionId,
         message,
         code,
+        isSubmission,
     });
-
 console.log("RETURNING TO FRONTEND");
 console.dir(data, { depth: null });
 

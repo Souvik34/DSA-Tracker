@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import interviewService from "@/services/interviewService";
 import { useNavigate } from "@tanstack/react-router";
 import { useInterviewSocket } from "../../socket/interviewSocketProvider";
@@ -61,9 +61,9 @@ export default function AIInterviewerPanel({
   const [input, setInput] = useState("");
 
   const [loading, setLoading] = useState(false);
-
+const [showIdleModal, setShowIdleModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
+const interviewStartedRef = useRef(false);
   const interviewSocket = useInterviewSocket();
   const navigate = useNavigate();
 
@@ -98,6 +98,9 @@ export default function AIInterviewerPanel({
         if (data.session?.phase) {
           setPhase(data.session.phase);
         }
+        if (data?.aiReply) {
+  await addAIMessageSafely(data.aiReply);
+}
 
         if (data.firstQuestion) {
           // Keeping this available for future interview logic.
@@ -117,6 +120,215 @@ export default function AIInterviewerPanel({
 
     loadInterview();
   }, [sessionId]);
+   /*
+   * Receive AI response
+   */
+  /*
+ * Receive AI interviewer messages
+ *
+ * Socket messages are used for realtime responses.
+ * The HTTP response from submitAIResponse() is also used
+ * for reliability, especially for the initial introduction.
+ */
+useEffect(() => {
+
+  const handleAIResponse = async (data: any) => {
+
+    console.log(
+      "INTERVIEWER SOCKET MESSAGE:",
+      data
+    );
+
+    if (data.phase) {
+      setPhase(data.phase);
+    }
+
+    const text =
+      data.aiReply ??
+      data.message ??
+      "";
+
+    if (!text) {
+      console.warn(
+        "Received interviewer event without message:",
+        data
+      );
+      return;
+    }
+
+    await addAIMessageSafely(
+      text
+    );
+
+    if (data.phase === "FINISHED") {
+
+      try {
+
+        await interviewService.endInterview(
+          sessionId
+        );
+
+        await navigate({
+          to: "/interview/$sessionId/report",
+          params: {
+            sessionId,
+          },
+        });
+
+      } catch (err) {
+
+        console.error(
+          "Failed to open interview report:",
+          err
+        );
+
+      }
+    }
+  };
+
+  socket.on(
+    "interviewer-message",
+    handleAIResponse
+  );
+
+  return () => {
+
+    socket.off(
+      "interviewer-message",
+      handleAIResponse
+    );
+
+  };
+
+}, [sessionId, navigate]);
+
+
+useEffect(() => {
+
+  if (!sessionId) {
+    return;
+  }
+
+  if (!interviewSocket) {
+    return;
+  }
+
+  if (interviewStartedRef.current) {
+    return;
+  }
+
+  const startInterview = async () => {
+
+    if (interviewStartedRef.current) {
+      return;
+    }
+
+    interviewStartedRef.current = true;
+
+    console.log(
+      "Starting interviewer..."
+    );
+
+    try {
+
+      const response =
+        await interviewService.submitAIResponse(
+          sessionId,
+          {
+            message:
+              "__INTERVIEW_START__",
+            code: "",
+            isSubmission: false
+          }
+        );
+
+      console.log(
+        "INTERVIEW START RESPONSE:",
+        response
+      );
+
+      /*
+       * Depending on your axios service,
+       * the actual response may be response.data.
+       */
+    const data =
+  response?.data?.data ?? response?.data ?? response;
+console.log("INTRO DATA:", data);
+console.log("INTRO REPLY:", data?.aiReply);
+
+if (data?.aiReply) {
+  console.log("ADDING INTRO TO CHAT");
+  await addAIMessageSafely(data.aiReply);
+}
+      /*
+       * Update phase from HTTP response.
+       */
+      if (data?.phase) {
+
+        setPhase(
+          data.phase
+        );
+
+      }
+
+      /*
+       * Most important part.
+       *
+       * Use HTTP response as a reliable fallback
+       * for the introduction.
+       */
+    
+
+    } catch (err) {
+
+      console.error(
+        "Failed to start interviewer:",
+        err
+      );
+
+      /*
+       * Allow another attempt if the request itself failed.
+       */
+      interviewStartedRef.current =
+        false;
+
+    }
+
+  };
+
+  /*
+   * Socket is already connected.
+   */
+  if (socket.connected) {
+
+    startInterview();
+
+  } else {
+
+    /*
+     * Wait until Socket.IO connects.
+     */
+    socket.once(
+      "connect",
+      startInterview
+    );
+
+  }
+
+  return () => {
+
+    socket.off(
+      "connect",
+      startInterview
+    );
+
+  };
+
+}, [
+  sessionId,
+  interviewSocket
+]);
+
 
   /*
    * Interview timer
@@ -172,6 +384,18 @@ export default function AIInterviewerPanel({
     };
   }, [sessionId, navigate]);
 
+  useEffect(() => {
+  const handleInterviewIdle = () => {
+    setShowIdleModal(true);
+  };
+
+  socket.on("interview-idle", handleInterviewIdle);
+
+  return () => {
+    socket.off("interview-idle", handleInterviewIdle);
+  };
+}, []);
+
   /*
    * Send code changes to backend
    */
@@ -196,79 +420,94 @@ export default function AIInterviewerPanel({
    * The temporary typing message is rendered INSIDE
    * the conversation instead of above the conversation.
    */
-  const typeAIMessage = async (text: string) => {
-    if (!text) return;
+const addAIMessageSafely = useCallback(
+  async (text: string) => {
 
-    setTypingMessage("");
+  if (!text?.trim()) {
+    return;
+  }
 
-    let output = "";
+  const normalizedText =
+    text.trim();
 
-    for (const char of text) {
-      output += char;
+  /*
+   * Prevent duplicate AI messages.
+   *
+   * This is especially important for the
+   * introduction because it can arrive through
+   * both HTTP and Socket.IO.
+   */
+  const alreadyExists =
+    messages.some(
+      message =>
+        message.role === "INTERVIEWER" &&
+        message.content.trim() === normalizedText
+    );
 
-      setTypingMessage(output);
+  if (alreadyExists) {
+    console.log(
+      "Skipping duplicate AI message"
+    );
+    return;
+  }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 18)
+  /*
+   * Type the message.
+   */
+  setTypingMessage("");
+
+  let output = "";
+
+  for (const char of normalizedText) {
+
+    output += char;
+
+    setTypingMessage(
+      output
+    );
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          18
+        )
+    );
+  }
+
+  /*
+   * Check again before inserting.
+   *
+   * Another socket event may have inserted the
+   * same message while we were typing.
+   */
+  setMessages(prev => {
+
+    const duplicate =
+      prev.some(
+        message =>
+          message.role === "INTERVIEWER" &&
+          message.content.trim() ===
+            normalizedText
       );
+
+    if (duplicate) {
+      return prev;
     }
 
-    setMessages((prev) => [
+    return [
       ...prev,
       {
         role: "INTERVIEWER",
-        content: text,
-      },
-    ]);
-
-    setTypingMessage("");
-  };
-
-  /*
-   * Receive AI response
-   */
-  useEffect(() => {
-    const handleAIResponse = async (data: any) => {
-      if (data.phase) {
-        setPhase(data.phase);
+        content: normalizedText
       }
+    ];
 
-      await typeAIMessage(
-        data.aiReply ??
-          data.message ??
-          ""
-      );
+  });
 
-      if (data.phase === "FINISHED") {
-        try {
-          await interviewService.endInterview(
-            sessionId
-          );
-
-          await navigate({
-            to: "/interview/$sessionId/report",
-            params: {
-              sessionId,
-            },
-          });
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    };
-
-    socket.on(
-      "interviewer-message",
-      handleAIResponse
-    );
-
-    return () => {
-      socket.off(
-        "interviewer-message",
-        handleAIResponse
-      );
-    };
-  }, [sessionId, navigate]);
+  setTypingMessage("");
+}, [messages]);
+ 
 
   /*
    * Send candidate message
@@ -296,13 +535,14 @@ export default function AIInterviewerPanel({
     setLoading(true);
 
     try {
-      await interviewService.submitAIResponse(
-        sessionId,
-        {
-          message: userMessage,
-          code,
-        }
-      );
+  await interviewService.submitAIResponse(
+    sessionId,
+    {
+        message: userMessage,
+        code,
+        isSubmission: false,
+    }
+);
     } catch (err) {
       console.error(
         "Failed to send interview response:",
@@ -346,8 +586,34 @@ export default function AIInterviewerPanel({
     );
 
   return (
-    <aside className="flex h-full min-h-0 min-w-0 flex-col border-l border-border/60 bg-card/20">
-      {/* ================================================= */}
+ <aside className="relative flex h-full flex-col">
+
+    {showIdleModal && (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="w-[90%] max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl">
+
+          <h2 className="text-lg font-semibold">
+            Still working?
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            You haven't made any progress for a while.
+            Are you still working on the problem?
+          </p>
+
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={() => setShowIdleModal(false)}
+              className="rounded-lg border border-border px-4 py-2 text-sm transition hover:bg-muted"
+            >
+              Yes, I'm working
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+  {/* ================================================= */}
       {/* HEADER */}
       {/* ================================================= */}
 

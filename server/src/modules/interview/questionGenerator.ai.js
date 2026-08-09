@@ -1,14 +1,169 @@
 import { generateAI } from "../ai/aiProvider.js";
 
 export const generateStructuredQuestion =
-  async ({
+async ({
+    company,
+    role,
     difficulty,
     language,
-  }) => {
+    questionStyle,
+    previousQuestions = []
+}) => {
+  const previousQuestionTitles = previousQuestions.map(q =>
+    typeof q === "string" ? q : q.title
+);
+const interviewTarget = company?.trim()
+    ? `Target company: ${company}`
+    : `Target company: General software engineering interview`;
 const prompt = `
-You are acting as a Senior Google L5 interviewer.
+You are an experienced technical interviewer conducting a realistic software engineering interview.
 
-Your job is NOT only to generate a coding problem.
+Your task is to select/generate ONE interview problem that is highly appropriate for the candidate's target company, role, difficulty, and requested question style.
+
+You must NOT generate an arbitrary generic coding problem.
+
+INTERVIEW TARGET
+
+
+${interviewTarget}
+
+Role:
+${role}
+
+Difficulty:
+${difficulty}
+
+Programming Language:
+${language}
+
+Question Style:
+${questionStyle}
+
+
+
+COMPANY RELEVANCE RULES
+If no company is provided:
+
+- Do NOT assume or mention any specific company.
+- Do NOT claim the question was asked by any company.
+- Select a broadly representative software engineering interview problem.
+- Prefer balanced coverage across common interview topics.
+- Prioritize arrays, strings, hashmaps, two pointers, sliding window,
+  binary search, linked lists, trees, graphs, heaps, greedy and DP
+  according to difficulty.
+- Avoid repeatedly selecting the same topic for the same candidate.
+- The problem should resemble a realistic SDE interview rather than
+  competitive programming.
+
+
+  IF COMPANY IS PROVIDED:
+The company name is a signal for interview style and problem selection.
+
+Use your knowledge of the company's commonly reported interview patterns, engineering expectations, and problem-solving style.
+
+Do NOT claim that the generated question was actually asked by the company unless there is strong basis for that.
+
+If Question Style is "PYQ":
+- Prefer a problem that is genuinely reported as having appeared in interviews for the specified company.
+- Do not fabricate a "previous year question".
+- If an exact known question cannot be confidently selected, use a highly similar reported interview problem and do not label it as an exact PYQ.
+
+If Question Style is "RELEVANT":
+- Select a problem strongly aligned with the company's commonly reported interview style and the specified role.
+- Prefer interview-relevant problems over random difficulty-matched problems.
+
+If Question Style is "UNSEEN":
+- Generate an original problem or meaningful variation.
+- It must still resemble the type of reasoning expected in the specified company's interview.
+- Do not simply rename or slightly modify a famous LeetCode problem.
+
+If Question Style is "MIXED":
+- Choose between reported interview problems, highly relevant interview problems, and original problems.
+- Prioritize realistic interview value over randomness.
+
+If Question Style is missing or unknown:
+- Default to RELEVANT.
+
+ROLE RELEVANCE
+
+The problem must be appropriate for the specified role.
+
+For SDE-1:
+- Focus primarily on implementation, data structures, algorithms, edge cases, and reasoning.
+- Avoid unnecessarily advanced competitive-programming techniques.
+- The problem should realistically fit within approximately 30–40 minutes.
+
+For SDE-2:
+- Require stronger reasoning and trade-off discussion.
+- Complexity, scalability, design choices, and optimization may be explored more deeply.
+
+For senior roles:
+- Prefer problems where the interviewer can evaluate trade-offs, scalability, and deeper reasoning.
+
+Do not artificially increase difficulty merely because the role is senior.
+
+PREVIOUS QUESTIONS
+
+The following questions have already been used by this candidate:
+
+${JSON.stringify(previousQuestionTitles)}
+
+You MUST NOT select or generate a question that is substantially the same as any previous question.
+
+A repeat includes:
+- identical title
+- same underlying problem with a renamed title
+- same problem with superficial input/output changes
+- same core problem with trivial constraint changes
+
+If a previous problem uses the same underlying interview idea, choose a meaningfully different problem.
+
+Prefer a different problem family when possible.
+PYQ ACCURACY
+
+Never fabricate a question as an actual company interview question.
+
+If the requested company and question style require a previous interview question, only use one when there is sufficient confidence that the problem has been reported for that company.
+
+The backend may provide verified company-question data. When such data is provided, prefer it over your own knowledge.
+
+If verified data is unavailable, generate a relevant interview-style problem but do not claim that it was previously asked.
+TOPIC DIVERSITY
+
+Avoid repeatedly selecting the same problem category for the same candidate.
+
+When previous questions show heavy exposure to one category, prefer another relevant category when appropriate.
+
+Possible categories include:
+
+arrays, strings, hashmap, sliding window, two pointers, stack, queue,
+binary search, linked list, trees, BST, graphs, heap, recursion,
+backtracking, greedy, dynamic programming, intervals, prefix sums.
+
+Do not force diversity if the company's interview style strongly favors a particular category.
+
+INTERVIEW REALISM
+
+The problem must work well in a live interview.
+
+The interviewer should be able to evaluate:
+
+- problem understanding
+- clarification ability
+- approach selection
+- communication
+- implementation
+- debugging
+- complexity analysis
+- optimization
+
+Avoid:
+- obscure mathematical tricks
+- extremely implementation-heavy problems
+- problems requiring excessive boilerplate
+- problems dependent on obscure APIs
+- problems that are primarily puzzle-solving
+- problems requiring more than approximately 40 minutes
 
 Generate the COMPLETE interview package.
 
@@ -77,7 +232,7 @@ IMPORTANT RULES:
 - Use meaningful variable names
 - Input/output format must stay consistent
 
-JSON FORMAT:
+
 JSON FORMAT:
 
 {
@@ -154,19 +309,15 @@ JSON FORMAT:
     ],
 
     "codingTriggers": [
-      {
-        "concept": "HashMap",
-        "question": "Why did you choose a HashMap here instead of sorting?"
-      },
-      {
-        "concept": "Sliding Window",
-        "question": "How do you know when the window should shrink?"
-      },
-      {
-        "concept": "DFS",
-        "question": "Why is DFS a better fit than BFS here?"
-      }
-    ],
+    {
+        "concept": "tracking distinct elements",
+        "question": "How are you ensuring that the current window contains only distinct values?"
+    },
+    {
+        "concept": "maintaining current sum",
+        "question": "How are you maintaining the sum efficiently as the window moves?"
+    }
+],
 
     "optimizationQuestion": "",
     "expectedMilestones":[
@@ -217,7 +368,11 @@ executionMetadata rules:
 - inputFormat describes stdin format
 - outputFormat describes expected stdout format
 - parameterMapping contains function parameters in order
-- invoker fields contain executable wrapper code only
+- executionMetadata MUST NOT contain invoker fields
+- Do NOT generate javaInvoker
+- Do NOT generate cppInvoker
+- Do NOT generate pythonInvoker
+- The backend generates all execution wrapper code automatically
 - match ${language}
 
 

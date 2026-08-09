@@ -3,44 +3,49 @@ import pool from "../../db/db.js";
 
 
 export const createInterviewSessionRepo = async ({
-  userId,
-  type,
-  difficulty,
-  language,
-  title,
-  currentQuestion,
+    userId,
+    type,
+    difficulty,
+    language,
+    company,
+    role,
+    questionStrategy,
+    title,
+    currentQuestion
 }) => {
 
-  const result = await pool.query(
-    `
-    INSERT INTO interview_sessions
-    (
-      user_id,
-      type,
-      difficulty,
-      language,
-      title,
-      current_question
-    )
+    const result = await pool.query(
+        `
+        INSERT INTO interview_sessions
+        (
+            user_id,
+            type,
+            difficulty,
+            language,
+            company,
+            role,
+            question_strategy,
+            title,
+            current_question
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *
+        `,
+        [
+            userId,
+            type,
+            difficulty,
+            language,
+            company,
+            role,
+            questionStrategy,
+            title,
+            currentQuestion
+        ]
+    );
 
-    VALUES ($1, $2, $3, $4, $5, $6)
-
-    RETURNING *
-    `,
-    [
-      userId,
-      type,
-      difficulty,
-      language,
-      title,
-      currentQuestion,
-    ]
-  );
-
-  return result.rows[0];
+    return result.rows[0];
 };
-
-
 
 export const insertInterviewMessageRepo = async ({
   sessionId,
@@ -284,4 +289,32 @@ export const getInterviewReportRepo = async (sessionId) => {
     const result = await pool.query(query, [sessionId]);
 
     return result.rows[0];
+};
+
+export const saveInterviewQuestionHistoryRepo = async ({
+    userId,
+    title
+}) => {
+    await pool.query(
+        `
+        INSERT INTO interview_question_history
+        (user_id, title)
+        VALUES ($1, $2)
+        `,
+        [userId, title]
+    );
+};
+
+export const getInterviewQuestionHistoryRepo = async (userId) => {
+    const { rows } = await pool.query(
+        `
+        SELECT title
+        FROM interview_question_history
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        `,
+        [userId]
+    );
+
+    return rows;
 };

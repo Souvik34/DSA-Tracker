@@ -60,13 +60,7 @@ export function InterviewSocketProvider({
         sessionId
     );
 
-    socket.emit(
-        "interview-message",
-        {
-            sessionId,
-            message: "__INTERVIEW_START__"
-        }
-    );
+
 
 };
 

@@ -384,11 +384,14 @@ const onEndInterview = async () => {
         </section>
 
         {/* Right: AI interviewer */}
-      <AIInterviewerPanel
+ {/* Right: AI interviewer */}
+<section className="min-h-0 flex flex-col border-l border-border/60">
+  <AIInterviewerPanel
     sessionId={sessionId}
     language={language}
     code={code}
-/>
+  />
+</section>
       </div>
     </div>
   );

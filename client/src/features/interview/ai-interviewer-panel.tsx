@@ -64,6 +64,8 @@ export default function AIInterviewerPanel({
 const [showIdleModal, setShowIdleModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 const interviewStartedRef = useRef(false);
+const [interviewAccessChecked, setInterviewAccessChecked] =
+  useState(false);
   const interviewSocket = useInterviewSocket();
   const navigate = useNavigate();
 
@@ -83,43 +85,86 @@ const interviewStartedRef = useRef(false);
   /*
    * Load interview state
    */
-  useEffect(() => {
-    if (!sessionId) return;
+ 
 
-    const loadInterview = async () => {
-      try {
-        const res =
-          await interviewService.getInterviewState(
-            sessionId
-          );
+useEffect(() => {
+  if (!sessionId) return;
 
-        const data = res.data;
+  const loadInterview = async () => {
+    try {
+      const res =
+        await interviewService.getInterviewState(
+          sessionId
+        );
 
-        if (data.session?.phase) {
-          setPhase(data.session.phase);
-        }
-        if (data?.aiReply) {
-  await addAIMessageSafely(data.aiReply);
-}
+      const data =
+        res?.data?.data ??
+        res?.data ??
+        res;
 
-        if (data.firstQuestion) {
-          // Keeping this available for future interview logic.
-          // We don't render it separately in the chat.
-          console.log(
-            "FIRST QUESTION:",
-            data.firstQuestion
-          );
-        }
-      } catch (err) {
-        console.error(
-          "Failed to load interview:",
-          err
+      /*
+       * Interview is still active.
+       * Allow the start-interview effect to continue.
+       */
+   setInterviewAccessChecked(true);
+
+      if (data.session?.phase) {
+        setPhase(data.session.phase);
+      }
+
+      if (data?.aiReply) {
+        await addAIMessageSafely(data.aiReply);
+      }
+
+      if (data.firstQuestion) {
+        console.log(
+          "FIRST QUESTION:",
+          data.firstQuestion
         );
       }
-    };
 
-    loadInterview();
-  }, [sessionId]);
+    } catch (err: any) {
+
+      console.error(
+        "Failed to load interview:",
+        err
+      );
+
+      /*
+       * Backend says this interview is already finished.
+       */
+      if (
+        err?.response?.status === 409 &&
+        err?.response?.data?.code ===
+          "INTERVIEW_ALREADY_COMPLETED"
+      ) {
+
+        console.log(
+          "Interview already completed. Redirecting to report..."
+        );
+
+        await navigate({
+          to: "/interview/$sessionId/report",
+          params: {
+            sessionId,
+          },
+        });
+
+        return;
+      }
+
+      /*
+       * Don't allow the interview to start if
+       * we couldn't verify the session.
+       */
+    setInterviewAccessChecked(false);
+    }
+  };
+
+  loadInterview();
+
+}, [sessionId, navigate]);
+
    /*
    * Receive AI response
    */
@@ -212,7 +257,9 @@ useEffect(() => {
   if (!interviewSocket) {
     return;
   }
-
+  if (!interviewAccessChecked) {
+    return;
+  }
   if (interviewStartedRef.current) {
     return;
   }
@@ -326,7 +373,8 @@ if (data?.aiReply) {
 
 }, [
   sessionId,
-  interviewSocket
+  interviewSocket,
+  interviewAccessChecked
 ]);
 
 
@@ -586,7 +634,7 @@ const addAIMessageSafely = useCallback(
     );
 
   return (
- <aside className="relative flex h-full flex-col">
+<aside className="relative flex min-h-0 h-full flex-col overflow-hidden">
 
     {showIdleModal && (
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -741,7 +789,7 @@ const addAIMessageSafely = useCallback(
             }
             onKeyDown={handleInputKeyDown}
             placeholder="Type your response..."
-            rows={1}
+            rows={4}
             disabled={loading}
             className="max-h-32 min-h-[36px] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />

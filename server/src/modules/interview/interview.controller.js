@@ -80,10 +80,11 @@ export const sendInterviewMessage =
             "sessionId and message required",
         });
       }
-
+const userId = req.user.id;
 const data =
     await sendInterviewMessageService({
         sessionId,
+        userId,
         message,
         code,
         isSubmission,
@@ -106,47 +107,44 @@ res.json({
       });
     }
 };
-
-export const endInterview =
-  async (req, res) => {
-
+export const endInterview = async (req, res) => {
     try {
+        const { sessionId } = req.body;
 
-      const { sessionId } =
-        req.body;
+        if (!sessionId) {
+            return res.status(400).json({
+                success: false,
+                message: "sessionId required",
+            });
+        }
 
+       const userId = req.user.id;
 
-
-      if (!sessionId) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "sessionId required",
+const feedback =
+    await endInterviewService({
+        sessionId,
+        userId
+    });
+        return res.json({
+            success: true,
+            feedback,
         });
-      }
-
-
-
-      const feedback =
-        await endInterviewService(
-          sessionId
-        );
-
-
-
-      res.json({
-        success: true,
-        feedback,
-      });
 
     } catch (err) {
+        console.error(err);
 
-      console.error(err);
+        if (err.code === "INTERVIEW_ALREADY_COMPLETED") {
+            return res.status(409).json({
+                success: false,
+                code: "INTERVIEW_ALREADY_COMPLETED",
+                message: "Interview has already been completed.",
+            });
+        }
 
-      res.status(500).json({
-        success: false,
-        message: err.message,
-      });
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
     }
 };
 
@@ -179,21 +177,36 @@ export const getInterviewReport = async (req, res) => {
 };
 
 export const getInterviewById = async (req, res) => {
-  try {
-    const { id } = req.params;
+      try {
 
-    const data = await getInterviewByIdService(id);
+        const sessionId = req.params.sessionId;
+        const userId = req.user.id;
+console.log("SESSION ID:", sessionId);
+console.log("AUTH USER ID:", userId);
+        const result =
+            await getInterviewByIdService({
+                sessionId,
+                userId
+            });
 
-    res.json({
-      success: true,
-      data,
-    });
-  } catch (err) {
-    console.error(err);
+        return res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (err) {
+        console.error(err);
 
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
+        if (err.code === "INTERVIEW_ALREADY_COMPLETED") {
+            return res.status(409).json({
+                success: false,
+                code: "INTERVIEW_ALREADY_COMPLETED",
+                message: "This interview has already been completed.",
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
 };

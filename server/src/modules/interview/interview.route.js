@@ -15,6 +15,10 @@ router.get(
   protect,
   getInterviewReport
 );
-router.get("/:id", protect,getInterviewById);
+router.get(
+  "/:sessionId",
+  protect,
+  getInterviewById
+);
 
 export default router;

@@ -60,34 +60,29 @@ export const getDashboardService = async (userId) => {
   console.log("DASHBOARD CACHE MISS");
 console.log("Before Promise.all");
 const [
-
-revisions,
-weak,
-dailySolve,
-topicDist,
-difficultyDist,
-strongTopics,
-recentActivity,
-mentor,
-
+    revisions,
+    dailySolve,
+    topicDist,
+    difficultyDist,
+    strongTopics,
+    recentActivity,
+    mentor,
 ] = await Promise.all([
-
-getDueRevisionsRepo(userId),
-getWeakTopicRepo(userId),
-getDailySolveRepo(userId),
-getTopicDistributionRepo(userId),
-getDifficultyDistributionRepo(userId),
-getStrongTopicsRepo(userId),
-getRecentActivityRepo(userId),
-
-getMentorRecommendation(userId),
-
+    getDueRevisionsRepo(userId),
+    getDailySolveRepo(userId),
+    getTopicDistributionRepo(userId),
+    getDifficultyDistributionRepo(userId),
+    getStrongTopicsRepo(userId),
+    getRecentActivityRepo(userId),
+    getMentorRecommendation(userId),
 ]);
 console.log("After Promise.all");
 console.log(mentor);
-  const weakTopic = weak?.topic || null;
+ const focusTopic = mentor?.focusTopic || null;
 
-  const recommendedProblems =
+const weakTopic = focusTopic?.topic || null;
+
+const recommendedProblems =
     await getRecommendedProblemsRepo(weakTopic);
 
   const { streak, longestStreak } = calculateStreak(dailySolve);
@@ -177,7 +172,7 @@ hard,
 
     },
 
-    weakTopic,
+      focusTopic,
 
     recommendedProblems,
 strongTopics,

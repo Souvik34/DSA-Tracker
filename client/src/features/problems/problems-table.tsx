@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useSearch } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import {
   Bookmark,
@@ -64,6 +65,8 @@ const removeStartedProblem = useProblemsStore(
 const clearActiveProblem = useProblemsStore(
   (s) => s.clearActiveProblem
 );
+
+const search = useSearch({ from: "/problems" });
 
 const toggleSolved = useProblemsStore((s) => s.toggleSolved);
 const startedProblems = useProblemsStore((s)=>s.startedProblems);
@@ -205,6 +208,7 @@ useEffect(() => {
 }, []);
   const filtered = useMemo(() => {
     return problems.filter((p) => {
+      
       if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
       if (topic !== "all" && p.topic !== topic) return false;
       if (company !== "all" && !p.companies.includes(company)) return false;
@@ -509,20 +513,29 @@ handleSolve(p);
                       <IconAction
                         title={st?.revision ? "Remove from revision" : "Mark for revision"}
                         active={!!st?.revision}
-                        onClick={async () => {
+onClick={async () => {
   try {
     const st = byId[p.id];
 
-    if (st?.revision) {
-
-      toast.info("Already added to revision queue");
-   return;
-    } else {
-      await revisionService.addRevision(p.id);
-toggleRevision(p.id);
+    // User must solve the problem before adding it to revision
+    if (!st?.solved) {
+      toast.error(
+        "Solve the problem before adding it to your revision queue."
+      );
+      return;
     }
+
+    if (st?.revision) {
+      toast.info("Already added to revision queue");
+      return;
+    }
+
+    await revisionService.addRevision(p.id);
+    toggleRevision(p.id);
+
   } catch (err) {
     console.error("Revision toggle failed:", err);
+    toast.error("Failed to add problem to revision queue.");
   }
 }}
                       >

@@ -52,7 +52,7 @@ Only expand the recommendation with:
 - a headline
 - one insight
 - one reason
-- a 7-day roadmap
+- a prioritized roadmap
 - one interview tip.
 Candidate Profile:
 
@@ -80,8 +80,10 @@ Example:
 "Only one Stack problem solved in recent practice."
 
 4. roadmap
-- Exactly 7 items.
+- Exactly 7 prioritized items.
 - Each item under 12 words.
+- Order items from fundamentals to advanced practice.
+- Do not prefix items with Day 1, Day 2, etc.
 Each roadmap item should contain either:
 - one LeetCode problem name, OR
 - one DSA pattern.
@@ -101,10 +103,11 @@ No explanations.
 No extra text before or after the JSON.
 
 
-Roadmap should progress from beginner to advanced.
-Days 1-2: fundamentals
-Days 3-5: medium patterns
-Days 6-7: interview-level practice
+Roadmap should progress from fundamentals to advanced practice.
+
+Do not assign days, dates, or time limits to roadmap items.
+The roadmap is a flexible sequence of priorities.
+The user can complete multiple roadmap items in one day.
 
 The recommendation below is FINAL.
 

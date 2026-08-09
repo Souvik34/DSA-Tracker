@@ -56,7 +56,7 @@ console.log("FOCUS TOPIC:", focusTopic);
 console.log(
     "FETCHING MENTOR PROBLEMS",
     userId,
-    focusTopic.topic
+    focusTopic?.topic
 );
 
 

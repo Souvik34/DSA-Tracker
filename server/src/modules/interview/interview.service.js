@@ -219,6 +219,7 @@ return {
 
 export const sendInterviewMessageService = async ({
     sessionId,
+    userId,
     message,
     code,
     isSubmission = false
@@ -230,8 +231,11 @@ export const sendInterviewMessageService = async ({
     console.log("Candidate message:", message);
     console.log("=================================");
 
-    const session =
-        await getInterviewSessionRepo(sessionId);
+  const session =
+    await getInterviewSessionRepo({
+        sessionId,
+        userId
+    });
 
     if (!session) {
         throw new Error("Interview session not found.");
@@ -1207,15 +1211,31 @@ Could you briefly introduce yourself?
 
     
     
-export const endInterviewService = async (sessionId) => {
+export const endInterviewService = async ({
+    sessionId,
+    userId
+}) => {
 
     const session =
-        await getInterviewSessionRepo(sessionId);
+        await getInterviewSessionRepo({
+            sessionId,
+            userId
+        });
 
 
     if (!session) {
         throw new Error("Interview session not found");
     }
+      if (
+        session.status === "completed" ||
+        session.phase === InterviewPhase.FINISHED
+    ) {
+        const error = new Error("INTERVIEW_ALREADY_COMPLETED");
+        error.code = "INTERVIEW_ALREADY_COMPLETED";
+        throw error;
+    }
+
+    // clearInterviewIdleTimer(sessionId);
      clearInterviewIdleTimer(sessionId);
 
     const conversation =
@@ -1346,11 +1366,29 @@ export const endInterviewService = async (sessionId) => {
 };
 
 
-export const getInterviewByIdService = async (sessionId) => {
-    const session = await getInterviewSessionRepo(sessionId);
+export const getInterviewByIdService = async ({
+    sessionId,
+    userId
+}) => {
+
+    const session =
+        await getInterviewSessionRepo({
+            sessionId,
+            userId
+        });
+
 
     if (!session) {
         throw new Error("Interview session not found");
+    }
+
+    if (
+        session.status === "completed" ||
+        session.phase === InterviewPhase.FINISHED
+    ) {
+        const error = new Error("INTERVIEW_ALREADY_COMPLETED");
+        error.code = "INTERVIEW_ALREADY_COMPLETED";
+        throw error;
     }
 
     const question = JSON.parse(session.current_question);

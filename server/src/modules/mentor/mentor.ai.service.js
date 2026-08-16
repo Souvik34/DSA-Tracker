@@ -10,7 +10,8 @@ const mentorContext = {
     focusTopic: profile.focusTopic,
     strongTopics: profile.strongTopics,
     difficulty: profile.difficulty,
-    recentProblems: profile.recentProblems
+    recentProblems: profile.recentProblems,
+    mentorProblems: profile.mentorProblems
 };
 
 const prompt = `
@@ -84,9 +85,15 @@ Example:
 - Each item under 12 words.
 - Order items from fundamentals to advanced practice.
 - Do not prefix items with Day 1, Day 2, etc.
-Each roadmap item should contain either:
-- one LeetCode problem name, OR
-- one DSA pattern.
+Each roadmap item must reference one of the provided mentor problems by exact title.
+
+Use only problems from mentorProblems.
+
+Do not invent problem names.
+
+Do not create problem IDs.
+
+The roadmap must contain 5 problem items and 2 DSA pattern items.
 
 Never include explanations.
 
@@ -103,7 +110,7 @@ No explanations.
 No extra text before or after the JSON.
 
 
-Roadmap should progress from fundamentals to advanced practice.
+Roadmap should progress from fundamentals to advanced practice using the provided mentor problems.
 
 Do not assign days, dates, or time limits to roadmap items.
 The roadmap is a flexible sequence of priorities.

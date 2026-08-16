@@ -158,35 +158,34 @@ console.log(
 
     /* ---------------- AI Profile ---------------- */
 
- const aiProfile = {
-
+const aiProfile = {
     recommendation,
-
     focusTopic,
-
-    strongTopics:
-        strongTopics.slice(0,3),
-
+    strongTopics: strongTopics.slice(0, 3),
     difficulty,
+    recentProblems: recentActivity.slice(0, 5),
+    topics: topics.slice(0, 5),
 
-    recentProblems:
-        recentActivity.slice(0,5),
-
-    topics:
-        topics.slice(0,5)
-
+    mentorProblems: mentorProblems.map((problem) => ({
+        id: problem.id,
+        title: problem.title,
+        difficulty: problem.difficulty,
+        topic: problem.topic
+    }))
 };
 
-
     /* ---------------- Dynamic Cache Key ---------------- */
-
+const problemIds = mentorProblems
+    .map((problem) => problem.id)
+    .join(",");
    const cacheKey = [
     "mentor-ai",
     userId,
     focusTopic?.topic ?? "none",
     focusTopic?.type ?? "none",
     focusTopic?.score ?? 0,
-    focusTopic?.confidence ?? 0
+    focusTopic?.confidence ?? 0,
+       problemIds
 ].join(":");
 
 

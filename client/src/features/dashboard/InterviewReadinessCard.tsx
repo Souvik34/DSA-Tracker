@@ -15,6 +15,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "@tanstack/react-router";
 
 interface Props {
     dashboard: any;
@@ -31,7 +32,8 @@ export default function InterviewReadinessCard({
 
     const level =
         dashboard?.readiness?.level ?? "Beginner";
-
+const mentorProblems =
+    dashboard?.mentorProblems ?? [];
     const weak =
     dashboard?.profile?.focusTopic?.topic ??
     dashboard?.weakTopic ??
@@ -42,7 +44,7 @@ export default function InterviewReadinessCard({
         dashboard?.stats?.solved ?? 0;
         const aiAdvice =
     dashboard?.aiAdvice;
-
+const navigate = useNavigate();
 const roadmap =
     aiAdvice?.roadmap ?? [];
 
@@ -197,15 +199,15 @@ const roadmap =
     {aiAdvice?.headline ?? "Your Interview Preparation Plan"}
 </h2>
 
-                            <p
-                                className="
-                                    mt-2
-                                    text-sm
-                                    text-zinc-400
-                                "
-                            >
-                                Personalized from your current DSA activity.
-                            </p>
+                         <p
+    className="
+        mt-2
+        text-sm
+        text-zinc-400
+    "
+>
+    {aiAdvice?.summary}
+</p>
 
                         </div>
 
@@ -364,26 +366,7 @@ const roadmap =
 
         {/* DAY ICON */}
 
-        <div
-            className="
-                relative
-                z-10
-                flex
-                h-10
-                w-10
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-violet-500/30
-                bg-violet-500/10
-            "
-        >
-            <span className="text-sm font-semibold text-violet-400">
-                {index + 1}
-            </span>
-        </div>
+      
 
         {/* ROADMAP ITEM */}
 
@@ -401,17 +384,7 @@ const roadmap =
             "
         >
 
-            <p
-                className="
-                    text-xs
-                    font-semibold
-                    uppercase
-                    tracking-wider
-                    text-violet-400
-                "
-            >
-                Day {index + 1}
-            </p>
+        
 
             <p
                 className="
@@ -494,19 +467,34 @@ const roadmap =
                         "
                     >
 
-                        <Button
-                            className="
-                                h-11
-                                w-full
-                                bg-violet-600
-                                text-sm
-                                font-semibold
-                                hover:bg-violet-500
-                            "
-                            onClick={closeRoadmap}
-                        >
-                            Start Preparing
-                        </Button>
+                    <Button
+  className="
+    h-11
+    w-full
+    bg-violet-600
+    text-sm
+    font-semibold
+    hover:bg-violet-500
+  "
+ onClick={() => {
+  const ids = mentorProblems
+    .map((p) => Number(p.id))
+    .join(",");
+
+  console.log("mentorProblems:", mentorProblems);
+  console.log("ids:", ids);
+
+  navigate({
+    to: "/problems",
+    search: {
+      source: "roadmap",
+      ids,
+    },
+  });
+}}
+>
+  START PREPARING TEST
+</Button>
 
                     </div>
 

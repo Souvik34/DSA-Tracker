@@ -4,6 +4,7 @@ import {
     Sparkles,
 
 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import {
     Activity,
     TrendingDown,
@@ -23,6 +24,7 @@ interface Props {
 export default function AIMentorCard({
     dashboard,
 }: Props) {
+    const navigate = useNavigate();
 
     if (!dashboard) return null;
 
@@ -552,121 +554,125 @@ AI selected problems from your weakness area
 
 <div className="mt-6 grid gap-4">
 
+    {dashboard.mentorProblems?.length > 0 ? (
 
-{
-dashboard.mentorProblems?.map(
-(problem,index)=>(
+        dashboard.mentorProblems.map((problem, index) => (
 
+            <motion.div
+                key={problem.id}
+                whileHover={{ y: -4 }}
+                className="
+                    flex
+                    items-center
+                    justify-between
+                    rounded-2xl
+                    border
+                    border-zinc-800
+                    bg-zinc-900/60
+                    p-5
+                    hover:border-violet-500/40
+                    transition-all
+                "
+            >
 
-<motion.div
+                <div>
 
-key={problem.id}
+                    <div className="flex gap-3 items-center">
 
-whileHover={{
-y:-4
+                        <span className="
+                            text-xs
+                            text-violet-400
+                            uppercase
+                        ">
+                            #{index + 1}
+                        </span>
+
+                        <h4 className="font-semibold text-white">
+                            {problem.title}
+                        </h4>
+
+                    </div>
+
+                    <p className="
+                        mt-2
+                        text-sm
+                        text-zinc-500
+                        capitalize
+                    ">
+                        {problem.topic} • {problem.difficulty}
+                    </p>
+
+                </div>
+
+            <button
+    type="button"
+onClick={() => {
+    console.log(
+        "ALL MENTOR PROBLEMS:",
+        dashboard.mentorProblems
+    );
+
+    console.log(
+        "MENTOR IDS:",
+        dashboard.mentorProblems?.map((p) => p.id)
+    );
+
+    console.log(
+        "IDS STRING:",
+        dashboard.mentorProblems?.map((p) => p.id).join(",")
+    );
+
+    const ids = dashboard.mentorProblems
+        ?.map((p) => p.id)
+        .join(",");
+
+    navigate({
+        to: "/problems",
+        search: {
+            source: "roadmap",
+            ids,
+        },
+    });
 }}
-
-className="
-flex
-items-center
-justify-between
-rounded-2xl
-border
-border-zinc-800
-bg-zinc-900/60
-p-5
-hover:border-violet-500/40
-transition-all
-"
-
+    className="
+        flex
+        items-center
+        gap-2
+        rounded-xl
+        bg-violet-600
+        px-4
+        py-2
+        text-sm
+        font-semibold
+        hover:bg-violet-500
+        transition
+    "
 >
+    Solve
+    <ExternalLink size={15} />
+</button>
 
+            </motion.div>
 
-<div>
+        ))
 
+    ) : (
 
-<div className="flex gap-3 items-center">
+        <div className="
+            rounded-2xl
+            border
+            border-zinc-800
+            bg-zinc-900/50
+            p-6
+            text-sm
+            text-zinc-500
+        ">
+            No recommended problems available right now.
+        </div>
 
-
-<span
-className="
-text-xs
-text-violet-400
-uppercase
-"
->
-
-#{index+1}
-
-</span>
-
-
-<h4 className="font-semibold text-white">
-
-{problem.title}
-
-</h4>
-
+    )}
 
 </div>
-
-
-<p
-className="
-mt-2
-text-sm
-text-zinc-500
-capitalize
-"
->
-
-{problem.topic} • {problem.difficulty}
-
-</p>
-
-
-</div>
-
-
-<a
-
-href={problem.question_link}
-
-target="_blank"
-
-className="
-flex
-items-center
-gap-2
-rounded-xl
-bg-violet-600
-px-4
-py-2
-text-sm
-font-semibold
-hover:bg-violet-500
-transition
-"
-
->
-
-Solve
-
-<ExternalLink size={15}/>
-
-</a>
-
-
-</motion.div>
-
-
-))
-
-}
-
-
-</div>
-
 
 </motion.div>
             

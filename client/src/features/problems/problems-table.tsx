@@ -53,8 +53,26 @@ const difficultyClasses: Record<Difficulty, string> = {
 };
 
 export function ProblemsTable() {
+console.log("ProblemsTable RENDER");
+  const searchParams = useSearch({
+  from: "/problems",
+});
 
-  
+
+const roadmapMode = searchParams.source === "roadmap";
+
+const roadmapIds = useMemo(
+  () =>
+    searchParams.ids
+      ? searchParams.ids
+          .split(",")
+          .map(Number)
+          .filter(Boolean)
+      : [],
+  [searchParams.ids]
+);
+//   console.log("ROADMAP MODE:", roadmapMode);
+// console.log("ROADMAP IDS:", roadmapIds);
   const byId = useProblemsStore((s) => s.byId);
   const startProblem = useProblemsStore((s) => s.startProblem);
 const activeProblemId = useProblemsStore((s) => s.activeProblemId);
@@ -81,6 +99,7 @@ const hydrateNotes = useProblemsStore((s) => s.hydrateNotes);
 const hydrateRevision = useProblemsStore((s) => s.hydrateRevision);
 
   const [query, setQuery] = useState("");
+  // const [roadmapMode, setRoadmapMode] = useState(false);
   const [topic, setTopic] = useState<string>("all");
   const [company, setCompany] = useState<string>("all");
   const [difficulty, setDifficulty] = useState<string>("all");
@@ -133,52 +152,88 @@ useEffect(() => {
 
   const loadProblems = async () => {
     try {
-     const data = await problemService.list({
-  page,
-  limit: LIMIT,
-});
-      const progress = await problemService.getProgress();
-const bookmarks = await problemService.getBookmarks();
-const notes = await problemService.getNotes();
-const revisions = await revisionService.getAllRevisions();
+      let data: BackendProblem[];
+if (roadmapMode && roadmapIds.length > 0) {
+  console.log("========== ROADMAP LOAD ==========");
+  console.log("ROADMAP MODE:", roadmapMode);
+  console.log("ROADMAP IDS:", roadmapIds);
 
+  const roadmapProblems = await Promise.all(
+    roadmapIds.map(async (id) => {
+      console.log("FETCHING ROADMAP ID:", id);
 
+      const problem = await problemService.getById(id);
 
-const solvedIds = progress.map(
-  (p: { problem_id: number }) => p.problem_id
-);
+      console.log("FETCHED ROADMAP PROBLEM:", problem);
 
-hydrateRevision(
-    revisions.revisions
-        .filter(r => !r.is_completed)
-        .map(r => r.problem_id)
-);
-hydrateSolved(solvedIds);
-      const mappedProblems: Problem[] = data.map((p) => ({
-        id: p.id,
-        title: p.title,
-        difficulty: formatDifficulty(p.difficulty),
-        topic: p.topic,
-        companies: [],
-        leetcodeUrl: p.question_link,
-      }));
-
-     if (!ignore) {
-  setProblems(mappedProblems);
-
-  hydrateSolved(
-    progress.map((p: any) => p.problem_id)
+      return problem;
+    })
   );
 
-  hydrateBookmarks(
-    bookmarks.map((b: any) => b.problem_id)
-  );
+  console.log("ROADMAP PROBLEMS BEFORE FILTER:", roadmapProblems);
 
-  hydrateNotes(notes);
+  data = roadmapProblems.filter(Boolean);
+
+  console.log("ROADMAP FINAL DATA:", data);
+} else {
+  console.log("NORMAL PROBLEM LOAD");
+
+  data = await problemService.list({
+    page,
+    limit: LIMIT,
+  });
+
+  console.log("NORMAL PROBLEMS:", data);
 }
+      const progress = await problemService.getProgress();
+      const bookmarks = await problemService.getBookmarks();
+      const notes = await problemService.getNotes();
+      const revisions = await revisionService.getAllRevisions();
+
+      const solvedIds = progress.map(
+        (p: { problem_id: number }) => p.problem_id
+      );
+
+      hydrateRevision(
+        revisions.revisions
+          .filter((r) => !r.is_completed)
+          .map((r) => r.problem_id)
+      );
+
+      hydrateSolved(solvedIds);
+
+     console.log("DATA BEFORE MAPPING:", data);
+
+const mappedProblems: Problem[] = data.map((p) => ({
+  id: p.id,
+  title: p.title,
+  difficulty: formatDifficulty(p.difficulty),
+  topic: p.topic,
+  companies: [],
+  leetcodeUrl: p.question_link,
+}));
+
+console.log("MAPPED PROBLEMS:", mappedProblems);
+
+      if (!ignore) {
+        setProblems(mappedProblems);
+
+        hydrateSolved(
+          progress.map((p: any) => p.problem_id)
+        );
+
+        hydrateBookmarks(
+          bookmarks.map((b: any) => b.problem_id)
+        );
+
+        hydrateNotes(notes);
+      }
     } catch (err) {
       console.error("Failed to load problems:", err);
-      if (!ignore) setProblems([]); // safe fallback
+
+      if (!ignore) {
+        setProblems([]);
+      }
     }
   };
 
@@ -187,7 +242,8 @@ hydrateSolved(solvedIds);
   return () => {
     ignore = true;
   };
-}, [page]);
+}, [page, roadmapMode, roadmapIds]);
+
 useEffect(() => {
   window.scrollTo({
     top: 0,
@@ -659,7 +715,8 @@ onClick={async () => {
     </div>,
     document.body
   )}
-    <div className="mt-6 flex items-center justify-center gap-4">
+   {!roadmapMode && (
+  <div className="mt-6 flex items-center justify-center gap-4">
 <Button
   variant="outline"
   disabled={page === 1}
@@ -680,11 +737,8 @@ onClick={async () => {
   Next
   <ChevronRight className="ml-2 h-4 w-4" />
 </Button>
-
-
-
-
-</div>
+  </div>
+)}
     </div>
 
     

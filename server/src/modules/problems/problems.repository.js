@@ -17,22 +17,24 @@ const normalize = (val) => {
 
 
 export const getAllProblemsRepo = async (params) => {
-  const {
-    difficulty,
-    topic,
-    page = 1,
-    limit = 50,
-    search = ""
-  } = params;
+ const {
+  difficulty,
+  topic,
+  page = 1,
+  limit = 50,
+  search = "",
+  ids
+} = params;
 
   const pageNum = Number(page);
   const limitNum = Number(limit);
 
   const cacheKey =
-    `problems:v1:` +
-    `d:${normalize(difficulty)}:` +
-    `t:${normalize(topic)}:` +
-    `p:${pageNum}:l:${limitNum}:s:${search || "none"}`;
+  `problems:v1:` +
+  `d:${normalize(difficulty)}:` +
+  `t:${normalize(topic)}:` +
+  `ids:${normalize(ids)}:` +
+  `p:${pageNum}:l:${limitNum}:s:${search || "none"}`;
 
   /* ---------- REDIS GET ---------- */
   let cachedData;
@@ -53,6 +55,7 @@ export const getAllProblemsRepo = async (params) => {
   /* ---------- SQL QUERY ---------- */
   const difficultyArr = safeArray(difficulty);
 const topicArr = safeArray(topic);
+const idsArr = safeArray(ids).map(Number);
 
 let query = "SELECT * FROM problems WHERE 1=1";
 const values = [];
@@ -66,7 +69,10 @@ if (topicArr.length > 0) {
   values.push(topicArr);
   query += ` AND topic = ANY($${values.length})`;
 }
-
+if (idsArr.length > 0) {
+  values.push(idsArr);
+  query += ` AND id = ANY($${values.length})`;
+}
   if (search) {
     values.push(`%${search}%`);
     query += ` AND title ILIKE $${values.length}`;
@@ -365,11 +371,8 @@ export const getMentorProblemsRepo = async (
             ]
         );
 
-        console.log(
-            "MENTOR PROBLEMS FOUND",
-            result.rows
-        );
-
+  console.log("MENTOR DB RESULT COUNT:", result.rows.length);
+console.log("MENTOR DB RESULT:", result.rows);
         return result.rows;
 
 

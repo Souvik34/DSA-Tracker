@@ -4,13 +4,22 @@ import { solveQueue } from "../../queues/solve.queue.js";
 import { getDueRevisionsService } from "../revision/revision.service.js";
 export const getAllProblems = async (req, res) => {
   try {
-    const { difficulty, topic, page = 1, limit = 50 } = req.query;
+    const {
+      difficulty,
+      topic,
+      ids,
+      page = 1,
+      limit = 50,
+    } = req.query;
+
     const problems = await problemService.getAllProblems({
       page: Number(page),
       limit: Number(limit),
-  difficulty: difficulty ? difficulty.split(",") : [],
-topic: topic ? topic.split(",") : [],
+      difficulty: difficulty ? difficulty.split(",") : [],
+      topic: topic ? topic.split(",") : [],
+      ids: ids ? ids.split(",").map(Number) : [],
     });
+
     res.status(200).json({
       success: true,
       page: Number(page),
@@ -18,12 +27,13 @@ topic: topic ? topic.split(",") : [],
       data: problems,
     });
   } catch (err) {
-  console.error(" getAllProblems ERROR:", err);
-  res.status(500).json({
-    message: err.message,
-    stack: err.stack,
-  });
-}
+    console.error("getAllProblems ERROR:", err);
+
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+    });
+  }
 };
 
 export const getProblemById = async (req, res) => {

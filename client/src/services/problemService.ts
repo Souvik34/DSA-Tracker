@@ -18,24 +18,44 @@ type ProgressResponse = {
 };
 
 export const problemService = {
-  async list(params = {}): Promise<BackendProblem[]> {
-    const res = await api.get<ProblemsResponse>("/problems", { params });
+async list(params: {
+  page?: number;
+  limit?: number;
+  ids?: number[];
+} = {}): Promise<BackendProblem[]> {
+  console.log("PROBLEMS REQUEST PARAMS:", params);
 
-    const data = res.data;
+  const queryParams = {
+    page: params.page,
+    limit: params.limit,
+    ...(params.ids?.length
+      ? { ids: params.ids.join(",") }
+      : {}),
+  };
 
-    if (Array.isArray(data)) return data;
+  console.log("PROBLEMS QUERY PARAMS:", queryParams);
 
-    return data?.problems ?? data?.data ?? [];
-  },
+  const res = await api.get("/problems", {
+    params: queryParams,
+  });
 
-  async getById(id: number | string): Promise<BackendProblem> {
-    const res = await api.get<ProblemResponse>(`/problems/${id}`);
+  const data = res.data;
 
-    const data = res.data;
+  console.log("PROBLEMS RAW RESPONSE:", data);
 
-    return data.problem ?? data.data!;
-  },
+  if (Array.isArray(data)) return data;
 
+  return data?.problems ?? data?.data ?? [];
+},
+async getById(id: number | string): Promise<BackendProblem> {
+  console.log("GETTING PROBLEM BY ID:", id);
+
+  const res = await api.get(`/problems/${id}`);
+
+  console.log("GET BY ID RESPONSE:", res.data);
+
+  return res.data;
+},
 async markSolved(
   problemId: number | string,
   difficulty: string,

@@ -11,7 +11,8 @@ import {
     markOptimizationCompletedRepo,
     resetInterruptRepo,
     getInterviewQuestionHistoryRepo,
-saveInterviewQuestionHistoryRepo
+saveInterviewQuestionHistoryRepo,
+getInterviewHistoryRepo
     
 } from "./interview.repository.js";
 
@@ -1717,4 +1718,94 @@ console.log(aiReply);
     }
   
 
+};
+
+export const getInterviewHistoryService = async (userId) => {
+
+    const interviews =
+        await getInterviewHistoryRepo(userId);
+
+    return interviews.map((interview) => {
+
+        let question = {};
+
+        try {
+            question =
+                JSON.parse(interview.current_question || "{}");
+        } catch (error) {
+            console.error(
+                "Failed to parse interview question:",
+                error
+            );
+        }
+
+        /*
+         * Never expose internal interviewer data
+         */
+        delete question.hiddenTestCases;
+        delete question.interviewGuide;
+        delete question.expectedConcepts;
+        delete question.expectedComplexity;
+        delete question.solution;
+        delete question.optimal_solution;
+        delete question.answer;
+
+        return {
+            id: interview.id,
+
+            title: interview.title,
+
+            type: interview.type,
+
+            difficulty: interview.difficulty,
+
+            language: interview.language,
+
+            company: interview.company,
+
+            role: interview.role,
+
+            questionStrategy:
+                interview.question_strategy,
+
+            createdAt:
+                interview.created_at,
+
+            endedAt:
+                interview.ended_at,
+
+            question,
+
+            code:
+                interview.last_code || "",
+
+            report: interview.overall_score === null
+                ? null
+                : {
+                    overallScore:
+                        interview.overall_score,
+
+                    communicationScore:
+                        interview.communication_score,
+
+                    problemSolvingScore:
+                        interview.problem_solving_score,
+
+                    optimizationScore:
+                        interview.optimization_score,
+
+                    strengths:
+                        interview.strengths,
+
+                    weaknesses:
+                        interview.weaknesses,
+
+                    finalFeedback:
+                        interview.final_feedback,
+
+                    createdAt:
+                        interview.report_created_at
+                }
+        };
+    });
 };

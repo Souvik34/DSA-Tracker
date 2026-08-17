@@ -318,3 +318,44 @@
 
         return rows;
     };
+
+  export const getInterviewHistoryRepo = async (userId) => {
+    const { rows } = await pool.query(
+        `
+        SELECT
+            s.id,
+            s.title,
+            s.type,
+            s.difficulty,
+            s.language,
+            s.company,
+            s.role,
+            s.question_strategy,
+            s.current_question,
+            s.last_code,
+            s.status,
+            s.ended_at,
+
+            f.overall_score,
+            f.communication_score,
+            f.problem_solving_score,
+            f.optimization_score,
+            f.strengths,
+            f.weaknesses,
+            f.final_feedback,
+            f.created_at AS report_created_at
+
+        FROM interview_sessions s
+
+        LEFT JOIN interview_feedback f
+            ON f.session_id = s.id
+
+        WHERE s.user_id = $1
+
+        ORDER BY COALESCE(s.ended_at, f.created_at) DESC
+        `,
+        [userId]
+    );
+
+    return rows;
+};

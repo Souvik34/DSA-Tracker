@@ -15,9 +15,11 @@ import { Route as ProblemsRouteImport } from './routes/problems'
 import { Route as OauthSuccessRouteImport } from './routes/oauth-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InterviewsRouteImport } from './routes/interviews'
+import { Route as InterviewHistoryRouteImport } from './routes/interview-history'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceSessionIdRouteImport } from './routes/workspace.$sessionId'
+import { Route as InterviewHistorySessionIdRouteImport } from './routes/interview-history/$sessionId'
 import { Route as InterviewSessionIdReportRouteImport } from './routes/interview.$sessionId.report'
 
 const SignupRoute = SignupRouteImport.update({
@@ -50,6 +52,11 @@ const InterviewsRoute = InterviewsRouteImport.update({
   path: '/interviews',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterviewHistoryRoute = InterviewHistoryRouteImport.update({
+  id: '/interview-history',
+  path: '/interview-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -65,6 +72,12 @@ const WorkspaceSessionIdRoute = WorkspaceSessionIdRouteImport.update({
   path: '/workspace/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InterviewHistorySessionIdRoute =
+  InterviewHistorySessionIdRouteImport.update({
+    id: '/$sessionId',
+    path: '/$sessionId',
+    getParentRoute: () => InterviewHistoryRoute,
+  } as any)
 const InterviewSessionIdReportRoute =
   InterviewSessionIdReportRouteImport.update({
     id: '/interview/$sessionId/report',
@@ -75,24 +88,28 @@ const InterviewSessionIdReportRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
+  '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
   '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
   '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
+  '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
   '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
   '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
@@ -100,12 +117,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
+  '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
   '/workspace/$sessionId': typeof WorkspaceSessionIdRoute
   '/interview/$sessionId/report': typeof InterviewSessionIdReportRoute
 }
@@ -114,36 +133,42 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
+    | '/interview-history/$sessionId'
     | '/workspace/$sessionId'
     | '/interview/$sessionId/report'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
+    | '/interview-history/$sessionId'
     | '/workspace/$sessionId'
     | '/interview/$sessionId/report'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
+    | '/interview-history/$sessionId'
     | '/workspace/$sessionId'
     | '/interview/$sessionId/report'
   fileRoutesById: FileRoutesById
@@ -151,6 +176,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  InterviewHistoryRoute: typeof InterviewHistoryRouteWithChildren
   InterviewsRoute: typeof InterviewsRoute
   LoginRoute: typeof LoginRoute
   OauthSuccessRoute: typeof OauthSuccessRoute
@@ -205,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InterviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interview-history': {
+      id: '/interview-history'
+      path: '/interview-history'
+      fullPath: '/interview-history'
+      preLoaderRoute: typeof InterviewHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -226,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/interview-history/$sessionId': {
+      id: '/interview-history/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/interview-history/$sessionId'
+      preLoaderRoute: typeof InterviewHistorySessionIdRouteImport
+      parentRoute: typeof InterviewHistoryRoute
+    }
     '/interview/$sessionId/report': {
       id: '/interview/$sessionId/report'
       path: '/interview/$sessionId/report'
@@ -236,9 +276,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface InterviewHistoryRouteChildren {
+  InterviewHistorySessionIdRoute: typeof InterviewHistorySessionIdRoute
+}
+
+const InterviewHistoryRouteChildren: InterviewHistoryRouteChildren = {
+  InterviewHistorySessionIdRoute: InterviewHistorySessionIdRoute,
+}
+
+const InterviewHistoryRouteWithChildren =
+  InterviewHistoryRoute._addFileChildren(InterviewHistoryRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  InterviewHistoryRoute: InterviewHistoryRouteWithChildren,
   InterviewsRoute: InterviewsRoute,
   LoginRoute: LoginRoute,
   OauthSuccessRoute: OauthSuccessRoute,

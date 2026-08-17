@@ -3,7 +3,7 @@ import {
 } from "./interview.service.js";
 
 import {
-  sendInterviewMessageService, getInterviewByIdService,
+  sendInterviewMessageService, getInterviewByIdService,getInterviewHistoryService,
 } from "./interview.service.js";
 import { getInterviewReportService } from "./interview.service.js";
 import {
@@ -58,6 +58,35 @@ const userId = req.user.id;
     });
   }
 };
+
+export const getInterviewHistory = async (req, res) => {
+
+    try {
+
+        const userId = req.user.id;
+
+        const interviews =
+            await getInterviewHistoryService(userId);
+
+        return res.status(200).json({
+            success: true,
+            data: interviews
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Get interview history error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch interview history"
+        });
+    }
+};
+
 
 export const sendInterviewMessage =
   async (req, res) => {

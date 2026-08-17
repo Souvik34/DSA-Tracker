@@ -9,6 +9,7 @@ import {
   BookOpen,
   Settings,
   Sparkles,
+  History,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,6 +40,14 @@ const mainItems = [
     title: "Interviews",
     url: "/interviews",
     icon: CalendarClock,
+  },
+];
+
+const progressItems = [
+  {
+    title: "Interview History",
+    url: "/interview-history",
+    icon: History,
   },
 ];
 
@@ -138,7 +147,55 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+<SidebarGroup>
+  <SidebarGroupLabel>Progress</SidebarGroupLabel>
 
+  <SidebarGroupContent>
+    <SidebarMenu>
+      {progressItems.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton
+            asChild
+            isActive={isActive(item.url)}
+            className="
+              transition-all
+              duration-300
+              ease-out
+              hover:bg-white/[0.045]
+              hover:text-white
+              data-[active=true]:bg-blue-500/[0.10]
+              data-[active=true]:text-blue-300
+              data-[active=true]:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_20px_-10px_rgba(59,130,246,0.6)]
+            "
+          >
+            <Link
+              to={item.url}
+              className="relative flex items-center gap-2"
+            >
+              {isActive(item.url) && (
+                <span
+                  className="
+                    absolute
+                    -left-2
+                    h-5
+                    w-[2px]
+                    rounded-full
+                    bg-blue-400
+                    shadow-[0_0_10px_rgba(96,165,250,0.8)]
+                  "
+                />
+              )}
+
+              <item.icon className="h-4 w-4" />
+
+              {!collapsed && <span>{item.title}</span>}
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  </SidebarGroupContent>
+</SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Learn</SidebarGroupLabel>
           <SidebarGroupContent>

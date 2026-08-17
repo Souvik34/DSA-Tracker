@@ -89,7 +89,9 @@ evaluateCode: async(data:{
     );
     return data;
   },
-
+getInterviewHistory: () => {
+    return api.get("/interview/history");
+},
   async endInterview(sessionId: string) {
     const { data } = await api.post("/interview/end", {
       sessionId,

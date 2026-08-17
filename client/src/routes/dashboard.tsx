@@ -5,7 +5,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { WelcomeCard } from "@/features/dashboard/welcome-card";
 import { ProgressCards } from "@/features/dashboard/progress-cards";
 import { RecentActivity } from "@/features/dashboard/recent-activity";
-
+import { History } from "lucide-react";
 import { RevisionGate } from "@/features/dashboard/revision-gate";
 import { requireRevisionCheck } from "@/lib/revision-guard";
 import { useNavigate } from "@tanstack/react-router";
@@ -130,6 +130,7 @@ if (error) {
         <ProgressCards
     dashboard={data}
 />
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
            <RecentActivity dashboard={dashboard} />

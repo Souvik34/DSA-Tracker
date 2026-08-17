@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-
+console.log("GOOGLE CALLBACK:", process.env.GOOGLE_CALLBACK_URL);
 import app from "./src/app.js";
 import pool from "./src/db/db.js";
 import http from "http";

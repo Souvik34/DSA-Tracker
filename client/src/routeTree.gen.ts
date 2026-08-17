@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RevisionsRouteImport } from './routes/revisions'
 import { Route as ProblemsRouteImport } from './routes/problems'
+import { Route as OauthSuccessRouteImport } from './routes/oauth-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -32,6 +33,11 @@ const RevisionsRoute = RevisionsRouteImport.update({
 const ProblemsRoute = ProblemsRouteImport.update({
   id: '/problems',
   path: '/problems',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthSuccessRoute = OauthSuccessRouteImport.update({
+  id: '/oauth-success',
+  path: '/oauth-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
+  '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
+  '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
+  '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interviews'
     | '/login'
+    | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interviews'
     | '/login'
+    | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interviews'
     | '/login'
+    | '/oauth-success'
     | '/problems'
     | '/revisions'
     | '/signup'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   InterviewsRoute: typeof InterviewsRoute
   LoginRoute: typeof LoginRoute
+  OauthSuccessRoute: typeof OauthSuccessRoute
   ProblemsRoute: typeof ProblemsRoute
   RevisionsRoute: typeof RevisionsRoute
   SignupRoute: typeof SignupRoute
@@ -169,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/problems'
       fullPath: '/problems'
       preLoaderRoute: typeof ProblemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth-success': {
+      id: '/oauth-success'
+      path: '/oauth-success'
+      fullPath: '/oauth-success'
+      preLoaderRoute: typeof OauthSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   InterviewsRoute: InterviewsRoute,
   LoginRoute: LoginRoute,
+  OauthSuccessRoute: OauthSuccessRoute,
   ProblemsRoute: ProblemsRoute,
   RevisionsRoute: RevisionsRoute,
   SignupRoute: SignupRoute,

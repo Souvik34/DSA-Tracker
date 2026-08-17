@@ -1,5 +1,5 @@
 import * as authService from "./auth.service.js";
-
+import { generateAccessToken, generateRefreshToken } from "../../utils/token.utils.js";
 export const signUp = async(req, res, next) => {
     try{
         const result = await authService.signUp(req.body);
@@ -13,6 +13,51 @@ export const signUp = async(req, res, next) => {
         next(error);
     }
 }
+export const googleSignIn = async (req, res, next) => {
+  try {
+    const result = await authService.googleSignIn(req.user);
+
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      message: result.message,
+      accessToken: result.accessToken,
+      user: result.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const googleCallback = async (req, res, next) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.redirect("http://localhost:8080/login");
+    }
+
+    const accessToken = generateAccessToken(user);
+
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
+
+    res.redirect(
+      `http://localhost:8080/oauth-success?token=${encodeURIComponent(
+        accessToken
+      )}&user=${encodeURIComponent(JSON.stringify(userData))}`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const signIn = async (req, res, next) => {
   try {
@@ -83,3 +128,4 @@ export const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+

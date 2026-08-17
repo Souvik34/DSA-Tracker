@@ -61,6 +61,24 @@ export const signIn  = async({email,password})=> {
   };
 };
 
+
+export const googleSignIn = async (user) => {
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  await authRepository.storeRefreshToken(user.id, refreshToken);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+  };
+};
+
 export const signOut = async (refreshToken) => {
   await authRepository.deleteRefreshToken(refreshToken);
 };

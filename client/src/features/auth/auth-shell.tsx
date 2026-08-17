@@ -1,10 +1,18 @@
 /* eslint-disable prettier/prettier */
-import { useState, type ReactNode } from "react";
+
+import {
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Link } from "@tanstack/react-router";
-import { Code2 } from "lucide-react";
+import { Code2, ArrowUpRight } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { authService } from "./auth-service";
 
 interface AuthShellProps {
   title: string;
@@ -12,14 +20,12 @@ interface AuthShellProps {
   footer: ReactNode;
   submitLabel: string;
   withName?: boolean;
+
   onSubmit: (values: {
     name?: string;
     email: string;
     password: string;
   }) => Promise<void> | void;
-
-  // Call your existing Google auth function here
-  onGoogleLogin?: () => Promise<void> | void;
 }
 
 export function AuthShell({
@@ -27,19 +33,25 @@ export function AuthShell({
   subtitle,
   footer,
   submitLabel,
-  withName,
+  withName = false,
   onSubmit,
-  onGoogleLogin,
 }: AuthShellProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleGoogleLogin = () => {
+    authService.googleLogin();
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     setLoading(true);
 
@@ -49,30 +61,16 @@ export function AuthShell({
         email,
         password,
       });
+    } catch (error) {
+      console.error("Authentication error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!onGoogleLogin) return;
-
-    setGoogleLoading(true);
-
-    try {
-      await onGoogleLogin();
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050608] text-foreground">
-      {/* =========================================================
-          BACKGROUND
-      ========================================================== */}
-
-      {/* Main ambient glow */}
+      {/* Background glow - top left */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full opacity-30 blur-[120px]"
@@ -82,6 +80,7 @@ export function AuthShell({
         }}
       />
 
+      {/* Background glow - bottom right */}
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-52 -right-40 h-[650px] w-[650px] rounded-full opacity-25 blur-[130px]"
@@ -91,7 +90,7 @@ export function AuthShell({
         }}
       />
 
-      {/* Tiny center glow */}
+      {/* Center glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-1/2 h-[350px] w-[350px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.08] blur-[100px]"
@@ -143,15 +142,16 @@ export function AuthShell({
 
             {/* Main content */}
             <div className="relative max-w-lg">
-              {/* Small badge */}
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/[0.07] px-3 py-1.5 text-xs font-medium text-blue-300 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.9)]" />
+
                 Built for serious engineers
               </div>
 
               <h2 className="text-4xl font-semibold leading-[1.12] tracking-[-0.035em] text-white xl:text-5xl">
                 Master DSA.
                 <br />
+
                 <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
                   Crack the interview.
                 </span>
@@ -200,7 +200,9 @@ export function AuthShell({
             {/* Bottom text */}
             <div className="flex items-center gap-3 text-[11px] text-white/25">
               <span>© {new Date().getFullYear()} AlgoForge</span>
+
               <span className="h-1 w-1 rounded-full bg-white/20" />
+
               <span>Build. Practice. Interview.</span>
             </div>
           </div>
@@ -211,7 +213,7 @@ export function AuthShell({
         ========================================================== */}
 
         <div className="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-10">
-          <div className="w-full max-w-[410px] animate-fade-in-up">
+          <div className="w-full max-w-[410px]">
             {/* Mobile logo */}
             <div className="mb-9 flex items-center gap-2.5 lg:hidden">
               <div
@@ -230,10 +232,7 @@ export function AuthShell({
               </span>
             </div>
 
-            {/* =====================================================
-                COLOURFUL GRADIENT OUTLINE
-            ====================================================== */}
-
+            {/* Colorful outline */}
             <div
               className="relative rounded-[26px] p-[1px]"
               style={{
@@ -277,49 +276,62 @@ export function AuthShell({
                     </p>
                   </div>
 
-                  {/* =================================================
-                      GOOGLE LOGIN
-                  ================================================== */}
+                  {/* Google Login */}
+                  <div className="group relative mt-7 rounded-xl p-[1px]">
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 rounded-xl opacity-60 blur-[1px] transition-all duration-500 group-hover:opacity-100 group-hover:blur-[2px]"
+                      style={{
+                        background:
+                          "linear-gradient(90deg, #4285F4, #8B5CF6, #06B6D4, #4285F4)",
+                        backgroundSize: "300% 100%",
+                        animation: "googleBorder 5s linear infinite",
+                      }}
+                    />
 
-                  {onGoogleLogin && (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGoogleLogin}
-                        disabled={googleLoading || loading}
-                        className="mt-7 h-11 w-full rounded-xl border-white/[0.12] bg-white/[0.035] text-sm font-medium text-white transition-all duration-200 hover:border-white/[0.2] hover:bg-white/[0.07]"
-                      >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                      className="relative h-11 w-full overflow-hidden rounded-[11px] border-0 bg-[#0c0f15] text-sm font-medium text-white transition-all duration-300 hover:bg-[#11151d]"
+                    >
+                      {/* Shimmer */}
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent opacity-0 transition-all duration-700 group-hover:left-[120%] group-hover:opacity-100"
+                      />
+
+                      {/* Google icon */}
+                      <span className="relative flex h-7 w-7 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] transition-all duration-300 group-hover:border-white/[0.15] group-hover:bg-white/[0.07]">
                         <GoogleIcon />
+                      </span>
 
-                        <span>
-                          {googleLoading
-                            ? "Connecting…"
-                            : "Continue with Google"}
-                        </span>
-                      </Button>
+                      <span className="relative ml-1">
+                        Continue with Google
+                      </span>
 
-                      {/* Divider */}
-                      <div className="my-6 flex items-center gap-3">
-                        <div className="h-px flex-1 bg-white/[0.08]" />
+                      <ArrowUpRight className="relative ml-auto h-4 w-4 text-white/25 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white/70" />
+                    </Button>
+                  </div>
 
-                        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
-                          or continue with email
-                        </span>
+                  {/* Divider */}
+                  <div className="my-6 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/[0.08]" />
 
-                        <div className="h-px flex-1 bg-white/[0.08]" />
-                      </div>
-                    </>
-                  )}
+                    <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
+                      or continue with email
+                    </span>
 
-                  {/* =================================================
-                      FORM
-                  ================================================== */}
+                    <div className="h-px flex-1 bg-white/[0.08]" />
+                  </div>
 
+                  {/* Form */}
                   <form
                     className="space-y-4"
                     onSubmit={handleSubmit}
                   >
+                    {/* Name */}
                     {withName && (
                       <div className="space-y-2">
                         <Label
@@ -340,6 +352,7 @@ export function AuthShell({
                       </div>
                     )}
 
+                    {/* Email */}
                     <div className="space-y-2">
                       <Label
                         htmlFor="email"
@@ -359,6 +372,7 @@ export function AuthShell({
                       />
                     </div>
 
+                    {/* Password */}
                     <div className="space-y-2">
                       <Label
                         htmlFor="password"
@@ -382,7 +396,7 @@ export function AuthShell({
                     {/* Submit */}
                     <Button
                       type="submit"
-                      disabled={loading || googleLoading}
+                      disabled={loading}
                       className="relative mt-2 h-11 w-full overflow-hidden rounded-xl border-0 text-sm font-semibold text-white transition-all duration-300 hover:scale-[1.01] disabled:hover:scale-100"
                       style={{
                         background:
@@ -395,10 +409,9 @@ export function AuthShell({
                         {loading ? "Please wait…" : submitLabel}
                       </span>
 
-                      {/* Button shine */}
                       <span
                         aria-hidden
-                        className="absolute inset-y-0 -left-20 w-20 rotate-12 bg-white/10 blur-md transition-transform duration-700 group-hover:translate-x-[450px]"
+                        className="absolute inset-y-0 -left-20 w-20 rotate-12 bg-white/10 blur-md transition-transform duration-700"
                       />
                     </Button>
                   </form>
@@ -418,19 +431,31 @@ export function AuthShell({
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes googleBorder {
+          0% {
+            background-position: 0% 50%;
+          }
+
+          50% {
+            background-position: 100% 50%;
+          }
+
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-/* ============================================================
-   GOOGLE ICON
-============================================================ */
-
 function GoogleIcon() {
   return (
     <svg
-      width="18"
-      height="18"
+      width="17"
+      height="17"
       viewBox="0 0 24 24"
       aria-hidden="true"
       className="shrink-0"
@@ -439,14 +464,17 @@ function GoogleIcon() {
         fill="#4285F4"
         d="M21.35 12.27c0-.79-.07-1.55-.22-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.44h3.14c1.84-1.69 2.92-4.18 2.92-7.4Z"
       />
+
       <path
         fill="#34A853"
         d="M12 21.75c2.63 0 4.84-.87 6.45-2.35l-3.14-2.44c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.72-5.46-4.03H3.3v2.52A9.75 9.75 0 0 0 12 21.75Z"
       />
+
       <path
         fill="#FBBC05"
         d="M6.54 13.86A5.86 5.86 0 0 1 6.23 12c0-.65.11-1.28.31-1.86V7.62H3.3A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.05 4.38l3.24-2.52Z"
       />
+
       <path
         fill="#EA4335"
         d="M12 6.11c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.21 14.63 2.25 12 2.25a9.75 9.75 0 0 0-8.7 5.37l3.24 2.52C7.31 7.83 9.46 6.11 12 6.11Z"

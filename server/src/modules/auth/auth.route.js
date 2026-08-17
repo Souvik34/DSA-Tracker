@@ -1,8 +1,20 @@
 import express from "express";
 import passport from "passport";
 
-import { signUp, signIn, signOut,  refreshAccessToken, forgotPassword, resetPassword} from "./auth.controller.js";
+import {
+  signUp,
+  signIn,
+  signOut,
+  refreshAccessToken,
+  forgotPassword,
+  resetPassword,
+  googleCallback,
+
+} from "./auth.controller.js";
+
 import { authLimiter } from "../../middlewares/ratelimit.js";
+import { protect } from "../../middlewares/auth.middleware.js";
+
 const router = express.Router();
 
 router.post("/signup", authLimiter, signUp);
@@ -16,19 +28,19 @@ router.get(
   "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
+    session: false,
   })
 );
-
 
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "/login",
+    failureRedirect: "http://localhost:8080/login",
+    session: false,
   }),
-  (req, res) => {
-    res.send("Google login successful ");
-  }
+  googleCallback
 );
+
 
 
 export default router;

@@ -8,68 +8,108 @@ import {
     getRecentActivityRepo
 } from "../dashboard/dashboard.repository.js";
 import {
-   getMentorProblemsRepo
+    getMentorProblemsRepo,
+    getMentorProblemsByIdsRepo
 } from "../problems/problems.repository.js";
 import {
     generateMentorAdvice
 } from "./mentor.ai.service.js";
 
 import {
-    findFocusTopic
+    findFocusTopic,
+    calculateTopicScore
 } from "./topicScore.js";
-
 export const getMentorRecommendation = async (userId) => {
+const snapshotCacheKey = `mentor-snapshot:${userId}`;
 
-    const [
+const cachedSnapshot =
+    await redisClient.get(snapshotCacheKey);
 
-        topicStrength,
+const existingSnapshot = cachedSnapshot
+    ? JSON.parse(cachedSnapshot)
+    : null;
 
-        strongTopics,
+const existingPlan = existingSnapshot?.mentorPlan;
+const completedProblemIds =
+    existingPlan?.completedProblemIds || [];
+    const planCompleted =
+    existingPlan?.problemIds?.length > 0 &&
+    existingPlan.problemIds.every((id) =>
+        completedProblemIds.includes(id)
+    );
+const [
+    topicStrength,
+    strongTopics,
+    difficulty,
+    topics,
+    recentActivity
+] = await Promise.all([
+    getTopicStrengthRepo(userId),
+    getStrongTopicsRepo(userId),
+    getDifficultyDistributionRepo(userId),
+    getTopicDistributionRepo(userId),
+    getRecentActivityRepo(userId)
+]);
 
-        difficulty,
+let mentorProblems = [];
 
-        topics,
+let focusTopic;
+let isNewPlan = !existingPlan || planCompleted;
+if (
+    existingPlan?.problemIds?.length > 0 &&
+    !planCompleted
+) {
 
-        recentActivity
+    const remainingProblemIds =
+        existingPlan.problemIds.filter(
+            (id) => !completedProblemIds.includes(id)
+        );
 
-    ] = await Promise.all([
+    mentorProblems =
+        await getMentorProblemsByIdsRepo(
+            remainingProblemIds
+        );
 
-        getTopicStrengthRepo(userId),
+    if (mentorProblems.length > 0) {
 
-        getStrongTopicsRepo(userId),
+        focusTopic =
+            topicStrength.find(
+                (topic) =>
+                    topic.topic === existingPlan.topic
+            ) || findFocusTopic(topicStrength);
 
-        getDifficultyDistributionRepo(userId),
+    }
 
-        getTopicDistributionRepo(userId),
+}
 
-        getRecentActivityRepo(userId)
+if (!mentorProblems.length) {
 
-    ]);
+    isNewPlan = true;
 
+    const rankedTopics = topicStrength
+        .map(topic => calculateTopicScore(topic))
+        .sort((a, b) => a.score - b.score);
 
-   const focusTopic =
-    findFocusTopic(topicStrength);
+    focusTopic = null;
+    mentorProblems = [];
 
-console.log("FOCUS TOPIC:", focusTopic);
+    for (const topic of rankedTopics) {
 
+        const problems = await getMentorProblemsRepo(
+            userId,
+            topic.topic,
+            5
+        );
 
-console.log(
-    "FETCHING MENTOR PROBLEMS",
-    userId,
-    focusTopic?.topic
-);
+        if (problems.length > 0) {
 
+            focusTopic = topic;
+            mentorProblems = problems;
 
-const mentorProblems =
-    focusTopic
-        ? await getMentorProblemsRepo(
-              userId,
-              focusTopic.topic,
-              5
-          )
-        : [];
-
-
+            break;
+        }
+    }
+}
 console.log(
     "MENTOR PROBLEMS RESULT",
     mentorProblems
@@ -224,31 +264,97 @@ const problemIds = mentorProblems
 
     }
 
-
-    /* ---------------- Response ---------------- */
-
-   return {
-
+const snapshot = {
     recommendation,
-
     aiAdvice,
-
     mentorProblems,
-
     profile: {
-
         focusTopic,
-
         strongTopics,
-
         difficulty,
-
         topics,
-
         recentActivity
+    },
+mentorPlan: {
+    topic: focusTopic?.topic ?? null,
 
-    }
+    problemIds: mentorProblems.map(
+        (problem) => problem.id
+    ),
+
+    completedProblemIds: isNewPlan
+        ? []
+        : completedProblemIds
+}
+};
+await redisClient.set(
+    snapshotCacheKey,
+    JSON.stringify(snapshot)
+);
+
+
+return snapshot;
+    /* ---------------- Response ---------------- */
 
 };
 
+export const completeMentorProblem = async (
+  userId,
+  problemId
+) => {
+  const snapshotCacheKey = `mentor-snapshot:${userId}`;
+
+  console.log("========== MENTOR COMPLETION ==========");
+  console.log("USER:", userId);
+  console.log("PROBLEM:", problemId);
+
+  const cached = await redisClient.get(snapshotCacheKey);
+
+  console.log("MENTOR SNAPSHOT EXISTS:", !!cached);
+
+  if (!cached) {
+    throw new Error("No active mentor plan");
+  }
+
+  const snapshot = JSON.parse(cached);
+
+  const plan = snapshot.mentorPlan;
+
+  console.log("MENTOR PLAN:", plan);
+
+  if (!plan?.problemIds?.includes(Number(problemId))) {
+    throw new Error(
+      "Problem is not part of the current mentor plan"
+    );
+  }
+
+  if (!plan.completedProblemIds) {
+    plan.completedProblemIds = [];
+  }
+
+  if (
+    !plan.completedProblemIds.includes(
+      Number(problemId)
+    )
+  ) {
+    plan.completedProblemIds.push(
+      Number(problemId)
+    );
+  }
+
+  snapshot.mentorPlan = plan;
+
+  await redisClient.set(
+    snapshotCacheKey,
+    JSON.stringify(snapshot)
+  );
+await redisClient.del(`dashboard:${userId}`);
+  console.log(
+    "UPDATED COMPLETED IDS:",
+    plan.completedProblemIds
+  );
+
+  console.log("========================================");
+
+  return snapshot.mentorPlan;
 };

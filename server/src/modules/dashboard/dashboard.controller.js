@@ -20,7 +20,7 @@ if (!userId) {
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: err.message,
     });
   }
 };

@@ -66,7 +66,6 @@ const [
     difficultyDist,
     strongTopics,
     recentActivity,
-    mentor,
 ] = await Promise.all([
     getDueRevisionsRepo(userId),
     getDailySolveRepo(userId),
@@ -74,9 +73,9 @@ const [
     getDifficultyDistributionRepo(userId),
     getStrongTopicsRepo(userId),
     getRecentActivityRepo(userId),
-    getMentorRecommendation(userId),
 ]);
 console.log("After Promise.all");
+const mentor = await getMentorRecommendation(userId);
 console.log(mentor);
  const focusTopic = mentor?.focusTopic || null;
 

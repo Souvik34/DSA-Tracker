@@ -6,17 +6,22 @@ import { ProblemsTable } from "@/features/problems/problems-table";
 import { requireRevisionCheck } from "@/lib/revision-guard";
 
 export const Route = createFileRoute("/problems")({
-  validateSearch: (search) => ({
-    source:
-      typeof search.source === "string"
-        ? search.source
-        : undefined,
+ validateSearch: (search) => ({
+  source:
+    typeof search.source === "string"
+      ? search.source
+      : undefined,
 
-    ids:
-      typeof search.ids === "string"
-        ? search.ids
-        : undefined,
-  }),
+  ids:
+    typeof search.ids === "string"
+      ? search.ids
+      : undefined,
+
+  problemId:
+    typeof search.problemId === "string"
+      ? search.problemId
+      : undefined,
+}),
 
   beforeLoad: async ({ location }) => {
     await requireAuth(location);

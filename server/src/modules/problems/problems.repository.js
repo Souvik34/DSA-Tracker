@@ -316,77 +316,39 @@ export const getMentorProblemsRepo = async (
     topic,
     limit = 3
 ) => {
+    const result = await pool.query(
+        `
+        SELECT
+            p.id,
+            p.title,
+            p.difficulty,
+            p.topic,
+            p.question_link
+        FROM problems p
+        WHERE LOWER(p.topic) = LOWER($2)
 
-    try {
-
-        console.log("MENTOR QUERY PARAMS", {
-            userId,
-            topic,
-            limit
-        });
-
-        const result = await pool.query(
-            `
-            SELECT
-                p.id,
-                p.title,
-                p.difficulty,
-                p.topic,
-                p.question_link
-
-            FROM problems p
-
-            WHERE LOWER(p.topic) = LOWER($2)
-
-            AND p.id NOT IN (
-
-                SELECT problem_id
-
-                FROM solved_problems
-
-                WHERE user_id = $1
-
-            )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM solved_problems sp
+            WHERE sp.user_id = $1
+              AND sp.problem_id = p.id
+        )
 
         ORDER BY
+            CASE LOWER(p.difficulty::text)
+                WHEN 'easy' THEN 1
+                WHEN 'medium' THEN 2
+                WHEN 'hard' THEN 3
+                ELSE 4
+            END,
+            p.id
 
-    CASE p.difficulty::text
+        LIMIT $3
+        `,
+        [userId, topic, limit]
+    );
 
-        WHEN 'easy' THEN 1
-        WHEN 'medium' THEN 2
-        WHEN 'hard' THEN 3
-
-        ELSE 4
-
-    END,
-
-    p.id
-
-            LIMIT $3
-            `,
-            [
-                userId,
-                topic,
-                limit
-            ]
-        );
-
-  console.log("MENTOR DB RESULT COUNT:", result.rows.length);
-console.log("MENTOR DB RESULT:", result.rows);
-        return result.rows;
-
-
-    } catch(err){
-
-        console.log(
-            "MENTOR PROBLEM QUERY FAILED",
-            err
-        );
-
-        throw err;
-
-    }
-
+    return result.rows;
 };
 
     export const startProblemAttemptRepo = async (
@@ -471,4 +433,27 @@ problemId
 
 return result.rows[0];
 
+};
+
+export const getMentorProblemsByIdsRepo = async (problemIds) => {
+    if (!problemIds || problemIds.length === 0) {
+        return [];
+    }
+
+    const result = await pool.query(
+        `
+        SELECT
+            id,
+            title,
+            difficulty,
+            topic,
+            question_link
+        FROM problems
+        WHERE id = ANY($1::int[])
+        ORDER BY array_position($1::int[], id)
+        `,
+        [problemIds]
+    );
+
+    return result.rows;
 };

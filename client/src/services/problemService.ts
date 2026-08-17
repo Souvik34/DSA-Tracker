@@ -73,14 +73,21 @@ async markSolved(
     const res = await api.post(`/problems/${id}/bookmark`);
     return res.data;
   },
-  async startProblem(id:number|string){
+async startProblem(id: number | string) {
+  try {
+    const res = await api.post(`/problems/${id}/start`);
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 403) {
+      return {
+        blocked: true,
+        problemId: err.response?.data?.problemId,
+        message: err.response?.data?.message,
+      };
+    }
 
- const res = await api.post(
-   `/problems/${id}/start`
- );
-
- return res.data;
-
+    throw err;
+  }
 },
 
   async toggleRevision(id: number | string) {
@@ -140,7 +147,16 @@ async removeBookmark(id: number | string) {
   const res = await api.delete(`/problems/${id}/bookmark`);
   return res.data;
 },
+async completeMentorProblem(problemId: number | string) {
+  const res = await api.post("/mentor/complete", {
+    problemId,
+  });
+
+  return res.data;
+},
 };
+
+
 
 
 export default problemService;

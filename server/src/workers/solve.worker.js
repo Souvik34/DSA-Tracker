@@ -3,7 +3,7 @@ import { connection } from "../config/bullmq.redis.js";
 import { addSolvedProblemService } from "../modules/progress/progress.service.js";
 import { insertRevisionRepo } from "../modules/revision/revision.repository.js";
 import redisClient from "../config/redis.js";
-
+import { completeMentorProblem } from "../modules/mentor/mentor.service.js";
 export const solveWorker = new Worker(
   "solve-problem",
   async (job) => {
@@ -23,8 +23,25 @@ console.log("WORKER DATA", {
 
     try {
       /* ---------- CORE LOGIC ---------- */
-      await addSolvedProblemService(userId, problemId, difficulty , timeTaken);
-      await insertRevisionRepo(userId, problemId);
+await addSolvedProblemService(
+  userId,
+  problemId,
+  difficulty,
+  timeTaken
+);
+
+await insertRevisionRepo(userId, problemId);
+
+// If this problem belongs to the active mentor plan,
+// mark it completed there as well.
+try {
+  await completeMentorProblem(userId, problemId);
+} catch (err) {
+  console.log(
+    "MENTOR COMPLETION SKIPPED:",
+    err.message
+  );
+}
 
     /* ---------- CACHE INVALIDATION ---------- */
 await Promise.all([
@@ -36,8 +53,7 @@ await Promise.all([
     redisClient.del(`revision:all:${userId}`),
 
     redisClient.del(`dashboard:${userId}`),
-
-    redisClient.del(`mentor-ai:${userId}`),
+// redisClient.del(`mentor-snapshot:${userId}`),
 
 ]);
       console.log(

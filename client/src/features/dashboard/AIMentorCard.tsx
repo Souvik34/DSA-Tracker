@@ -1,18 +1,16 @@
 /* eslint-disable prettier/prettier */
+
 import {
     BrainCircuit,
     Sparkles,
-
-} from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
-import {
     Activity,
     TrendingDown,
     Target,
-    ExternalLink,
-    Flame,
+    ArrowUpRight,
+    Zap,
 } from "lucide-react";
 
+import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 
 import { DashboardData } from "@/types/dashboard";
@@ -28,661 +26,965 @@ export default function AIMentorCard({
 
     if (!dashboard) return null;
 
-   const recommendation =
-dashboard.recommendation ?? {};
-
-const ai =
-dashboard.aiAdvice ?? {};
-
-const focus =
-dashboard.profile?.focusTopic ?? {};
-    console.log("Dashboard", dashboard);
-console.log("AI", dashboard?.aiAdvice);
-console.log("Recommendation", dashboard?.recommendation);
-console.log("Profile", dashboard?.profile);
-
-    return (
-
-        <motion.div
-
-            initial={{
-                opacity: 0,
-                y: 24,
-            }}
-
-            animate={{
-                opacity: 1,
-                y: 0,
-            }}
-
-            transition={{
-                duration: 0.6,
-                ease: "easeOut",
-            }}
-
-            className="
-            relative
-            overflow-hidden
-            rounded-[32px]
-            border
-            border-zinc-800
-            bg-zinc-950
-            mt-8
-            shadow-2xl
-            shadow-black/40
-            "
-        >
-
-            {/* Animated background glow */}
-
-            <div
-                className="
-                absolute
-                -right-20
-                -top-20
-                h-72
-                w-72
-                rounded-full
-                bg-violet-600/20
-                blur-[120px]
-                animate-pulse
-                "
-            />
-
-            <div
-                className="
-                absolute
-                -left-20
-                bottom-0
-                h-64
-                w-64
-                rounded-full
-                bg-cyan-500/10
-                blur-[100px]
-                "
-            />
-
-            {/* Subtle grid overlay */}
-
-            <div
-                className="
-                absolute
-                inset-0
-                opacity-[0.04]
-                [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)]
-                [background-size:32px_32px]
-                "
-            />
-
-            <div className="relative p-8">
-
-                {/* Top Row */}
-
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-
-                    <div>
-
-                        <motion.div
-
-                            initial={{
-                                opacity: 0,
-                                x: -12,
-                            }}
-
-                            animate={{
-                                opacity: 1,
-                                x: 0,
-                            }}
-
-                            transition={{
-                                delay: 0.1,
-                            }}
-
-                            className="
-                            inline-flex
-                            items-center
-                            gap-2
-                            rounded-full
-                            border
-                            border-violet-500/20
-                            bg-violet-500/10
-                            px-4
-                            py-2
-                            text-violet-300
-                            text-sm
-                            font-medium
-                            backdrop-blur-sm
-                            "
-                        >
-
-                            <BrainCircuit size={16}/>
-
-                            Interview Intelligence
-
-                        </motion.div>
-
-                        <motion.h2
-
-                            initial={{
-                                opacity: 0,
-                                y: 10,
-                            }}
-
-                            animate={{
-                                opacity: 1,
-                                y: 0,
-                            }}
-
-                            transition={{
-                                delay: 0.15,
-                            }}
-
-                            className="
-                            mt-6
-                            text-4xl
-                            md:text-5xl
-                            font-black
-                            tracking-tight
-                            text-white
-                            leading-tight
-                            "
-                        >
-
-                            {ai?.headline || recommendation?.title}
-
-                        </motion.h2>
-
-                        <motion.p
-
-                            initial={{
-                                opacity: 0,
-                                y: 10,
-                            }}
-
-                            animate={{
-                                opacity: 1,
-                                y: 0,
-                            }}
-
-                            transition={{
-                                delay: 0.22,
-                            }}
-
-                            className="
-                            mt-4
-                            max-w-2xl
-                            text-lg
-                            md:text-xl
-                            text-zinc-300
-                            leading-relaxed
-                            "
-                        >
-
-                            {ai?.insight || recommendation?.summary}
-
-                        </motion.p>
-
-                    </div>
-
-                    {/* Live chip */}
-
-                    <motion.div
-
-                        initial={{
-                            opacity: 0,
-                            scale: 0.9,
-                        }}
-
-                        animate={{
-                            opacity: 1,
-                            scale: 1,
-                        }}
-
-                        transition={{
-                            delay: 0.25,
-                        }}
-
-                        className="
-                        flex
-                        items-center
-                        gap-2
-                        rounded-full
-                        border
-                        border-zinc-700
-                        bg-zinc-900/80
-                        px-4
-                        py-2
-                        text-sm
-                        text-zinc-300
-                        backdrop-blur-sm
-                        "
-                    >
-
-                        <span className="relative flex h-2.5 w-2.5">
-
-                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"/>
-
-                            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400"/>
-
-                        </span>
-
-                        Live Analysis
-
-                    </motion.div>
-                   
-
-                </div>
-
-                {/* Signal + Confidence Row */}
-
-                <motion.div
-
-                    initial={{
-                        opacity: 0,
-                        y: 16,
-                    }}
-
-                    animate={{
-                        opacity: 1,
-                        y: 0,
-                    }}
-
-                    transition={{
-                        delay: 0.35,
-                    }}
-
-                    className="
-                    mt-8
-                    flex
-                    flex-wrap
-                    items-center
-                    gap-3
-                    "
-                >
-
-                    <div
-                        className="
-                        inline-flex
-                        items-center
-                        gap-2
-                        rounded-2xl
-                        border
-                        border-violet-500/20
-                        bg-violet-500/10
-                        px-4
-                        py-3
-                        backdrop-blur-sm
-                        transition-all
-                        duration-300
-                        hover:border-violet-400/40
-                        hover:bg-violet-500/15
-                        hover:shadow-lg
-                        hover:shadow-violet-500/10
-                        "
-                    >
-
-                        <Sparkles className="text-violet-300" size={18}/>
-
-                        <div>
-
-                            <p className="text-[11px] uppercase tracking-[0.18em] text-violet-200/80">
-
-                                Focus Area
-
-                            </p>
-
-                            <p className="text-sm font-semibold text-white capitalize">
-
-                                {recommendation?.priority}
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    <div
-                        className="
-                        inline-flex
-                        items-center
-                        gap-2
-                        rounded-2xl
-                        border
-                        border-zinc-700
-                        bg-zinc-900/80
-                        px-4
-                        py-3
-                        backdrop-blur-sm
-                        transition-all
-                        duration-300
-                        hover:border-zinc-500
-                        hover:bg-zinc-900
-                        "
-                    >
-
-                        <Activity className="text-emerald-300" size={18}/>
-
-                        <div>
-
-                            <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-
-                                Confidence
-
-                            </p>
-
-                            <p className="text-sm font-semibold text-white">
-
-                                {focus?.confidence ?? recommendation?.confidence ?? 0}%
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                    <div
-                        className="
-                        inline-flex
-                        items-center
-                        rounded-2xl
-                        border
-                        border-zinc-700
-                        bg-zinc-900/80
-                        px-4
-                        py-3
-                        text-sm
-                        font-medium
-                        text-zinc-200
-                        capitalize
-                        backdrop-blur-sm
-                        transition-all
-                        duration-300
-                        hover:border-zinc-500
-                        hover:bg-zinc-900
-                        "
-                    >
-
-                        {focus?.type === "coverage_gap"
-                            ? "Coverage Gap"
-                            : focus?.type === "weakness"
-                            ? "Weak Topic"
-                            : "Healthy Topic"
-                        }
-
-                    </div>
-
-                </motion.div>
-
-                
-                <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.45 }}
-    className="mt-10"
->
-
-    <div className="flex items-center gap-3">
-
-        <div
-            className="
-            h-12
-            w-12
-            rounded-2xl
-            border
-            border-violet-500/20
-            bg-violet-500/10
-            flex
-            items-center
-            justify-center
-            "
-        >
-
-            <TrendingDown
-                size={20}
-                className="text-violet-400"
-            />
-
-        </div>
-
-        <div>
-
-            <h3 className="text-2xl font-bold text-white">
-                Detected Signal
-            </h3>
-
-            <p className="text-zinc-500">
-                Why the AI selected this recommendation
-            </p>
-
-        </div>
-
-    </div>
-
-    <motion.div
-        whileHover={{ y: -4 }}
-        transition={{ duration: 0.25 }}
-        className="
-        mt-6
-        rounded-3xl
-        border
-        border-zinc-800
-        bg-zinc-900/50
-        p-6
-        backdrop-blur-xl
-        "
-    >
-
-        <p
-            className="
-            text-lg
-            leading-8
-            text-zinc-300
-            "
-        >
-            {ai?.reason}
-        </p>
-
-    </motion.div>
-
-</motion.div>
-<motion.div
-
-initial={{
-opacity:0,
-y:20
-}}
-
-animate={{
-opacity:1,
-y:0
-}}
-
-transition={{
-delay:0.6
-}}
-
-className="mt-10"
-
->
-
-<div className="flex items-center gap-3">
-
-
-<div
-className="
-h-12
-w-12
-rounded-2xl
-border
-border-cyan-500/20
-bg-cyan-500/10
-flex
-items-center
-justify-center
-"
->
-
-<Target
-size={20}
-className="text-cyan-400"
-/>
-
-</div>
-
-
-<div>
-
-<h3 className="text-2xl font-bold">
-
-Recommended Next Steps
-
-</h3>
-
-
-<p className="text-zinc-500">
-
-AI selected problems from your weakness area
-
-</p>
-
-
-</div>
-
-
-</div>
-
-
-<div className="mt-6 grid gap-4">
-
-    {dashboard.mentorProblems?.length > 0 ? (
-
-        dashboard.mentorProblems.map((problem, index) => (
-
-            <motion.div
-                key={problem.id}
-                whileHover={{ y: -4 }}
-                className="
-                    flex
-                    items-center
-                    justify-between
-                    rounded-2xl
-                    border
-                    border-zinc-800
-                    bg-zinc-900/60
-                    p-5
-                    hover:border-violet-500/40
-                    transition-all
-                "
-            >
-
-                <div>
-
-                    <div className="flex gap-3 items-center">
-
-                        <span className="
-                            text-xs
-                            text-violet-400
-                            uppercase
-                        ">
-                            #{index + 1}
-                        </span>
-
-                        <h4 className="font-semibold text-white">
-                            {problem.title}
-                        </h4>
-
-                    </div>
-
-                    <p className="
-                        mt-2
-                        text-sm
-                        text-zinc-500
-                        capitalize
-                    ">
-                        {problem.topic} • {problem.difficulty}
-                    </p>
-
-                </div>
-
-            <button
-    type="button"
-onClick={() => {
-    console.log(
-        "ALL MENTOR PROBLEMS:",
-        dashboard.mentorProblems
-    );
-
-    console.log(
-        "MENTOR IDS:",
-        dashboard.mentorProblems?.map((p) => p.id)
-    );
-
-    console.log(
-        "IDS STRING:",
-        dashboard.mentorProblems?.map((p) => p.id).join(",")
-    );
-
-    const ids = dashboard.mentorProblems
-        ?.map((p) => p.id)
+    const recommendation = dashboard.recommendation ?? {};
+    const ai = dashboard.aiAdvice ?? {};
+    const focus = dashboard.profile?.focusTopic ?? {};
+
+    const confidence =
+        focus?.confidence ??
+        recommendation?.confidence ??
+        0;
+
+    const focusType =
+        focus?.type === "coverage_gap"
+            ? "Coverage Gap"
+            : focus?.type === "weakness"
+                ? "Weak Topic"
+                : "Healthy Topic";
+
+ const mentorProblems =
+    dashboard.mentorProblems ?? [];
+
+const mentorPlan =
+    dashboard.mentorPlan ?? {};
+
+const completedProblemIds =
+    mentorPlan.completedProblemIds ?? [];
+
+    const isMentorCompleted = (problemId: number) =>
+    completedProblemIds.includes(problemId);
+
+    const staggerContainer = {
+        hidden: {},
+        show: {
+            transition: {
+                staggerChildren: 0.08,
+            },
+        },
+    };
+
+    const fadeUp = {
+        hidden: {
+            opacity: 0,
+            y: 18,
+        },
+        show: {
+            opacity: 1,
+            y: 0,
+        },
+    };
+
+    const openRoadmap = (problemId?: number) => {
+    const ids = mentorProblems
+        .map((problem) => problem.id)
         .join(",");
+
+    if (!ids) return;
 
     navigate({
         to: "/problems",
         search: {
             source: "roadmap",
             ids,
+            problemId: problemId
+                ? String(problemId)
+                : undefined,
         },
     });
-}}
-    className="
-        flex
-        items-center
-        gap-2
+};
+
+    return (
+        <motion.section
+            initial="hidden"
+            animate="show"
+            variants={staggerContainer}
+            className="
+                relative
+                mt-8
+                overflow-hidden
+                rounded-[28px]
+                border
+                border-zinc-800/80
+                bg-zinc-950
+                shadow-2xl
+                shadow-black/30
+            "
+        >
+            {/* ------------------------------------------------ */}
+            {/* BACKGROUND EFFECTS */}
+            {/* ------------------------------------------------ */}
+
+            <div
+                className="
+                    pointer-events-none
+                    absolute
+                    -right-32
+                    -top-32
+                    h-96
+                    w-96
+                    rounded-full
+                    bg-violet-600/15
+                    blur-[130px]
+                "
+            />
+
+            <motion.div
+                animate={{
+                    scale: [1, 1.08, 1],
+                    opacity: [0.15, 0.25, 0.15],
+                }}
+                transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+                className="
+                    pointer-events-none
+                    absolute
+                    -left-32
+                    bottom-0
+                    h-80
+                    w-80
+                    rounded-full
+                    bg-cyan-500/10
+                    blur-[120px]
+                "
+            />
+
+            <div
+                className="
+                    pointer-events-none
+                    absolute
+                    inset-0
+                    opacity-[0.025]
+                    [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)]
+                    [background-size:32px_32px]
+                "
+            />
+
+            <div className="relative p-6 md:p-8">
+
+                {/* ================================================= */}
+                {/* HERO */}
+                {/* ================================================= */}
+
+                <motion.div
+                    variants={fadeUp}
+                    className="
+                        rounded-3xl
+                        border
+                        border-zinc-800
+                        bg-zinc-900/50
+                        p-6
+                        md:p-7
+                    "
+                >
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+
+                        <div className="max-w-3xl">
+
+                            {/* Badge */}
+
+                            <div
+                                className="
+                                    inline-flex
+                                    items-center
+                                    gap-2
+                                    rounded-full
+                                    border
+                                    border-violet-500/20
+                                    bg-violet-500/10
+                                    px-3
+                                    py-1.5
+                                    text-xs
+                                    font-medium
+                                    text-violet-300
+                                "
+                            >
+                                <BrainCircuit
+                                    size={15}
+                                    className="text-violet-400"
+                                />
+
+                                Interview Intelligence
+
+                                <span
+                                    className="
+                                        h-1
+                                        w-1
+                                        rounded-full
+                                        bg-violet-400
+                                    "
+                                />
+
+                                AI Mentor
+                            </div>
+
+                            {/* Headline */}
+
+                            <motion.h2
+                                variants={fadeUp}
+                                className="
+                                    mt-5
+                                    text-3xl
+                                    font-bold
+                                    tracking-tight
+                                    text-white
+                                    md:text-4xl
+                                "
+                            >
+                                {ai?.headline ||
+                                    recommendation?.title ||
+                                    "Your AI Mentor"}
+                            </motion.h2>
+
+                            {/* Insight */}
+
+                            <motion.p
+                                variants={fadeUp}
+                                className="
+                                    mt-3
+                                    max-w-2xl
+                                    text-base
+                                    leading-7
+                                    text-zinc-400
+                                    md:text-lg
+                                "
+                            >
+                                {ai?.insight ||
+                                    recommendation?.summary ||
+                                    "Your personalized preparation guidance will appear here."}
+                            </motion.p>
+
+                        </div>
+
+                        {/* Live analysis */}
+
+                        <motion.div
+                            variants={fadeUp}
+                            className="
+                                flex
+                                shrink-0
+                                items-center
+                                gap-2
+                                self-start
+                                rounded-full
+                                border
+                                border-emerald-500/20
+                                bg-emerald-500/5
+                                px-3
+                                py-2
+                                text-xs
+                                font-medium
+                                text-emerald-300
+                            "
+                        >
+                            <span className="relative flex h-2 w-2">
+                                <span
+                                    className="
+                                        absolute
+                                        inline-flex
+                                        h-full
+                                        w-full
+                                        animate-ping
+                                        rounded-full
+                                        bg-emerald-400
+                                        opacity-60
+                                    "
+                                />
+
+                                <span
+                                    className="
+                                        relative
+                                        inline-flex
+                                        h-2
+                                        w-2
+                                        rounded-full
+                                        bg-emerald-400
+                                    "
+                                />
+                            </span>
+
+                            Live Analysis
+                        </motion.div>
+
+                    </div>
+                </motion.div>
+
+                {/* ================================================= */}
+                {/* METRICS */}
+                {/* ================================================= */}
+
+                <motion.div
+                    variants={staggerContainer}
+                    className="
+                        mt-4
+                        grid
+                        grid-cols-1
+                        gap-4
+                        md:grid-cols-3
+                    "
+                >
+
+                    {/* Focus */}
+
+                    <motion.div
+                        variants={fadeUp}
+                        whileHover={{
+                            y: -4,
+                            borderColor: "rgba(139,92,246,0.35)",
+                        }}
+                        transition={{
+                            duration: 0.2,
+                        }}
+                        className="
+                            rounded-2xl
+                            border
+                            border-zinc-800
+                            bg-zinc-900/50
+                            p-5
+                        "
+                    >
+                        <div className="flex items-center gap-3">
+
+                            <div
+                                className="
+                                    grid
+                                    h-10
+                                    w-10
+                                    shrink-0
+                                    place-items-center
+                                    rounded-xl
+                                    border
+                                    border-violet-500/20
+                                    bg-violet-500/10
+                                "
+                            >
+                                <Sparkles
+                                    size={18}
+                                    className="text-violet-400"
+                                />
+                            </div>
+
+                            <div className="min-w-0">
+
+                                <p
+                                    className="
+                                        text-[10px]
+                                        font-medium
+                                        uppercase
+                                        tracking-[0.18em]
+                                        text-zinc-500
+                                    "
+                                >
+                                    Focus Area
+                                </p>
+
+                                <p
+                                    className="
+                                        mt-1
+                                        truncate
+                                        text-sm
+                                        font-semibold
+                                        capitalize
+                                        text-white
+                                    "
+                                >
+                                    {recommendation?.priority ||
+                                        focus?.topic ||
+                                        "—"}
+                                </p>
+
+                            </div>
+
+                        </div>
+                    </motion.div>
+
+                    {/* Confidence */}
+
+                    <motion.div
+                        variants={fadeUp}
+                        whileHover={{
+                            y: -4,
+                            borderColor: "rgba(16,185,129,0.35)",
+                        }}
+                        transition={{
+                            duration: 0.2,
+                        }}
+                        className="
+                            rounded-2xl
+                            border
+                            border-zinc-800
+                            bg-zinc-900/50
+                            p-5
+                        "
+                    >
+                        <div className="flex items-center gap-3">
+
+                            <div
+                                className="
+                                    grid
+                                    h-10
+                                    w-10
+                                    shrink-0
+                                    place-items-center
+                                    rounded-xl
+                                    border
+                                    border-emerald-500/20
+                                    bg-emerald-500/10
+                                "
+                            >
+                                <Activity
+                                    size={18}
+                                    className="text-emerald-400"
+                                />
+                            </div>
+
+                            <div className="flex-1">
+
+                                <div className="flex items-center justify-between">
+
+                                    <p
+                                        className="
+                                            text-[10px]
+                                            font-medium
+                                            uppercase
+                                            tracking-[0.18em]
+                                            text-zinc-500
+                                        "
+                                    >
+                                        Confidence
+                                    </p>
+
+                                    <span className="text-sm font-bold text-white">
+                                        {confidence}%
+                                    </span>
+
+                                </div>
+
+                                <div
+                                    className="
+                                        mt-2
+                                        h-1.5
+                                        overflow-hidden
+                                        rounded-full
+                                        bg-zinc-800
+                                    "
+                                >
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{
+                                            width: `${Math.min(
+                                                Math.max(confidence, 0),
+                                                100
+                                            )}%`,
+                                        }}
+                                        transition={{
+                                            duration: 1,
+                                            delay: 0.5,
+                                            ease: "easeOut",
+                                        }}
+                                        className="
+                                            h-full
+                                            rounded-full
+                                            bg-gradient-to-r
+                                            from-emerald-500
+                                            to-cyan-400
+                                        "
+                                    />
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </motion.div>
+
+                    {/* Signal type */}
+
+                    <motion.div
+                        variants={fadeUp}
+                        whileHover={{
+                            y: -4,
+                            borderColor: "rgba(34,211,238,0.35)",
+                        }}
+                        transition={{
+                            duration: 0.2,
+                        }}
+                        className="
+                            rounded-2xl
+                            border
+                            border-zinc-800
+                            bg-zinc-900/50
+                            p-5
+                        "
+                    >
+                        <div className="flex items-center gap-3">
+
+                            <div
+                                className="
+                                    grid
+                                    h-10
+                                    w-10
+                                    shrink-0
+                                    place-items-center
+                                    rounded-xl
+                                    border
+                                    border-cyan-500/20
+                                    bg-cyan-500/10
+                                "
+                            >
+                                <Zap
+                                    size={18}
+                                    className="text-cyan-400"
+                                />
+                            </div>
+
+                            <div>
+
+                                <p
+                                    className="
+                                        text-[10px]
+                                        font-medium
+                                        uppercase
+                                        tracking-[0.18em]
+                                        text-zinc-500
+                                    "
+                                >
+                                    Detected Signal
+                                </p>
+
+                                <p
+                                    className="
+                                        mt-1
+                                        text-sm
+                                        font-semibold
+                                        text-white
+                                    "
+                                >
+                                    {focusType}
+                                </p>
+
+                            </div>
+
+                        </div>
+                    </motion.div>
+
+                </motion.div>
+
+                {/* ================================================= */}
+                {/* DETECTED SIGNAL */}
+                {/* ================================================= */}
+
+                <motion.div
+                    variants={fadeUp}
+                    className="
+                        mt-4
+                        rounded-3xl
+                        border
+                        border-zinc-800
+                        bg-zinc-900/50
+                        p-6
+                        md:p-7
+                    "
+                >
+
+                    <div className="flex items-start gap-4">
+
+                        <div
+                            className="
+                                grid
+                                h-11
+                                w-11
+                                shrink-0
+                                place-items-center
+                                rounded-xl
+                                border
+                                border-violet-500/20
+                                bg-violet-500/10
+                            "
+                        >
+                            <TrendingDown
+                                size={20}
+                                className="text-violet-400"
+                            />
+                        </div>
+
+                        <div className="min-w-0">
+
+                            <div className="flex flex-wrap items-center gap-2">
+
+                                <h3 className="text-lg font-semibold text-white">
+                                    Detected Signal
+                                </h3>
+
+                                <span
+                                    className="
+                                        rounded-full
+                                        bg-violet-500/10
+                                        px-2
+                                        py-1
+                                        text-[10px]
+                                        font-medium
+                                        text-violet-300
+                                    "
+                                >
+                                    AI Insight
+                                </span>
+
+                            </div>
+
+                            <p className="mt-1 text-sm text-zinc-500">
+                                Why your mentor selected this focus area
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <motion.div
+                        whileHover={{
+                            backgroundColor: "rgba(24,24,27,0.8)",
+                        }}
+                        className="
+                            mt-5
+                            rounded-2xl
+                            border
+                            border-zinc-800/80
+                            bg-zinc-950/50
+                            p-5
+                        "
+                    >
+                        <p
+                            className="
+                                text-sm
+                                leading-7
+                                text-zinc-300
+                                md:text-base
+                            "
+                        >
+                            {ai?.reason ||
+                                "Your current performance data indicates this is an area worth focusing on."}
+                        </p>
+                    </motion.div>
+
+                </motion.div>
+
+                {/* ================================================= */}
+                {/* RECOMMENDED PROBLEMS */}
+                {/* ================================================= */}
+
+                <motion.div
+                    variants={fadeUp}
+                    className="
+                        mt-4
+                        rounded-3xl
+                        border
+                        border-zinc-800
+                        bg-zinc-900/50
+                        p-6
+                        md:p-7
+                    "
+                >
+
+                    {/* Section header */}
+
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                        <div className="flex items-start gap-4">
+
+                            <div
+                                className="
+                                    grid
+                                    h-11
+                                    w-11
+                                    shrink-0
+                                    place-items-center
+                                    rounded-xl
+                                    border
+                                    border-cyan-500/20
+                                    bg-cyan-500/10
+                                "
+                            >
+                                <Target
+                                    size={20}
+                                    className="text-cyan-400"
+                                />
+                            </div>
+
+                            <div>
+
+                                <h3 className="text-lg font-semibold text-white">
+                                    Recommended Next Steps
+                                </h3>
+
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Problems selected from your current focus area
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        {mentorProblems.length > 0 && (
+                            <span
+                                className="
+                                    self-start
+                                    rounded-full
+                                    border
+                                    border-zinc-700
+                                    bg-zinc-950
+                                    px-3
+                                    py-1.5
+                                    text-xs
+                                    font-medium
+                                    text-zinc-400
+                                "
+                            >
+                                {mentorProblems.length}{" "}
+                                {mentorProblems.length === 1
+                                    ? "problem"
+                                    : "problems"}
+                            </span>
+                        )}
+
+                    </div>
+
+                    {/* Problems */}
+
+                    <motion.div
+                        variants={staggerContainer}
+                        className="mt-6 grid gap-3"
+                    >
+
+                        {mentorProblems.length > 0 ? (
+
+                            mentorProblems.map((problem, index) => {
+                                const completed =
+        isMentorCompleted(problem.id);
+return(
+                                <motion.div
+                                    key={problem.id}
+                                    variants={fadeUp}
+                                    whileHover={{
+                                        y: -3,
+                                        scale: 1.005,
+                                    }}
+                                    transition={{
+                                        duration: 0.2,
+                                    }}
+                                    className="
+                                        group
+                                        flex
+                                        flex-col
+                                        gap-4
+                                        rounded-2xl
+                                        border
+                                        border-zinc-800
+                                        bg-zinc-950/60
+                                        p-4
+                                        transition-colors
+                                        hover:border-violet-500/30
+                                        sm:flex-row
+                                        sm:items-center
+                                        sm:justify-between
+                                        sm:p-5
+                                    "
+                                >
+
+                                    <div className="flex min-w-0 items-center gap-4">
+
+                                        {/* Number */}
+
+                                       <div
+    className={`
+        grid
+        h-10
+        w-10
+        shrink-0
+        place-items-center
         rounded-xl
-        bg-violet-600
-        px-4
-        py-2
-        text-sm
-        font-semibold
-        hover:bg-violet-500
-        transition
-    "
+        border
+        ${
+            completed
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : "border-zinc-800 bg-zinc-900 text-violet-400"
+        }
+        text-xs
+        font-bold
+    `}
 >
-    Solve
-    <ExternalLink size={15} />
-</button>
-
-            </motion.div>
-
-        ))
-
-    ) : (
-
-        <div className="
-            rounded-2xl
-            border
-            border-zinc-800
-            bg-zinc-900/50
-            p-6
-            text-sm
-            text-zinc-500
-        ">
-            No recommended problems available right now.
-        </div>
-
-    )}
-
+    {completed
+        ? "✓"
+        : String(index + 1).padStart(2, "0")}
 </div>
 
-</motion.div>
-            
+                                        {/* Problem info */}
+
+                                        <div className="min-w-0">
+
+                                            <h4
+                                                className="
+                                                    truncate
+                                                    text-sm
+                                                    font-semibold
+                                                    text-white
+                                                "
+                                            >
+                                                {problem.title}
+                                            </h4>
+                                             {completed && (
+        <span
+            className="
+                shrink-0
+                rounded-full
+                border
+                border-emerald-500/20
+                bg-emerald-500/10
+                px-2
+                py-0.5
+                text-[10px]
+                font-medium
+                text-emerald-400
+            "
+        >
+            Completed
+        </span>
+    )}
+
+
+                                            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+
+                                                <span
+                                                    className="
+                                                        capitalize
+                                                        text-zinc-500
+                                                    "
+                                                >
+                                                    {problem.topic}
+                                                </span>
+
+                                                <span className="text-zinc-700">
+                                                    •
+                                                </span>
+
+                                                <span
+                                                    className="
+                                                        capitalize
+                                                        text-zinc-400
+                                                    "
+                                                >
+                                                    {problem.difficulty}
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    {/* Solve button */}
+
+                                  <button
+    type="button"
+    onClick={() => openRoadmap(problem.id)}
+                                        className="
+                                            inline-flex
+                                            shrink-0
+                                            items-center
+                                            justify-center
+                                            gap-2
+                                            rounded-xl
+                                            border
+                                            border-violet-500/20
+                                            bg-violet-600/90
+                                            px-4
+                                            py-2.5
+                                            text-xs
+                                            font-semibold
+                                            text-white
+                                            shadow-lg
+                                            shadow-violet-900/20
+                                            transition-all
+                                            duration-200
+                                            hover:bg-violet-500
+                                            hover:shadow-violet-500/20
+                                            active:scale-95
+                                        "
+                                    >
+                                        {completed ? "Practice Again" : "Solve"}
+
+                                        <ArrowUpRight
+                                            size={15}
+                                            className="
+                                                transition-transform
+                                                duration-200
+                                                group-hover:translate-x-0.5
+                                                group-hover:-translate-y-0.5
+                                            "
+                                        />
+                                    </button>
+
+                                </motion.div>
+
+                                );
+                            })
+
+                        ) : (
+
+                            <div
+                                className="
+                                    rounded-2xl
+                                    border
+                                    border-dashed
+                                    border-zinc-800
+                                    bg-zinc-950/40
+                                    p-8
+                                    text-center
+                                "
+                            >
+                                <Target
+                                    size={22}
+                                    className="mx-auto text-zinc-700"
+                                />
+
+                                <p className="mt-3 text-sm text-zinc-500">
+                                    No recommended problems available right now.
+                                </p>
+                            </div>
+
+                        )}
+
+                    </motion.div>
+
+                    {/* View roadmap */}
+
+                    {mentorProblems.length > 0 && (
+                        <motion.button
+                            whileHover={{ x: 3 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={openRoadmap}
+                            className="
+                                mt-5
+                                inline-flex
+                                items-center
+                                gap-2
+                                text-xs
+                                font-medium
+                                text-violet-400
+                                transition-colors
+                                hover:text-violet-300
+                            "
+                        >
+                            View all recommended problems
+
+                            <ArrowUpRight size={14} />
+                        </motion.button>
+                    )}
+
+                </motion.div>
+
             </div>
-
-        </motion.div>
-
-        
-
+        </motion.section>
     );
-    
-
 }

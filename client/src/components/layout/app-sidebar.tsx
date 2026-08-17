@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -24,19 +25,30 @@ import {
 } from "@/components/ui/sidebar";
 
 const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Problems", url: "/problems", icon: Code2 },
-  { title: "Sheets", url: "/dashboard", icon: ListChecks },
-  { title: "Contests", url: "/dashboard", icon: Trophy },
-  { title: "Interviews", url: "/interviews", icon: CalendarClock },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Problems",
+    url: "/problems",
+    icon: Code2,
+  },
+  {
+    title: "Interviews",
+    url: "/interviews",
+    icon: CalendarClock,
+  },
 ];
 
 const learnItems = [
-  { title: "Topics", url: "/dashboard", icon: BookOpen },
-  { title: "AI Coach", url: "/dashboard", icon: Sparkles, badge: "Soon" },
-  { title: "Settings", url: "/dashboard", icon: Settings },
+  {
+    title: "AI Mentor",
+    url: "/dashboard",
+    icon: Sparkles,
+  },
 ];
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -44,8 +56,23 @@ export function AppSidebar() {
   const isActive = (url: string) => path === url;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="px-3 py-4">
+  <Sidebar
+  collapsible="icon"
+  className="
+    border-r
+    border-white/[0.08]
+    bg-black/95
+    shadow-[8px_0_40px_-25px_rgba(255,255,255,0.12)]
+  "
+>
+      <SidebarHeader
+  className="
+    border-b
+    border-white/[0.06]
+    px-3
+    py-4
+  "
+>
         <Link to="/dashboard" className="flex items-center gap-2">
           <div
             className="grid h-9 w-9 place-items-center rounded-xl text-primary-foreground"
@@ -69,11 +96,42 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <Link to={item.url} className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </Link>
+                  <SidebarMenuButton
+  asChild
+  isActive={isActive(item.url)}
+  className="
+    transition-all
+    duration-300
+    ease-out
+    hover:bg-white/[0.045]
+    hover:text-white
+    data-[active=true]:bg-blue-500/[0.10]
+    data-[active=true]:text-blue-300
+    data-[active=true]:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_20px_-10px_rgba(59,130,246,0.6)]
+  "
+>
+                    <Link
+  to={item.url}
+  className="relative flex items-center gap-2"
+>
+  {isActive(item.url) && (
+    <span
+      className="
+        absolute
+        -left-2
+        h-5
+        w-[2px]
+        rounded-full
+        bg-blue-400
+        shadow-[0_0_10px_rgba(96,165,250,0.8)]
+      "
+    />
+  )}
+
+  <item.icon className="h-4 w-4" />
+
+  {!collapsed && <span>{item.title}</span>}
+</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

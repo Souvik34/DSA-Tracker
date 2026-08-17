@@ -21,7 +21,8 @@ interface ProblemsStore {
   clearActiveProblem: () => void;
   removeStartedProblem: (id: string | number) => void;
 
-  toggleSolved: (id: string | number) => void;
+  // toggleSolved: (id: string | number) => void;
+  markSolved: (id: string | number) => void;
   toggleRevision: (id: string | number) => void;
   toggleBookmark: (id: string | number) => void;
 
@@ -68,17 +69,25 @@ export const useProblemsStore = create<ProblemsStore>()(
         get().byId[String(id)] ?? empty,
 
 
-      startProblem: (id) =>
-        set((state) => ({
+    startProblem: (id) =>
+  set((state) => {
+    const key = String(id);
 
-          activeProblemId: String(id),
+    console.log("ZUSTAND START PROBLEM:", key);
 
-          startedProblems: {
-            ...state.startedProblems,
-            [String(id)]: Date.now(),
-          },
+    const nextState = {
+      activeProblemId: key,
 
-        })),
+      startedProblems: {
+        ...state.startedProblems,
+        [key]: Date.now(),
+      },
+    };
+
+    console.log("ZUSTAND NEXT STATE:", nextState);
+
+    return nextState;
+  }),
 
 
       clearActiveProblem: () =>
@@ -106,35 +115,52 @@ export const useProblemsStore = create<ProblemsStore>()(
 
 
       hydrateSolved: (problemIds) =>
-        set((state) => {
+  set((state) => {
 
-          const updated = {
-            ...state.byId,
-          };
+    const updated = {
+      ...state.byId,
+    };
 
+    const solvedSet = new Set(
+      problemIds.map(String)
+    );
 
-          problemIds.forEach((id) => {
+    problemIds.forEach((id) => {
 
-            const key = String(id);
+      const key = String(id);
 
-            const cur =
-              updated[key] ?? empty;
+      const cur =
+        updated[key] ?? empty;
 
+      updated[key] = {
+        ...cur,
+        solved: true,
+      };
 
-            updated[key] = {
-              ...cur,
-              solved: true,
-            };
+    });
 
-          });
+    // Remove solved problems from active attempts
+    const updatedStartedProblems = {
+      ...state.startedProblems,
+    };
 
+    solvedSet.forEach((id) => {
+      delete updatedStartedProblems[id];
+    });
 
-          return {
-            byId: updated,
-          };
+    const activeId =
+      state.activeProblemId &&
+      solvedSet.has(state.activeProblemId)
+        ? null
+        : state.activeProblemId;
 
-        }),
+    return {
+      byId: updated,
+      startedProblems: updatedStartedProblems,
+      activeProblemId: activeId,
+    };
 
+  }),
 
 
       hydrateBookmarks: (problemIds) =>
@@ -241,37 +267,26 @@ export const useProblemsStore = create<ProblemsStore>()(
 
 
 
-      toggleSolved: (id) =>
-        set((state) => {
+    markSolved: (id) =>
+  set((state) => {
 
-          const key = String(id);
+    const key = String(id);
 
-          const cur =
-            state.byId[key] ?? empty;
+    const cur =
+      state.byId[key] ?? empty;
 
+    return {
+      byId: {
+        ...state.byId,
+        [key]: {
+          ...cur,
+          solved: true,
+          updatedAt: Date.now(),
+        },
+      },
+    };
 
-          return {
-
-            byId: {
-
-              ...state.byId,
-
-              [key]: {
-
-                ...cur,
-
-                solved: !cur.solved,
-
-                updatedAt: Date.now(),
-
-              },
-
-            },
-
-          };
-
-        }),
-
+  }),
 
 
 

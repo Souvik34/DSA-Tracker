@@ -21,7 +21,7 @@ export const addSolvedProblemService = async (
   if (!userId || !problemId || !difficulty) {
     throw new Error("Invalid input for solved problem");
   }
-
+await completeProblemAttemptRepo(userId, problemId);
   await insertSolvedProblemRepo(
     userId,
     problemId,

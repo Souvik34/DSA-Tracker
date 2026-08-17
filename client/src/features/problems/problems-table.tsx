@@ -86,7 +86,10 @@ const clearActiveProblem = useProblemsStore(
 
 const search = useSearch({ from: "/problems" });
 
-const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+// const toggleSolved = useProblemsStore((s) => s.toggleSolved);
+const markSolved = useProblemsStore(
+  (s) => s.markSolved
+);
 const startedProblems = useProblemsStore((s)=>s.startedProblems);
 
 
@@ -295,111 +298,153 @@ const hasNextPage = problems.length === LIMIT;
 
 const navigate = useNavigate(); 
 const handleOpenProblem = async (p: Problem) => {
+  // Roadmap problem
+  if (roadmapMode) {
+    try {
+      await problemService.completeMentorProblem(p.id);
 
-  if (
-    activeProblemId &&
-    activeProblemId !== String(p.id)
-  ) {
+      window.open(p.leetcodeUrl, "_blank");
 
-    const previous =
-      problems.find(
-        (item) =>
-          String(item.id) === activeProblemId
-      );
-
-    if (previous) {
-      setWarningProblem(previous);
-      return;
+      toast.success("Mentor problem completed");
+    } catch (err) {
+      console.error("Mentor completion failed:", err);
+      toast.error("Failed to update mentor progress");
     }
+
+    return;
   }
 
+  // Already solved → just open LeetCode
+  // No start attempt, no modal, no toast.
+  if (byId[p.id]?.solved) {
+    window.open(p.leetcodeUrl, "_blank");
+    return;
+  }
+
+  // Unsolved problem → check for another active problem
+  if (
+  activeProblemId &&
+  activeProblemId !== String(p.id) &&
+  !byId[activeProblemId]?.solved
+) {
+  const previous = problems.find(
+    (item) => String(item.id) === String(activeProblemId)
+  );
+
+  if (previous) {
+    setWarningProblem(previous);
+    return;
+  }
+}
 
   try {
-
+    // Ask backend to start the problem
     await problemService.startProblem(p.id);
 
+    // Only update frontend after backend accepts it
     startProblem(p.id);
 
-    window.open(
-      p.leetcodeUrl,
-      "_blank"
-    );
+    window.open(p.leetcodeUrl, "_blank");
+  } catch (err: any) {
+    console.error("Start problem failed", err);
 
-  } catch(err){
+   if (err?.response?.status === 403) {
+  const blockedProblemId =
+    err?.response?.data?.problemId;
 
-    console.error(
-      "Start problem failed",
-      err
-    );
+  console.log("BACKEND BLOCKED PROBLEM:", blockedProblemId);
 
+  if (!blockedProblemId) {
+    toast.error("You already have a problem in progress.");
+    return;
   }
 
-};
-const handleSolve = async (p: Problem) => {
+  // IMPORTANT:
+  // Backend says this problem is already STARTED.
+  // Restore it into Zustand so the checkbox can later solve it.
+  startProblem(blockedProblemId);
+
+  const previous = problems.find(
+    (item) =>
+      String(item.id) === String(blockedProblemId)
+  );
+
+  if (previous) {
+    setWarningProblem(previous);
+    return;
+  }
 
   try {
+    const previous =
+      await problemService.getById(blockedProblemId);
 
-    const startTime =
-      startedProblems[String(p.id)];
+    const mappedPrevious: Problem = {
+      id: previous.id,
+      title: previous.title,
+      difficulty: formatDifficulty(previous.difficulty),
+      topic: previous.topic,
+      companies: [],
+      leetcodeUrl: previous.question_link,
+    };
 
-
-    if (!startTime) {
-
-      toast.error(
-        "Open the problem first before marking it solved."
-      );
-
-      return;
-
-    }
-
-
-    const timeTaken =
-      Math.floor(
-        (Date.now() - startTime) / 60000
-      );
-console.log("SOLVING", {
-  id: p.id,
-  difficulty: p.difficulty
-});
-
-    const res =
-      await problemService.markSolved(
-        p.id,
-        p.difficulty,
-        timeTaken
-      );
-
-
-    toggleSolved(p.id);
-
-
-    removeStartedProblem(p.id);
-
-    clearActiveProblem();
-
-
-    await revisionService.getDueRevisions();
-
-
-    if (res?.blocked) {
-
-      navigate({
-        to: "/revisions"
-      });
-
-    }
-
-
-  } catch(err){
-
+    setWarningProblem(mappedPrevious);
+    return;
+  } catch (fetchErr) {
     console.error(
-      "Solve failed:",
-      err
+      "Failed to fetch blocked problem:",
+      fetchErr
     );
 
+    toast.error("Could not load the active problem.");
   }
+}
+    toast.error("Failed to start problem");
+  }
+};
+const handleSolve = async (p: Problem) => {
+  try {
+    const problemId = String(p.id);
+    const startTime = startedProblems[problemId];
 
+    const timeTaken = startTime
+      ? Math.floor((Date.now() - startTime) / 60000)
+      : 0;
+
+    await problemService.markSolved(
+      p.id,
+      p.difficulty,
+      timeTaken
+    );
+
+    markSolved(p.id);
+    removeStartedProblem(p.id);
+    clearActiveProblem();
+
+    toast.success("Problem marked as solved");
+
+  } catch (err: any) {
+    console.error("Solve failed:", err);
+    console.log("SOLVE ERROR STATUS:", err?.response?.status);
+    console.log("SOLVE ERROR DATA:", err?.response?.data);
+  }
+};
+const handleMentorComplete = async (p: Problem) => {
+  try {
+    await problemService.markSolved(
+      p.id,
+      p.difficulty,
+      0
+    );
+
+    toast.success("Mentor problem completed");
+
+    // Do NOT toggle solved.
+    // It is already solved historically.
+
+  } catch (err) {
+    console.error("Mentor completion failed:", err);
+    toast.error("Failed to complete mentor problem");
+  }
 };
   return (
     <div className="space-y-6">
@@ -450,13 +495,7 @@ console.log("SOLVING", {
             })),
           ]}
         />
-        <FilterSelect
-          className="md:col-span-2"
-          value={company}
-          onChange={setCompany}
-          placeholder="Company"
-          options={[{ value: "all", label: "All companies" }]}
-        />
+    
         <FilterSelect
           className="md:col-span-2"
           value={difficulty}
@@ -503,24 +542,20 @@ console.log("SOLVING", {
               return (
                 <TableRow key={p.id} className="group transition-colors">
                   <TableCell className="pl-4">
-                 <Checkbox
+    <Checkbox
   checked={!!st?.solved}
+  disabled={!!st?.solved}
 onCheckedChange={() => {
+  if (roadmapMode && st?.solved) {
+    handleMentorComplete(p);
+    return;
+  }
 
-const started = startedProblems[p.id];
+  if (st?.solved) {
+    return;
+  }
 
-if(!started){
-
-toast.error(
-"Open the problem first before marking it solved"
-);
-
-return;
-
-}
-
-handleSolve(p);
-
+  handleSolve(p);
 }}
   aria-label="Mark solved"
 />
@@ -686,28 +721,33 @@ onClick={async () => {
 
         <div className="mt-5 flex justify-end gap-3">
 
-          <Button
-            variant="outline"
-            onClick={() => setWarningProblem(null)}
-          >
-            Cancel
-          </Button>
+        <Button
+  variant="outline"
+  onClick={() => setWarningProblem(null)}
+>
+  Cancel
+</Button>
 
-          <Button
-            onClick={() => {
-              startProblem(warningProblem.id);
+<Button
+  onClick={async () => {
+    try {
+      // await problemService.startProblem(warningProblem.id);
 
-              window.open(
-                warningProblem.leetcodeUrl,
-                // document.body.style.overflow = "hidden";
-                "_blank"
-              );
+      // startProblem(warningProblem.id);
 
-              setWarningProblem(null);
-            }}
-          >
-            Continue Previous
-          </Button>
+      window.open(
+        warningProblem.leetcodeUrl,
+        "_blank"
+      );
+
+      setWarningProblem(null);
+    } catch (err) {
+      console.error("Failed to resume problem:", err);
+    }
+  }}
+>
+  Continue Previous
+</Button>
 
         </div>
 

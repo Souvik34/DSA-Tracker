@@ -5,8 +5,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { WelcomeCard } from "@/features/dashboard/welcome-card";
 import { ProgressCards } from "@/features/dashboard/progress-cards";
 import { RecentActivity } from "@/features/dashboard/recent-activity";
-import { StreakWidget } from "@/features/dashboard/streak-widget";
-import { UpcomingInterview } from "@/features/dashboard/upcoming-interview";
+
 import { RevisionGate } from "@/features/dashboard/revision-gate";
 import { requireRevisionCheck } from "@/lib/revision-guard";
 import { useNavigate } from "@tanstack/react-router";
@@ -136,8 +135,8 @@ if (error) {
            <RecentActivity dashboard={dashboard} />
           </div>
           <div className="space-y-6">
-            <StreakWidget />
-            <UpcomingInterview />
+           
+            {/* <UpcomingInterview /> */}
           </div>
         </div>
       </div>

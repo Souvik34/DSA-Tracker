@@ -297,14 +297,12 @@ problemId
 
 if(data.blocked){
 
-return res.status(403).json({
-
-success:false,
-
-message:
-"Complete your current problem first"
-
-});
+  return res.status(403).json({
+    success: false,
+    blocked: true,
+    problemId: data.attempt.problem_id,
+    message: "Complete your current problem first"
+  });
 
 }
 

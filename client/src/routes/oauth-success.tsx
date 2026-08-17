@@ -2,6 +2,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
+import { ScreenLoader } from "@/components/ui/screenLoader";
+
+
 
 export const Route = createFileRoute("/oauth-success")({
   component: OAuthSuccessPage,
@@ -42,9 +45,11 @@ function OAuthSuccessPage() {
     login();
   }, [navigate, setAuth]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#050608] text-white">
-      Signing you in...
-    </div>
-  );
+//   return (
+//     <div className="flex min-h-screen items-center justify-center bg-[#050608] text-white">
+//       Signing you in...
+//     </div>
+//   );
+
+return <ScreenLoader text="Signing you in" />;
 }

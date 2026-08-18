@@ -1,4 +1,3 @@
-
 /* eslint-disable prettier/prettier */
 
 import { useEffect, useState } from "react";
@@ -18,49 +17,92 @@ import { toast } from "sonner";
 import interviewService from "../../services/interviewService";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
 
-export const Route = createFileRoute("/interview-history/$sessionId")({
+export const Route = createFileRoute(
+  "/interview-history/$sessionId"
+)({
   component: InterviewHistoryDetailPage,
 });
 
 function InterviewHistoryDetailPage() {
+  console.log("🔥🔥 DETAIL PAGE COMPONENT RENDERED");
+
   const navigate = useNavigate();
 
   const { sessionId } = Route.useParams();
 
-  const [interview, setInterview] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  console.log("🔥 SESSION ID:", sessionId);
+
+  const [interview, setInterview] =
+    useState<any>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
+    console.log("🚀 DETAIL EFFECT STARTED");
+    console.log("🚀 SESSION ID:", sessionId);
+
     const loadInterview = async () => {
       try {
         setLoading(true);
 
-        /*
-         * We intentionally use the history endpoint again.
-         *
-         * Why?
-         * The existing /:sessionId endpoint is for active interviews
-         * and rejects completed interviews.
-         *
-         * History already contains:
-         * - question
-         * - code
-         * - report
-         */
+        console.log(
+          "📡 Fetching interview history..."
+        );
 
         const response =
           await interviewService.getInterviewHistory();
 
-        const history = response.data?.data || [];
+        console.log(
+          "📡 FULL HISTORY RESPONSE:",
+          response
+        );
 
-        const selectedInterview = history.find(
-          (item: any) => item.id === sessionId
+        console.log(
+          "📡 RESPONSE DATA:",
+          response.data
+        );
+
+        const history =
+          response.data?.data ?? [];
+
+        console.log(
+          "📋 HISTORY:",
+          history
+        );
+
+        console.log(
+          "📋 HISTORY LENGTH:",
+          history.length
+        );
+
+        const selectedInterview =
+          history.find(
+            (item: any) =>
+              String(item.id) ===
+              String(sessionId)
+          );
+
+        console.log(
+          "🎯 SELECTED INTERVIEW:",
+          selectedInterview
         );
 
         if (!selectedInterview) {
-          toast.error("Interview not found.");
+          console.error(
+            "❌ INTERVIEW NOT FOUND:",
+            sessionId
+          );
+
+          toast.error(
+            "Interview not found."
+          );
 
           navigate({
             to: "/interview-history",
@@ -69,10 +111,15 @@ function InterviewHistoryDetailPage() {
           return;
         }
 
+        console.log(
+          "✅ SETTING INTERVIEW:",
+          selectedInterview
+        );
+
         setInterview(selectedInterview);
       } catch (error) {
         console.error(
-          "Failed to load interview:",
+          "❌ Failed to load interview:",
           error
         );
 
@@ -80,6 +127,10 @@ function InterviewHistoryDetailPage() {
           "Failed to load interview details."
         );
       } finally {
+        console.log(
+          "🏁 FINISHED LOADING INTERVIEW"
+        );
+
         setLoading(false);
       }
     };
@@ -105,10 +156,15 @@ function InterviewHistoryDetailPage() {
     return null;
   }
 
-  const question = interview.question || {};
-  const report = interview.report || {};
+  const question =
+    interview.question || {};
 
-  const formatDate = (date: string | null) => {
+  const report =
+    interview.report || {};
+
+  const formatDate = (
+    date: string | null
+  ) => {
     if (!date) return "Unknown date";
 
     return new Date(date).toLocaleDateString(
@@ -166,7 +222,6 @@ function InterviewHistoryDetailPage() {
       />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-8 md:px-8">
-
         {/* Top bar */}
 
         <div className="mb-8 flex items-center justify-between">
@@ -201,7 +256,8 @@ function InterviewHistoryDetailPage() {
 
             <div>
               <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                {interview.title || "AI Mock Interview"}
+                {interview.title ||
+                  "AI Mock Interview"}
               </h1>
 
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -265,6 +321,7 @@ function InterviewHistoryDetailPage() {
 
                       <p className="mt-1 text-2xl font-semibold">
                         {item.value ?? "—"}
+
                         {item.value != null && (
                           <span className="ml-1 text-sm text-muted-foreground">
                             /100
@@ -284,11 +341,9 @@ function InterviewHistoryDetailPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-
           {/* Left */}
 
           <div className="space-y-6">
-
             {/* Question */}
 
             <Card className="border-white/[0.08] bg-white/[0.035] shadow-2xl shadow-black/20 backdrop-blur-xl">
@@ -303,7 +358,6 @@ function InterviewHistoryDetailPage() {
               </CardHeader>
 
               <CardContent className="px-6 py-6">
-
                 <h3 className="text-lg font-semibold">
                   {question.title ||
                     interview.title ||
@@ -384,7 +438,6 @@ function InterviewHistoryDetailPage() {
           {/* Right */}
 
           <div className="space-y-6">
-
             {/* Final feedback */}
 
             <Card className="border-white/[0.08] bg-white/[0.035] shadow-2xl shadow-black/20 backdrop-blur-xl">
@@ -399,7 +452,6 @@ function InterviewHistoryDetailPage() {
               </CardHeader>
 
               <CardContent className="space-y-6 px-6 py-6">
-
                 {report.finalFeedback && (
                   <div>
                     <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -435,7 +487,6 @@ function InterviewHistoryDetailPage() {
                     </div>
                   </div>
                 )}
-
               </CardContent>
             </Card>
 
@@ -450,14 +501,14 @@ function InterviewHistoryDetailPage() {
 
               <CardContent className="px-6 pb-6">
                 <div className="space-y-3 text-sm">
-
                   <div className="flex justify-between gap-4">
                     <span className="text-muted-foreground">
                       Role
                     </span>
 
                     <span className="text-right">
-                      {interview.role || "SDE-1"}
+                      {interview.role ||
+                        "SDE-1"}
                     </span>
                   </div>
 
@@ -502,11 +553,9 @@ function InterviewHistoryDetailPage() {
                         "Interview Relevant"}
                     </span>
                   </div>
-
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </div>

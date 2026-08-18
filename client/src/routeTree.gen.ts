@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RevisionsRouteImport } from './routes/revisions'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProblemsRouteImport } from './routes/problems'
 import { Route as OauthSuccessRouteImport } from './routes/oauth-success'
 import { Route as LoginRouteImport } from './routes/login'
@@ -30,6 +31,11 @@ const SignupRoute = SignupRouteImport.update({
 const RevisionsRoute = RevisionsRouteImport.update({
   id: '/revisions',
   path: '/revisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProblemsRoute = ProblemsRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
+  '/profile': typeof ProfileRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
+  '/profile': typeof ProfileRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
+  '/profile': typeof ProfileRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/oauth-success'
     | '/problems'
+    | '/profile'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/oauth-success'
     | '/problems'
+    | '/profile'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/oauth-success'
     | '/problems'
+    | '/profile'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OauthSuccessRoute: typeof OauthSuccessRoute
   ProblemsRoute: typeof ProblemsRoute
+  ProfileRoute: typeof ProfileRoute
   RevisionsRoute: typeof RevisionsRoute
   SignupRoute: typeof SignupRoute
   WorkspaceSessionIdRoute: typeof WorkspaceSessionIdRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/revisions'
       fullPath: '/revisions'
       preLoaderRoute: typeof RevisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/problems': {
@@ -295,6 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OauthSuccessRoute: OauthSuccessRoute,
   ProblemsRoute: ProblemsRoute,
+  ProfileRoute: ProfileRoute,
   RevisionsRoute: RevisionsRoute,
   SignupRoute: SignupRoute,
   WorkspaceSessionIdRoute: WorkspaceSessionIdRoute,

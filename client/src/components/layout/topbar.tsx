@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  UserRound,
   LogOut,
 } from "lucide-react";
 
@@ -424,6 +425,41 @@ export function Topbar() {
                 bg-white/[0.08]
               "
             />
+<DropdownMenuItem
+  onClick={() => {
+    navigate({
+      to: "/profile",
+    });
+  }}
+  className="
+    mt-1
+
+    cursor-pointer
+
+    rounded-xl
+
+    px-3
+    py-2.5
+
+    text-zinc-300
+
+    transition-colors
+
+    focus:bg-white/[0.06]
+    focus:text-white
+  "
+>
+  <UserRound
+    className="
+      mr-2
+      h-4
+      w-4
+    "
+  />
+
+  View Profile
+
+</DropdownMenuItem>
 
 
             {/* -------------------------------------------------

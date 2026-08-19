@@ -1,34 +1,29 @@
 /* eslint-disable prettier/prettier */
+
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
-import { useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import {
   Bookmark,
   BookmarkCheck,
   Check,
+  CheckCircle2,
+  ChevronDown,
   ExternalLink,
   FileText,
+  Flame,
   RotateCcw,
   Search,
-  SquareCode,
-    ChevronLeft,
-  ChevronRight,
-  ChevronUp 
+  Target,
+  X,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { motion, AnimatePresence } from "framer-motion";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+
 import {
   Select,
   SelectContent,
@@ -36,779 +31,2048 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { cn } from "@/lib/utils";
 import { useProblemsStore } from "@/store/problems-store";
-// import { COMPANIES, PROBLEMS, TOPICS, type Difficulty, type Problem } from "./problems-data";
-import type { Problem, BackendProblem, Difficulty } from "./problems-data";
+
+import type {
+  Problem,
+  BackendProblem,
+  Difficulty,
+} from "./problems-data";
+
 import problemService from "../../services/problemService";
-// import { useEffect } from "react";
-import { NotesDialog } from "./notes-dialog";
 import revisionService from "@/services/revisionService";
+import { NotesDialog } from "./notes-dialog";
 import { toast } from "sonner";
 
+/* =========================================================
+   CONSTANTS
+========================================================= */
+
+const LIMIT = 50;
+
+const ACCORDION_STORAGE_KEY =
+  "algoforge-problems-open-topics";
+
 const difficultyClasses: Record<Difficulty, string> = {
-  Easy: "bg-success/15 text-success border-success/30",
-  Medium: "bg-warning/15 text-warning border-warning/30",
-  Hard: "bg-destructive/15 text-destructive border-destructive/30",
+  Easy:
+    "border-emerald-400/30 bg-emerald-400/[0.08] text-emerald-300",
+
+  Medium:
+    "border-amber-400/30 bg-amber-400/[0.08] text-amber-300",
+
+  Hard:
+    "border-red-400/30 bg-red-400/[0.08] text-red-300",
 };
 
-export function ProblemsTable() {
-console.log("ProblemsTable RENDER");
-  const searchParams = useSearch({
-  from: "/problems",
-});
+/* =========================================================
+   HELPERS
+========================================================= */
 
-
-const roadmapMode = searchParams.source === "roadmap";
-
-const roadmapIds = useMemo(
-  () =>
-    searchParams.ids
-      ? searchParams.ids
-          .split(",")
-          .map(Number)
-          .filter(Boolean)
-      : [],
-  [searchParams.ids]
-);
-//   console.log("ROADMAP MODE:", roadmapMode);
-// console.log("ROADMAP IDS:", roadmapIds);
-  const byId = useProblemsStore((s) => s.byId);
-  const startProblem = useProblemsStore((s) => s.startProblem);
-const activeProblemId = useProblemsStore((s) => s.activeProblemId);
-
-const removeStartedProblem = useProblemsStore(
-  (s) => s.removeStartedProblem
-);
-const clearActiveProblem = useProblemsStore(
-  (s) => s.clearActiveProblem
-);
-
-const search = useSearch({ from: "/problems" });
-
-// const toggleSolved = useProblemsStore((s) => s.toggleSolved);
-const markSolved = useProblemsStore(
-  (s) => s.markSolved
-);
-const startedProblems = useProblemsStore((s)=>s.startedProblems);
-
-
-const toggleRevision = useProblemsStore((s) => s.toggleRevision);
-const toggleBookmark = useProblemsStore((s) => s.toggleBookmark);
-
-const hydrateSolved = useProblemsStore((s) => s.hydrateSolved);
-const hydrateBookmarks = useProblemsStore((s) => s.hydrateBookmarks);
-const hydrateNotes = useProblemsStore((s) => s.hydrateNotes);
-const hydrateRevision = useProblemsStore((s) => s.hydrateRevision);
-
-  const [query, setQuery] = useState("");
-  // const [roadmapMode, setRoadmapMode] = useState(false);
-  const [topic, setTopic] = useState<string>("all");
-  const [company, setCompany] = useState<string>("all");
-  const [difficulty, setDifficulty] = useState<string>("all");
-  const [status, setStatus] = useState<string>("all");
-  const [notesFor, setNotesFor] = useState<Problem | null>(null);
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [page, setPage] = useState(1);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [warningProblem, setWarningProblem] = useState<Problem | null>(null);
-const LIMIT = 50;
 const formatDifficulty = (d?: string): Difficulty => {
   if (!d) return "Easy";
 
-  const val = d.toLowerCase();
+  const value = d.toLowerCase();
 
-  if (val === "easy") return "Easy";
-  if (val === "medium") return "Medium";
-  if (val === "hard") return "Hard";
+  if (value === "easy") return "Easy";
+  if (value === "medium") return "Medium";
+  if (value === "hard") return "Hard";
 
   return "Easy";
 };
-useEffect(() => {
-  if (warningProblem) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "auto";
-  }
 
-  return () => {
-    document.body.style.overflow = "auto";
-  };
-}, [warningProblem]);
-useEffect(() => {
-  const check = async () => {
-    const res = await revisionService.getDueRevisions();
+const getTopicKey = (topic?: string) =>
+  topic?.trim() || "General";
 
-    if (res.blocked) {
-      alert(
-        "You have pending revisions that need to be completed before accessing the problems page. Please complete your revisions first.",
-      );
-      window.location.href = "/revisions";
-    }
-  };
+/* =========================================================
+   COMPONENT
+========================================================= */
 
-  check();
-}, []);
+export function ProblemsTable() {
+  const navigate = useNavigate();
 
-useEffect(() => {
-  let ignore = false;
-
-  const loadProblems = async () => {
-    try {
-      let data: BackendProblem[];
-if (roadmapMode && roadmapIds.length > 0) {
-  console.log("========== ROADMAP LOAD ==========");
-  console.log("ROADMAP MODE:", roadmapMode);
-  console.log("ROADMAP IDS:", roadmapIds);
-
-  const roadmapProblems = await Promise.all(
-    roadmapIds.map(async (id) => {
-      console.log("FETCHING ROADMAP ID:", id);
-
-      const problem = await problemService.getById(id);
-
-      console.log("FETCHED ROADMAP PROBLEM:", problem);
-
-      return problem;
-    })
-  );
-
-  console.log("ROADMAP PROBLEMS BEFORE FILTER:", roadmapProblems);
-
-  data = roadmapProblems.filter(Boolean);
-
-  console.log("ROADMAP FINAL DATA:", data);
-} else {
-  console.log("NORMAL PROBLEM LOAD");
-
-  data = await problemService.list({
-    page,
-    limit: LIMIT,
+  const searchParams = useSearch({
+    from: "/problems",
   });
 
-  console.log("NORMAL PROBLEMS:", data);
-}
-      const progress = await problemService.getProgress();
-      const bookmarks = await problemService.getBookmarks();
-      const notes = await problemService.getNotes();
-      const revisions = await revisionService.getAllRevisions();
+  const roadmapMode = searchParams.source === "roadmap";
 
-      const solvedIds = progress.map(
-        (p: { problem_id: number }) => p.problem_id
+  const roadmapIds = useMemo(
+    () =>
+      searchParams.ids
+        ? searchParams.ids
+            .split(",")
+            .map(Number)
+            .filter(Boolean)
+        : [],
+    [searchParams.ids],
+  );
+
+  /* =======================================================
+     STORE
+  ======================================================= */
+
+  const byId = useProblemsStore((s) => s.byId);
+
+  const startProblem = useProblemsStore(
+    (s) => s.startProblem,
+  );
+
+  const activeProblemId = useProblemsStore(
+    (s) => s.activeProblemId,
+  );
+
+  const removeStartedProblem = useProblemsStore(
+    (s) => s.removeStartedProblem,
+  );
+
+  const clearActiveProblem = useProblemsStore(
+    (s) => s.clearActiveProblem,
+  );
+
+  const markSolved = useProblemsStore(
+    (s) => s.markSolved,
+  );
+
+  const startedProblems = useProblemsStore(
+    (s) => s.startedProblems,
+  );
+
+  const toggleRevision = useProblemsStore(
+    (s) => s.toggleRevision,
+  );
+
+  const toggleBookmark = useProblemsStore(
+    (s) => s.toggleBookmark,
+  );
+
+  const hydrateSolved = useProblemsStore(
+    (s) => s.hydrateSolved,
+  );
+
+  const hydrateBookmarks = useProblemsStore(
+    (s) => s.hydrateBookmarks,
+  );
+
+  const hydrateNotes = useProblemsStore(
+    (s) => s.hydrateNotes,
+  );
+
+  const hydrateRevision = useProblemsStore(
+    (s) => s.hydrateRevision,
+  );
+
+  /* =======================================================
+     LOCAL STATE
+  ======================================================= */
+
+  const [query, setQuery] = useState("");
+
+  const [topic, setTopic] =
+    useState<string>("all");
+
+  const [difficulty, setDifficulty] =
+    useState<string>("all");
+
+  const [status, setStatus] =
+    useState<string>("all");
+
+  const [notesFor, setNotesFor] =
+    useState<Problem | null>(null);
+
+  const [problems, setProblems] =
+    useState<Problem[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [warningProblem, setWarningProblem] =
+    useState<Problem | null>(null);
+
+  /*
+   * null means:
+   * We haven't restored the user's preference yet.
+   */
+  const [openTopics, setOpenTopics] =
+    useState<string[] | null>(null);
+
+  /* =======================================================
+     RESTORE ACCORDION STATE
+  ======================================================= */
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(
+        ACCORDION_STORAGE_KEY,
       );
 
-      hydrateRevision(
-        revisions.revisions
-          .filter((r) => !r.is_completed)
-          .map((r) => r.problem_id)
+      if (stored) {
+        const parsed = JSON.parse(stored);
+
+        if (Array.isArray(parsed)) {
+          setOpenTopics(parsed);
+          return;
+        }
+      }
+
+      /*
+       * No previous preference:
+       * first topic will be opened after data loads.
+       */
+      setOpenTopics(null);
+    } catch (error) {
+      console.error(
+        "Failed to restore accordion state:",
+        error,
       );
 
-      hydrateSolved(solvedIds);
+      setOpenTopics(null);
+    }
+  }, []);
 
-     console.log("DATA BEFORE MAPPING:", data);
+  /* =======================================================
+     SAVE ACCORDION STATE
+  ======================================================= */
 
-const mappedProblems: Problem[] = data.map((p) => ({
-  id: p.id,
-  title: p.title,
-  difficulty: formatDifficulty(p.difficulty),
-  topic: p.topic,
-  companies: [],
-  leetcodeUrl: p.question_link,
-}));
+  useEffect(() => {
+    if (openTopics === null) return;
 
-console.log("MAPPED PROBLEMS:", mappedProblems);
+    localStorage.setItem(
+      ACCORDION_STORAGE_KEY,
+      JSON.stringify(openTopics),
+    );
+  }, [openTopics]);
 
-      if (!ignore) {
-        setProblems(mappedProblems);
+  /* =======================================================
+     BODY LOCK FOR WARNING MODAL
+  ======================================================= */
 
-        hydrateSolved(
-          progress.map((p: any) => p.problem_id)
+  useEffect(() => {
+    document.body.style.overflow = warningProblem
+      ? "hidden"
+      : "auto";
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [warningProblem]);
+
+  /* =======================================================
+     REVISION GATE
+  ======================================================= */
+
+  useEffect(() => {
+    const checkRevisionGate = async () => {
+      try {
+        const res =
+          await revisionService.getDueRevisions();
+
+        if (res.blocked) {
+          toast.warning(
+            "Complete your pending revisions before continuing.",
+          );
+
+          window.location.href = "/revisions";
+        }
+      } catch (error) {
+        console.error(
+          "Revision gate check failed:",
+          error,
+        );
+      }
+    };
+
+    checkRevisionGate();
+  }, []);
+
+  /* =======================================================
+     LOAD ALL PROBLEMS
+     
+     Backend still paginates internally.
+     UI does NOT.
+  ======================================================= */
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadAllProblems = async () => {
+      try {
+        setLoading(true);
+
+        let data: BackendProblem[] = [];
+
+        /* =================================================
+           ROADMAP MODE
+        ================================================= */
+
+        if (
+          roadmapMode &&
+          roadmapIds.length > 0
+        ) {
+          const roadmapProblems =
+            await Promise.all(
+              roadmapIds.map((id) =>
+                problemService.getById(id),
+              ),
+            );
+
+          data =
+            roadmapProblems.filter(Boolean);
+        }
+
+        /* =================================================
+           NORMAL MODE
+           
+           Fetch every backend page.
+        ================================================= */
+
+        else {
+          let currentPage = 1;
+
+          while (true) {
+            const batch =
+              await problemService.list({
+                page: currentPage,
+                limit: LIMIT,
+              });
+
+            data.push(...batch);
+
+            if (batch.length < LIMIT) {
+              break;
+            }
+
+            currentPage++;
+          }
+        }
+
+        /* =================================================
+           USER PROGRESS
+        ================================================= */
+
+        const [
+          progress,
+          bookmarks,
+          notes,
+          revisions,
+        ] = await Promise.all([
+          problemService.getProgress(),
+          problemService.getBookmarks(),
+          problemService.getNotes(),
+          revisionService.getAllRevisions(),
+        ]);
+
+        const solvedIds = progress.map(
+          (p: { problem_id: number }) =>
+            p.problem_id,
         );
 
+        hydrateSolved(solvedIds);
+
         hydrateBookmarks(
-          bookmarks.map((b: any) => b.problem_id)
+          bookmarks.map(
+            (b: { problem_id: number }) =>
+              b.problem_id,
+          ),
         );
 
         hydrateNotes(notes);
+
+        hydrateRevision(
+          revisions.revisions
+            .filter(
+              (r) => !r.is_completed,
+            )
+            .map(
+              (r) => r.problem_id,
+            ),
+        );
+
+        /* =================================================
+           MAP BACKEND → UI
+        ================================================= */
+
+        const mappedProblems: Problem[] =
+          data.map((p) => ({
+            id: p.id,
+            title: p.title,
+            difficulty: formatDifficulty(
+              p.difficulty,
+            ),
+            topic: p.topic,
+            companies: [],
+            leetcodeUrl:
+              p.question_link,
+          }));
+
+        if (!ignore) {
+          setProblems(mappedProblems);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load problems:",
+          error,
+        );
+
+        if (!ignore) {
+          setProblems([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.error("Failed to load problems:", err);
+    };
 
-      if (!ignore) {
-        setProblems([]);
-      }
-    }
-  };
+    loadAllProblems();
 
-  loadProblems();
+    return () => {
+      ignore = true;
+    };
+  }, [
+    roadmapMode,
+    roadmapIds,
+    hydrateSolved,
+    hydrateBookmarks,
+    hydrateNotes,
+    hydrateRevision,
+  ]);
 
-  return () => {
-    ignore = true;
-  };
-}, [page, roadmapMode, roadmapIds]);
+  /* =======================================================
+     FILTERED PROBLEMS
+  ======================================================= */
 
-useEffect(() => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}, [page]);
-
-useEffect(() => {
-  const handleScroll = () => {
-    setShowScrollTop(window.scrollY > 250);
-  };
-
-  window.addEventListener("scroll", handleScroll);
-
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, []);
   const filtered = useMemo(() => {
+    const normalizedQuery =
+      query.trim().toLowerCase();
+
     return problems.filter((p) => {
-      
-      if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
-      if (topic !== "all" && p.topic !== topic) return false;
-      if (company !== "all" && !p.companies.includes(company)) return false;
-      if (difficulty !== "all" && p.difficulty !== difficulty) return false;
+      if (
+        normalizedQuery &&
+        !p.title
+          .toLowerCase()
+          .includes(normalizedQuery)
+      ) {
+        return false;
+      }
+
+      if (
+        topic !== "all" &&
+        getTopicKey(p.topic) !== topic
+      ) {
+        return false;
+      }
+
+      if (
+        difficulty !== "all" &&
+        p.difficulty !== difficulty
+      ) {
+        return false;
+      }
+
       const st = byId[p.id];
-      if (status === "solved" && !st?.solved) return false;
-      if (status === "unsolved" && st?.solved) return false;
-      if (status === "revision" && !st?.revision) return false;
-      if (status === "bookmarked" && !st?.bookmarked) return false;
+
+      if (
+        status === "solved" &&
+        !st?.solved
+      ) {
+        return false;
+      }
+
+      if (
+        status === "unsolved" &&
+        st?.solved
+      ) {
+        return false;
+      }
+
+      if (
+        status === "revision" &&
+        !st?.revision
+      ) {
+        return false;
+      }
+
+      if (
+        status === "bookmarked" &&
+        !st?.bookmarked
+      ) {
+        return false;
+      }
+
       return true;
     });
-  }, [problems, query, topic, company, difficulty, status, byId]);
-const hasNextPage = problems.length === LIMIT;
+  }, [
+    problems,
+    query,
+    topic,
+    difficulty,
+    status,
+    byId,
+  ]);
+
+  /* =======================================================
+     GROUP BY TOPIC
+  ======================================================= */
+
+  const groupedProblems = useMemo(() => {
+    const groups = new Map<
+      string,
+      Problem[]
+    >();
+
+    filtered.forEach((problem) => {
+      const key = getTopicKey(
+        problem.topic,
+      );
+
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+
+      groups
+        .get(key)!
+        .push(problem);
+    });
+
+    return Array.from(
+      groups.entries(),
+    );
+  }, [filtered]);
+
+  /* =======================================================
+     INITIAL FIRST CARD
+  ======================================================= */
+
+  useEffect(() => {
+    if (
+      openTopics !== null ||
+      groupedProblems.length === 0
+    ) {
+      return;
+    }
+
+    setOpenTopics([
+      groupedProblems[0][0],
+    ]);
+  }, [
+    groupedProblems,
+    openTopics,
+  ]);
+
+  /* =======================================================
+     TOGGLE TOPIC
+  ======================================================= */
+
+  const toggleTopic = (
+    topicName: string,
+  ) => {
+    setOpenTopics((current) => {
+      const existing =
+        current ?? [];
+
+      if (
+        existing.includes(topicName)
+      ) {
+        return existing.filter(
+          (topic) =>
+            topic !== topicName,
+        );
+      }
+
+      return [
+        ...existing,
+        topicName,
+      ];
+    });
+  };
+
+  /* =======================================================
+     STATS
+  ======================================================= */
+
   const stats = useMemo(() => {
-    const total = problems.length;
+    const total =
+      problems.length;
+
     let solved = 0;
     let revision = 0;
     let bookmarked = 0;
-    for (const p of problems) {
-      const s = byId[p.id];
-      if (s?.solved) solved++;
-      if (s?.revision) revision++;
-      if (s?.bookmarked) bookmarked++;
-    }
-    return { total, solved, revision, bookmarked, pct: total ? Math.round((solved / total) * 100) : 0 };
-  }, [problems, byId]);
+    let easy = 0;
+    let medium = 0;
+    let hard = 0;
 
+    problems.forEach((p) => {
+      const st = byId[p.id];
 
-const navigate = useNavigate(); 
-const handleOpenProblem = async (p: Problem) => {
-  // Roadmap problem
-  if (roadmapMode) {
-    try {
-      await problemService.completeMentorProblem(p.id);
+      if (st?.solved) solved++;
+      if (st?.revision) revision++;
+      if (st?.bookmarked) bookmarked++;
 
-      window.open(p.leetcodeUrl, "_blank");
+      if (p.difficulty === "Easy")
+        easy++;
 
-      toast.success("Mentor problem completed");
-    } catch (err) {
-      console.error("Mentor completion failed:", err);
-      toast.error("Failed to update mentor progress");
-    }
+      if (p.difficulty === "Medium")
+        medium++;
 
-    return;
-  }
+      if (p.difficulty === "Hard")
+        hard++;
+    });
 
-  // Already solved → just open LeetCode
-  // No start attempt, no modal, no toast.
-  if (byId[p.id]?.solved) {
-    window.open(p.leetcodeUrl, "_blank");
-    return;
-  }
+    return {
+      total,
+      solved,
+      revision,
+      bookmarked,
+      easy,
+      medium,
+      hard,
+      pct: total
+        ? Math.round(
+            (solved / total) * 100,
+          )
+        : 0,
+    };
+  }, [
+    problems,
+    byId,
+  ]);
 
-  // Unsolved problem → check for another active problem
-  if (
-  activeProblemId &&
-  activeProblemId !== String(p.id) &&
-  !byId[activeProblemId]?.solved
-) {
-  const previous = problems.find(
-    (item) => String(item.id) === String(activeProblemId)
-  );
+  /* =======================================================
+     OPEN PROBLEM
+  ======================================================= */
 
-  if (previous) {
-    setWarningProblem(previous);
-    return;
-  }
-}
+  const handleOpenProblem =
+    async (p: Problem) => {
+      /* ================================================
+         ROADMAP
+      ================================================= */
 
-  try {
-    // Ask backend to start the problem
-    await problemService.startProblem(p.id);
+      if (roadmapMode) {
+        try {
+          await problemService.completeMentorProblem(
+            p.id,
+          );
 
-    // Only update frontend after backend accepts it
-    startProblem(p.id);
+          window.open(
+            p.leetcodeUrl,
+            "_blank",
+          );
 
-    window.open(p.leetcodeUrl, "_blank");
-  } catch (err: any) {
-    console.error("Start problem failed", err);
+          toast.success(
+            "Mentor problem completed",
+          );
+        } catch (error) {
+          console.error(
+            "Mentor completion failed:",
+            error,
+          );
 
-   if (err?.response?.status === 403) {
-  const blockedProblemId =
-    err?.response?.data?.problemId;
+          toast.error(
+            "Failed to update mentor progress",
+          );
+        }
 
-  console.log("BACKEND BLOCKED PROBLEM:", blockedProblemId);
+        return;
+      }
 
-  if (!blockedProblemId) {
-    toast.error("You already have a problem in progress.");
-    return;
-  }
+      /* ================================================
+         ALREADY SOLVED
+      ================================================= */
 
-  // IMPORTANT:
-  // Backend says this problem is already STARTED.
-  // Restore it into Zustand so the checkbox can later solve it.
-  startProblem(blockedProblemId);
+      if (byId[p.id]?.solved) {
+        window.open(
+          p.leetcodeUrl,
+          "_blank",
+        );
 
-  const previous = problems.find(
-    (item) =>
-      String(item.id) === String(blockedProblemId)
-  );
+        return;
+      }
 
-  if (previous) {
-    setWarningProblem(previous);
-    return;
-  }
+      /* ================================================
+         ANOTHER ACTIVE PROBLEM
+      ================================================= */
 
-  try {
-    const previous =
-      await problemService.getById(blockedProblemId);
+      if (
+        activeProblemId &&
+        activeProblemId !==
+          String(p.id) &&
+        !byId[
+          activeProblemId
+        ]?.solved
+      ) {
+        const previous =
+          problems.find(
+            (item) =>
+              String(item.id) ===
+              String(
+                activeProblemId,
+              ),
+          );
 
-    const mappedPrevious: Problem = {
-      id: previous.id,
-      title: previous.title,
-      difficulty: formatDifficulty(previous.difficulty),
-      topic: previous.topic,
-      companies: [],
-      leetcodeUrl: previous.question_link,
+        if (previous) {
+          setWarningProblem(
+            previous,
+          );
+
+          return;
+        }
+      }
+
+      /* ================================================
+         START
+      ================================================= */
+
+      try {
+        await problemService.startProblem(
+          p.id,
+        );
+
+        startProblem(p.id);
+
+        window.open(
+          p.leetcodeUrl,
+          "_blank",
+        );
+      } catch (error: any) {
+        console.error(
+          "Start problem failed:",
+          error,
+        );
+
+        if (
+          error?.response
+            ?.status === 403
+        ) {
+          const blockedProblemId =
+            error?.response?.data
+              ?.problemId;
+
+          if (!blockedProblemId) {
+            toast.error(
+              "You already have a problem in progress.",
+            );
+
+            return;
+          }
+
+          startProblem(
+            blockedProblemId,
+          );
+
+          const previous =
+            problems.find(
+              (item) =>
+                String(item.id) ===
+                String(
+                  blockedProblemId,
+                ),
+            );
+
+          if (previous) {
+            setWarningProblem(
+              previous,
+            );
+
+            return;
+          }
+
+          try {
+            const previous =
+              await problemService.getById(
+                blockedProblemId,
+              );
+
+            const mappedPrevious: Problem =
+              {
+                id: previous.id,
+                title:
+                  previous.title,
+                difficulty:
+                  formatDifficulty(
+                    previous.difficulty,
+                  ),
+                topic:
+                  previous.topic,
+                companies: [],
+                leetcodeUrl:
+                  previous.question_link,
+              };
+
+            setWarningProblem(
+              mappedPrevious,
+            );
+
+            return;
+          } catch (fetchError) {
+            console.error(
+              "Failed to fetch blocked problem:",
+              fetchError,
+            );
+
+            toast.error(
+              "Could not load the active problem.",
+            );
+          }
+        }
+
+        toast.error(
+          "Failed to start problem",
+        );
+      }
     };
 
-    setWarningProblem(mappedPrevious);
-    return;
-  } catch (fetchErr) {
-    console.error(
-      "Failed to fetch blocked problem:",
-      fetchErr
-    );
+  /* =======================================================
+     SOLVE
+  ======================================================= */
 
-    toast.error("Could not load the active problem.");
-  }
-}
-    toast.error("Failed to start problem");
-  }
-};
-const handleSolve = async (p: Problem) => {
-  try {
-    const problemId = String(p.id);
-    const startTime = startedProblems[problemId];
+  const handleSolve = async (
+    p: Problem,
+  ) => {
+    try {
+      const problemId =
+        String(p.id);
 
-    const timeTaken = startTime
-      ? Math.floor((Date.now() - startTime) / 60000)
-      : 0;
+      const startTime =
+        startedProblems[
+          problemId
+        ];
 
-    await problemService.markSolved(
-      p.id,
-      p.difficulty,
-      timeTaken
-    );
+      const timeTaken = startTime
+        ? Math.floor(
+            (Date.now() -
+              startTime) /
+              60000,
+          )
+        : 0;
 
-    markSolved(p.id);
-    removeStartedProblem(p.id);
-    clearActiveProblem();
+      await problemService.markSolved(
+        p.id,
+        p.difficulty,
+        timeTaken,
+      );
 
-    toast.success("Problem marked as solved");
+      markSolved(p.id);
+      removeStartedProblem(p.id);
+      clearActiveProblem();
 
-  } catch (err: any) {
-    console.error("Solve failed:", err);
-    console.log("SOLVE ERROR STATUS:", err?.response?.status);
-    console.log("SOLVE ERROR DATA:", err?.response?.data);
-  }
-};
-const handleMentorComplete = async (p: Problem) => {
-  try {
-    await problemService.markSolved(
-      p.id,
-      p.difficulty,
-      0
-    );
+      toast.success(
+        "Problem marked as solved",
+      );
+    } catch (error) {
+      console.error(
+        "Solve failed:",
+        error,
+      );
 
-    toast.success("Mentor problem completed");
+      toast.error(
+        "Failed to mark problem as solved",
+      );
+    }
+  };
 
-    // Do NOT toggle solved.
-    // It is already solved historically.
+  /* =======================================================
+     MENTOR COMPLETE
+  ======================================================= */
 
-  } catch (err) {
-    console.error("Mentor completion failed:", err);
-    toast.error("Failed to complete mentor problem");
-  }
-};
-  return (
-    <div className="space-y-6">
-      {/* Header / stats */}
-      <div className="glass rounded-2xl border border-border/60 p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Problems</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Curated DSA roadmap. Track progress, take notes, jump to LeetCode.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <StatPill label="Solved" value={`${stats.solved}/${stats.total}`} accent="success" />
-            <StatPill label="Revision" value={stats.revision} accent="warning" />
-            <StatPill label="Bookmarked" value={stats.bookmarked} accent="primary" />
-          </div>
+  const handleMentorComplete =
+    async (p: Problem) => {
+      try {
+        await problemService.markSolved(
+          p.id,
+          p.difficulty,
+          0,
+        );
+
+        toast.success(
+          "Mentor problem completed",
+        );
+      } catch (error) {
+        console.error(
+          "Mentor completion failed:",
+          error,
+        );
+
+        toast.error(
+          "Failed to complete mentor problem",
+        );
+      }
+    };
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="glass animate-pulse rounded-3xl border border-white/10 p-7">
+          <div className="h-8 w-48 rounded-lg bg-white/10" />
+          <div className="mt-4 h-5 w-96 max-w-full rounded bg-white/[0.06]" />
+
+          <div className="mt-8 h-3 w-full rounded-full bg-white/[0.06]" />
         </div>
-        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${stats.pct}%`, background: "var(--gradient-primary)" }}
-          />
+
+        <div className="space-y-4">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-24 animate-pulse rounded-2xl border border-white/10 bg-white/[0.025]"
+            />
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Filters */}
-      <div className="grid gap-3 md:grid-cols-12">
-        <div className="relative md:col-span-4">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+  /* =======================================================
+     UI
+  ======================================================= */
+
+  return (
+    <div className="space-y-7">
+      {/* ===================================================
+          HEADER
+      ================================================== */}
+
+      <motion.div
+        initial={{
+          opacity: 0,
+          y: 16,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.55,
+          ease: [
+            0.22,
+            1,
+            0.36,
+            1,
+          ],
+        }}
+        className="
+          relative
+          overflow-hidden
+          rounded-3xl
+          border
+          border-white/[0.12]
+          bg-[#090b10]
+          p-7
+          shadow-[0_20px_60px_rgba(0,0,0,0.28)]
+        "
+      >
+        {/* Ambient line */}
+
+        <motion.div
+          className="
+            pointer-events-none
+            absolute
+            -left-20
+            top-0
+            h-px
+            w-80
+            bg-gradient-to-r
+            from-transparent
+            via-blue-400/60
+            to-transparent
+          "
+          animate={{
+            x: [
+              "-20%",
+              "450%",
+            ],
+            opacity: [
+              0,
+              1,
+              0,
+            ],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            repeatDelay: 4,
+            ease: "easeInOut",
+          }}
+        />
+
+        <div className="relative flex flex-col gap-7 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/[0.08] px-3.5 py-1.5 text-sm font-medium text-blue-300">
+              <Target className="h-4 w-4" />
+              DSA Roadmap
+            </div>
+
+            <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+              Problems
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-base leading-7 text-zinc-300">
+              Practice, track and revise your
+              problems topic by topic.
+            </p>
+          </div>
+
+          {/* =================================================
+              GLOBAL STATS
+          ================================================= */}
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <OverviewStat
+              value={`${stats.solved}/${stats.total}`}
+              label="Solved"
+              icon={CheckCircle2}
+              iconClass="text-emerald-400"
+            />
+
+            <OverviewStat
+              value={`${stats.pct}%`}
+              label="Progress"
+              icon={Target}
+              iconClass="text-blue-400"
+            />
+
+            <OverviewStat
+              value={stats.revision}
+              label="Revision"
+              icon={RotateCcw}
+              iconClass="text-amber-400"
+            />
+
+            <OverviewStat
+              value={stats.bookmarked}
+              label="Saved"
+              icon={Bookmark}
+              iconClass="text-violet-400"
+            />
+          </div>
+        </div>
+
+        {/* =================================================
+            DIFFICULTY BREAKDOWN
+        ================================================= */}
+
+        <div className="relative mt-7 flex flex-wrap gap-3">
+          <DifficultyStat
+            label="Easy"
+            value={stats.easy}
+            className="text-emerald-300"
+          />
+
+          <DifficultyStat
+            label="Medium"
+            value={stats.medium}
+            className="text-amber-300"
+          />
+
+          <DifficultyStat
+            label="Hard"
+            value={stats.hard}
+            className="text-red-300"
+          />
+        </div>
+
+        {/* =================================================
+            PROGRESS BAR
+        ================================================= */}
+
+        <div className="relative mt-7">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-300">
+              Overall progress
+            </span>
+
+            <span className="text-sm font-semibold text-white">
+              {stats.pct}%
+            </span>
+          </div>
+
+          <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.07]">
+            <motion.div
+              initial={{
+                width: 0,
+              }}
+              animate={{
+                width: `${stats.pct}%`,
+              }}
+              transition={{
+                duration: 1.1,
+                ease: [
+                  0.22,
+                  1,
+                  0.36,
+                  1,
+                ],
+              }}
+              className="h-full rounded-full"
+              style={{
+                background:
+                  "var(--gradient-primary)",
+              }}
+            />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ===================================================
+          FILTERS
+      ================================================== */}
+
+      <div className="grid gap-3 lg:grid-cols-12">
+        <div className="relative lg:col-span-5">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+
           <Input
             placeholder="Search problems..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
+            onChange={(e) =>
+              setQuery(e.target.value)
+            }
+            className="
+              h-12
+              border-white/[0.12]
+              bg-[#0b0d12]
+              pl-11
+              text-base
+              text-white
+              placeholder:text-zinc-500
+              focus:border-blue-400/50
+            "
           />
         </div>
+
         <FilterSelect
-          className="md:col-span-2"
+          className="h-12 lg:col-span-2"
           value={topic}
           onChange={setTopic}
           placeholder="Topic"
           options={[
-            { value: "all", label: "All topics" },
-            ...Array.from(new Set(problems.map((p) => p.topic))).map((t) => ({
+            {
+              value: "all",
+              label: "All topics",
+            },
+            ...Array.from(
+              new Set(
+                problems.map((p) =>
+                  getTopicKey(
+                    p.topic,
+                  ),
+                ),
+              ),
+            ).map((t) => ({
               value: t,
               label: t,
             })),
           ]}
         />
-    
+
         <FilterSelect
-          className="md:col-span-2"
+          className="h-12 lg:col-span-2"
           value={difficulty}
           onChange={setDifficulty}
           placeholder="Difficulty"
           options={[
-            { value: "all", label: "All difficulty" },
-            { value: "Easy", label: "Easy" },
-            { value: "Medium", label: "Medium" },
-            { value: "Hard", label: "Hard" },
+            {
+              value: "all",
+              label: "All difficulty",
+            },
+            {
+              value: "Easy",
+              label: "Easy",
+            },
+            {
+              value: "Medium",
+              label: "Medium",
+            },
+            {
+              value: "Hard",
+              label: "Hard",
+            },
           ]}
         />
+
         <FilterSelect
-          className="md:col-span-2"
+          className="h-12 lg:col-span-2"
           value={status}
           onChange={setStatus}
           placeholder="Status"
           options={[
-            { value: "all", label: "Any status" },
-            { value: "solved", label: "Solved" },
-            { value: "unsolved", label: "Unsolved" },
-            { value: "revision", label: "For revision" },
-            { value: "bookmarked", label: "Bookmarked" },
+            {
+              value: "all",
+              label: "Any status",
+            },
+            {
+              value: "solved",
+              label: "Solved",
+            },
+            {
+              value: "unsolved",
+              label: "Unsolved",
+            },
+            {
+              value: "revision",
+              label: "For revision",
+            },
+            {
+              value: "bookmarked",
+              label: "Bookmarked",
+            },
           ]}
         />
+
+        <Button
+          variant="outline"
+          className="
+            h-12
+            border-white/[0.12]
+            bg-white/[0.025]
+            text-zinc-200
+            hover:bg-white/[0.07]
+          "
+          onClick={() => {
+            setQuery("");
+            setTopic("all");
+            setDifficulty("all");
+            setStatus("all");
+          }}
+        >
+          <X className="mr-2 h-4 w-4" />
+          Reset
+        </Button>
       </div>
 
-      {/* Table */}
-      <div className="glass overflow-hidden rounded-2xl border border-border/60">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 pl-4"></TableHead>
-              <TableHead>Problem</TableHead>
-              <TableHead className="hidden md:table-cell">Topic</TableHead>
-              <TableHead className="hidden lg:table-cell">Companies</TableHead>
-              <TableHead>Difficulty</TableHead>
-              <TableHead className="w-[180px] text-right pr-4">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((p) => {
-              const st = byId[p.id];
-              return (
-                <TableRow key={p.id} className="group transition-colors">
-                  <TableCell className="pl-4">
-    <Checkbox
-  checked={!!st?.solved}
-  disabled={!!st?.solved}
-onCheckedChange={() => {
-  if (roadmapMode && st?.solved) {
-    handleMentorComplete(p);
-    return;
-  }
+      {/* ===================================================
+          TOPIC CARDS
+      ================================================== */}
 
-  if (st?.solved) {
-    return;
-  }
+      <div className="space-y-4">
+        {groupedProblems.map(
+          (
+            [topicName, topicProblems],
+            topicIndex,
+          ) => {
+            const isOpen =
+              openTopics?.includes(
+                topicName,
+              ) ?? false;
 
-  handleSolve(p);
-}}
-  aria-label="Mark solved"
-/>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      <span
-                        className={cn(
-                          "font-medium leading-tight",
-                          st?.solved && "text-muted-foreground line-through",
-                        )}
-                      >
-                        {p.title}
+            const solvedCount =
+              topicProblems.filter(
+                (p) =>
+                  byId[p.id]
+                    ?.solved,
+              ).length;
+
+            const progress =
+              topicProblems.length
+                ? Math.round(
+                    (solvedCount /
+                      topicProblems.length) *
+                      100,
+                  )
+                : 0;
+
+            return (
+              <motion.div
+                key={topicName}
+                initial={{
+                  opacity: 0,
+                  y: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                transition={{
+                  delay:
+                    topicIndex * 0.035,
+                  duration: 0.45,
+                }}
+                className="
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-white/[0.13]
+                  bg-[#090b10]
+                  shadow-[0_12px_40px_rgba(0,0,0,0.18)]
+                "
+              >
+                {/* =================================================
+                    TOPIC HEADER
+                ================================================= */}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleTopic(
+                      topicName,
+                    )
+                  }
+                  className="
+                    group
+                    flex
+                    w-full
+                    items-center
+                    gap-4
+                    p-5
+                    text-left
+                    transition-colors
+                    duration-300
+                    hover:bg-white/[0.035]
+                  "
+                >
+                  {/* Number */}
+
+                  <div
+                    className="
+                      flex
+                      h-11
+                      w-11
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-blue-400/20
+                      bg-blue-400/[0.07]
+                      text-sm
+                      font-bold
+                      text-blue-300
+                    "
+                  >
+                    {String(
+                      topicIndex + 1,
+                    ).padStart(
+                      2,
+                      "0",
+                    )}
+                  </div>
+
+                  {/* Title */}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="text-lg font-semibold text-white">
+                        {topicName}
+                      </h2>
+
+                      <span className="rounded-full border border-white/[0.11] bg-white/[0.04] px-2.5 py-1 text-sm font-medium text-zinc-300">
+                        {
+                          topicProblems.length
+                        }{" "}
+                        problems
                       </span>
-                      <div className="flex items-center gap-2 md:hidden">
-                        <span className="text-xs text-muted-foreground">{p.topic}</span>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="h-1.5 max-w-[180px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
+                        <motion.div
+                          initial={{
+                            width: 0,
+                          }}
+                          animate={{
+                            width: `${progress}%`,
+                          }}
+                          transition={{
+                            duration: 0.8,
+                          }}
+                          className="h-full rounded-full"
+                          style={{
+                            background:
+                              "var(--gradient-primary)",
+                          }}
+                        />
                       </div>
+
+                      <span className="text-sm font-medium text-zinc-300">
+                        {solvedCount}/
+                        {
+                          topicProblems.length
+                        }{" "}
+                        solved
+                      </span>
                     </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="secondary" className="font-normal">
-                      {p.topic}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {p.companies.slice(0, 3).map((c) => (
-                        <Badge key={c} variant="outline" className="font-normal text-xs">
-                          {c}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                        difficultyClasses[p.difficulty],
-                      )}
+                  </div>
+
+                  {/* Difficulty mini breakdown */}
+
+                  <div className="hidden items-center gap-2 md:flex">
+                    <TopicDifficulty
+                      problems={
+                        topicProblems
+                      }
+                      difficulty="Easy"
+                    />
+
+                    <TopicDifficulty
+                      problems={
+                        topicProblems
+                      }
+                      difficulty="Medium"
+                    />
+
+                    <TopicDifficulty
+                      problems={
+                        topicProblems
+                      }
+                      difficulty="Hard"
+                    />
+                  </div>
+
+                  {/* Chevron */}
+
+                  <motion.div
+                    animate={{
+                      rotate: isOpen
+                        ? 180
+                        : 0,
+                    }}
+                    transition={{
+                      duration: 0.25,
+                      ease: [
+                        0.22,
+                        1,
+                        0.36,
+                        1,
+                      ],
+                    }}
+                    className="shrink-0 text-zinc-400"
+                  >
+                    <ChevronDown className="h-5 w-5" />
+                  </motion.div>
+                </button>
+
+                {/* =================================================
+                    PROBLEM LIST
+                ================================================= */}
+
+                <AnimatePresence
+                  initial={false}
+                >
+                  {isOpen && (
+                    <motion.div
+                      initial={{
+                        height: 0,
+                        opacity: 0,
+                      }}
+                      animate={{
+                        height: "auto",
+                        opacity: 1,
+                      }}
+                      exit={{
+                        height: 0,
+                        opacity: 0,
+                      }}
+                      transition={{
+                        duration: 0.32,
+                        ease: [
+                          0.22,
+                          1,
+                          0.36,
+                          1,
+                        ],
+                      }}
+                      className="overflow-hidden"
                     >
-                      {p.difficulty}
-                    </span>
-                  </TableCell>
-                  <TableCell className="pr-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <IconAction
-                        title={st?.revision ? "Remove from revision" : "Mark for revision"}
-                        active={!!st?.revision}
-onClick={async () => {
-  try {
-    const st = byId[p.id];
+                      <div className="border-t border-white/[0.09] p-3 md:p-4">
+                        <div className="space-y-2">
+                          {topicProblems.map(
+                            (
+                              problem,
+                              problemIndex,
+                            ) => (
+                              <ProblemRow
+                                key={
+                                  problem.id
+                                }
+                                problem={
+                                  problem
+                                }
+                                index={
+                                  problemIndex
+                                }
+                                state={
+                                  byId[
+                                    problem
+                                      .id
+                                  ]
+                                }
+                                roadmapMode={
+                                  roadmapMode
+                                }
+                                onOpen={() =>
+                                  handleOpenProblem(
+                                    problem,
+                                  )
+                                }
+                                onSolve={() =>
+                                  handleSolve(
+                                    problem,
+                                  )
+                                }
+                                onMentorComplete={() =>
+                                  handleMentorComplete(
+                                    problem,
+                                  )
+                                }
+                                onRevision={async () => {
+                                  try {
+                                    const st =
+                                      byId[
+                                        problem
+                                          .id
+                                      ];
 
-    // User must solve the problem before adding it to revision
-    if (!st?.solved) {
-      toast.error(
-        "Solve the problem before adding it to your revision queue."
-      );
-      return;
-    }
+                                    if (
+                                      !st?.solved
+                                    ) {
+                                      toast.error(
+                                        "Solve the problem before adding it to your revision queue.",
+                                      );
 
-    if (st?.revision) {
-      toast.info("Already added to revision queue");
-      return;
-    }
+                                      return;
+                                    }
 
-    await revisionService.addRevision(p.id);
-    toggleRevision(p.id);
+                                    if (
+                                      st?.revision
+                                    ) {
+                                      toast.info(
+                                        "Already added to revision queue",
+                                      );
 
-  } catch (err) {
-    console.error("Revision toggle failed:", err);
-    toast.error("Failed to add problem to revision queue.");
-  }
-}}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </IconAction>
-                      <IconAction
-                        title={st?.bookmarked ? "Remove bookmark" : "Bookmark"}
-                        active={!!st?.bookmarked}
-                        onClick={async () => {
-  try {
-    if (st?.bookmarked) {
-      await problemService.removeBookmark(p.id);
-    } else {
-      await problemService.addBookmark(p.id);
-    }
+                                      return;
+                                    }
 
-    toggleBookmark(p.id);
-  } catch (err) {
-    console.error(err);
-  }
-}}
-                      >
-                        {st?.bookmarked ? (
-                          <BookmarkCheck className="h-4 w-4" />
-                        ) : (
-                          <Bookmark className="h-4 w-4" />
-                        )}
-                      </IconAction>
-                      <IconAction
-                        title={st?.notes ? "Edit notes" : "Add notes"}
-                        active={!!st?.notes}
-                        onClick={() => setNotesFor(p)}
-                      >
-                        <FileText className="h-4 w-4" />
-                      </IconAction>
-                    
-                 <Button
-  variant="ghost"
-  size="icon"
-  title="Open on LeetCode"
-  onClick={() => handleOpenProblem(p)}
->
-  <ExternalLink className="h-4 w-4" />
-</Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
-                  No problems match your filters.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                                    await revisionService.addRevision(
+                                      problem.id,
+                                    );
+
+                                    toggleRevision(
+                                      problem.id,
+                                    );
+
+                                    toast.success(
+                                      "Added to revision queue",
+                                    );
+                                  } catch (error) {
+                                    console.error(
+                                      "Revision toggle failed:",
+                                      error,
+                                    );
+
+                                    toast.error(
+                                      "Failed to add problem to revision queue.",
+                                    );
+                                  }
+                                }}
+                                onBookmark={async () => {
+                                  try {
+                                    const st =
+                                      byId[
+                                        problem
+                                          .id
+                                      ];
+
+                                    if (
+                                      st?.bookmarked
+                                    ) {
+                                      await problemService.removeBookmark(
+                                        problem.id,
+                                      );
+                                    } else {
+                                      await problemService.addBookmark(
+                                        problem.id,
+                                      );
+                                    }
+
+                                    toggleBookmark(
+                                      problem.id,
+                                    );
+                                  } catch (error) {
+                                    console.error(
+                                      error,
+                                    );
+
+                                    toast.error(
+                                      "Failed to update bookmark",
+                                    );
+                                  }
+                                }}
+                                onNotes={() =>
+                                  setNotesFor(
+                                    problem,
+                                  )
+                                }
+                              />
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          },
+        )}
+
+        {/* Empty */}
+
+        {groupedProblems.length === 0 && (
+          <div className="rounded-2xl border border-white/[0.12] bg-[#090b10] py-16 text-center">
+            <Search className="mx-auto h-8 w-8 text-zinc-500" />
+
+            <h3 className="mt-4 text-lg font-semibold text-white">
+              No problems found
+            </h3>
+
+            <p className="mt-2 text-base text-zinc-400">
+              Try changing your filters or
+              search query.
+            </p>
+          </div>
+        )}
       </div>
 
- 
+      {/* ===================================================
+          NOTES
+      ================================================== */}
 
       <NotesDialog
         problem={notesFor}
         open={!!notesFor}
-        onOpenChange={(o) => !o && setNotesFor(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNotesFor(null);
+          }
+        }}
       />
-{warningProblem &&
-  createPortal(
-    <div
-      className="
-        fixed
-        inset-0
-        z-[999999]
-        flex
-        items-center
-        justify-center
-        bg-black/60
-        backdrop-blur-sm
-      "
+
+      {/* ===================================================
+          ACTIVE PROBLEM WARNING
+      ================================================== */}
+
+      {warningProblem &&
+        createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+            <motion.div
+              initial={{
+                opacity: 0,
+                scale: 0.94,
+                y: 10,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+              }}
+              className="
+                w-full
+                max-w-md
+                rounded-3xl
+                border
+                border-white/[0.14]
+                bg-[#0b0d12]
+                p-7
+                shadow-[0_30px_100px_rgba(0,0,0,0.55)]
+              "
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-400/20 bg-amber-400/[0.08]">
+                  <Flame className="h-5 w-5 text-amber-400" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    Problem already in progress
+                  </h2>
+
+                  <p className="mt-2 text-base leading-7 text-zinc-300">
+                    You started{" "}
+                    <span className="font-semibold text-white">
+                      "{warningProblem.title}"
+                    </span>
+                    . Finish it before
+                    starting another problem.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-7 flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-white/[0.13] bg-white/[0.03] text-zinc-200"
+                  onClick={() =>
+                    setWarningProblem(
+                      null,
+                    )
+                  }
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    window.open(
+                      warningProblem.leetcodeUrl,
+                      "_blank",
+                    );
+
+                    setWarningProblem(
+                      null,
+                    );
+                  }}
+                >
+                  Continue Previous
+                </Button>
+              </div>
+            </motion.div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+/* =========================================================
+   PROBLEM ROW
+========================================================= */
+
+function ProblemRow({
+  problem,
+  index,
+  state,
+  roadmapMode,
+  onOpen,
+  onSolve,
+  onMentorComplete,
+  onRevision,
+  onBookmark,
+  onNotes,
+}: {
+  problem: Problem;
+  index: number;
+  state: any;
+  roadmapMode: boolean;
+  onOpen: () => void;
+  onSolve: () => void;
+  onMentorComplete: () => void;
+  onRevision: () => void;
+  onBookmark: () => void;
+  onNotes: () => void;
+}) {
+  const solved = !!state?.solved;
+
+  return (
+    <motion.div
+      initial={{
+        opacity: 0,
+        x: -8,
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+      }}
+      transition={{
+        delay: index * 0.015,
+        duration: 0.3,
+      }}
+      whileHover={{
+        x: 2,
+      }}
+      className={cn(
+        `
+          group
+          flex
+          flex-col
+          gap-4
+          rounded-xl
+          border
+          px-4
+          py-4
+          transition-all
+          duration-300
+          md:flex-row
+          md:items-center
+        `,
+        solved
+          ? "border-emerald-400/20 bg-emerald-400/[0.025]"
+          : "border-white/[0.10] bg-white/[0.018] hover:border-blue-400/25 hover:bg-blue-400/[0.025]",
+      )}
     >
-      <div className="w-[400px] rounded-xl border bg-background p-6 shadow-xl">
+      {/* Number */}
 
-        <h2 className="text-lg font-semibold">
-          Previous problem unfinished
-        </h2>
+      <div
+        className={cn(
+          "hidden w-8 shrink-0 text-center text-sm font-semibold md:block",
+          solved
+            ? "text-emerald-400"
+            : "text-zinc-500",
+        )}
+      >
+        {String(index + 1).padStart(
+          2,
+          "0",
+        )}
+      </div>
 
-        <p className="mt-2 text-sm text-muted-foreground">
-          You started "{warningProblem.title}".
-          Please solve or mark it before starting another problem.
-        </p>
+      {/* Checkbox */}
 
-        <div className="mt-5 flex justify-end gap-3">
+      <Checkbox
+        checked={solved}
+        disabled={
+          solved && !roadmapMode
+        }
+        onCheckedChange={() => {
+          if (
+            roadmapMode &&
+            solved
+          ) {
+            onMentorComplete();
+            return;
+          }
 
-        <Button
-  variant="outline"
-  onClick={() => setWarningProblem(null)}
->
-  Cancel
-</Button>
+          if (solved) return;
 
-<Button
-  onClick={async () => {
-    try {
-      // await problemService.startProblem(warningProblem.id);
+          onSolve();
+        }}
+        className="h-5 w-5 shrink-0"
+        aria-label="Mark solved"
+      />
 
-      // startProblem(warningProblem.id);
+      {/* Problem */}
 
-      window.open(
-        warningProblem.leetcodeUrl,
-        "_blank"
-      );
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className={cn(
+              "text-base font-semibold leading-6",
+              solved
+                ? "text-zinc-300"
+                : "text-white",
+            )}
+          >
+            {problem.title}
+          </span>
 
-      setWarningProblem(null);
-    } catch (err) {
-      console.error("Failed to resume problem:", err);
-    }
-  }}
->
-  Continue Previous
-</Button>
+          {solved && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/[0.08] px-2 py-0.5 text-sm font-medium text-emerald-300">
+              <Check className="h-3.5 w-3.5" />
+              Solved
+            </span>
+          )}
 
+          {state?.revision && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/20 bg-amber-400/[0.08] px-2 py-0.5 text-sm font-medium text-amber-300">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Revision
+            </span>
+          )}
         </div>
 
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "rounded-md border px-2.5 py-1 text-sm font-medium",
+              difficultyClasses[
+                problem.difficulty
+              ],
+            )}
+          >
+            {problem.difficulty}
+          </span>
+
+          <span className="text-sm text-zinc-400">
+            {problem.topic ||
+              "General"}
+          </span>
+        </div>
       </div>
-    </div>,
-    document.body
-  )}
-   {!roadmapMode && (
-  <div className="mt-6 flex items-center justify-center gap-4">
-<Button
-  variant="outline"
-  disabled={page === 1}
-  onClick={() => setPage((p) => p - 1)}
->
-  <ChevronLeft className="mr-2 h-4 w-4" />
-  Previous
-</Button>
 
-  <span className="text-sm font-medium">
-    Page {page}
-  </span>
-<Button
-  variant="outline"
-  disabled={!hasNextPage}
-  onClick={() => setPage((p) => p + 1)}
->
-  Next
-  <ChevronRight className="ml-2 h-4 w-4" />
-</Button>
-  </div>
-)}
-    </div>
+      {/* Actions */}
 
-    
+      <div className="flex items-center gap-1 border-t border-white/[0.07] pt-3 md:border-0 md:pt-0">
+        <IconAction
+          title={
+            state?.revision
+              ? "Remove from revision"
+              : "Mark for revision"
+          }
+          active={
+            !!state?.revision
+          }
+          onClick={onRevision}
+        >
+          <RotateCcw className="h-[18px] w-[18px]" />
+        </IconAction>
+
+        <IconAction
+          title={
+            state?.bookmarked
+              ? "Remove bookmark"
+              : "Bookmark"
+          }
+          active={
+            !!state?.bookmarked
+          }
+          onClick={onBookmark}
+        >
+          {state?.bookmarked ? (
+            <BookmarkCheck className="h-[18px] w-[18px]" />
+          ) : (
+            <Bookmark className="h-[18px] w-[18px]" />
+          )}
+        </IconAction>
+
+        <IconAction
+          title={
+            state?.notes
+              ? "Edit notes"
+              : "Add notes"
+          }
+          active={!!state?.notes}
+          onClick={onNotes}
+        >
+          <FileText className="h-[18px] w-[18px]" />
+        </IconAction>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Open on LeetCode"
+          onClick={onOpen}
+          className="
+            ml-1
+            h-9
+            w-9
+            text-zinc-400
+            transition-all
+            hover:bg-blue-400/[0.08]
+            hover:text-blue-300
+          "
+        >
+          <ExternalLink className="h-[18px] w-[18px]" />
+        </Button>
+      </div>
+    </motion.div>
   );
-
-  
 }
 
+/* =========================================================
+   OVERVIEW STAT
+========================================================= */
 
+function OverviewStat({
+  value,
+  label,
+  icon: Icon,
+  iconClass,
+}: {
+  value: string | number;
+  label: string;
+  icon: any;
+  iconClass: string;
+}) {
+  return (
+    <div className="min-w-[105px] rounded-xl border border-white/[0.11] bg-white/[0.025] px-4 py-3">
+      <div className="flex items-center gap-2">
+        <Icon
+          className={cn(
+            "h-4 w-4",
+            iconClass,
+          )}
+        />
 
-function StatPill({
+        <span className="text-sm font-medium text-zinc-400">
+          {label}
+        </span>
+      </div>
+
+      <div className="mt-1 text-xl font-bold text-white">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   DIFFICULTY STAT
+========================================================= */
+
+function DifficultyStat({
   label,
   value,
-  accent,
+  className,
 }: {
   label: string;
-  value: string | number;
-  accent: "success" | "warning" | "primary";
+  value: number;
+  className: string;
 }) {
-  const tone =
-    accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : "text-primary";
-  const Icon = accent === "success" ? Check : accent === "warning" ? RotateCcw : Bookmark;
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5">
-      <Icon className={cn("h-3.5 w-3.5", tone)} />
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn("text-sm font-semibold", tone)}>{value}</span>
+    <div className="flex items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.025] px-3 py-2">
+      <span
+        className={cn(
+          "text-sm font-semibold",
+          className,
+        )}
+      >
+        {label}
+      </span>
+
+      <span className="text-sm font-medium text-zinc-300">
+        {value}
+      </span>
     </div>
   );
 }
+
+/* =========================================================
+   TOPIC DIFFICULTY
+========================================================= */
+
+function TopicDifficulty({
+  problems,
+  difficulty,
+}: {
+  problems: Problem[];
+  difficulty: Difficulty;
+}) {
+  const count =
+    problems.filter(
+      (p) =>
+        p.difficulty ===
+        difficulty,
+    ).length;
+
+  if (!count) return null;
+
+  const className =
+    difficulty === "Easy"
+      ? "text-emerald-300 border-emerald-400/20 bg-emerald-400/[0.06]"
+      : difficulty ===
+          "Medium"
+        ? "text-amber-300 border-amber-400/20 bg-amber-400/[0.06]"
+        : "text-red-300 border-red-400/20 bg-red-400/[0.06]";
+
+  return (
+    <span
+      className={cn(
+        "rounded-md border px-2 py-1 text-sm font-medium",
+        className,
+      )}
+    >
+      {count}
+    </span>
+  );
+}
+
+/* =========================================================
+   ICON ACTION
+========================================================= */
 
 function IconAction({
   children,
@@ -827,12 +2091,21 @@ function IconAction({
       size="icon"
       title={title}
       onClick={onClick}
-      className={cn(active && "text-primary")}
+      className={cn(
+        "h-9 w-9 text-zinc-400 transition-all duration-200",
+        "hover:bg-white/[0.07] hover:text-white",
+        active &&
+          "bg-blue-400/[0.08] text-blue-300",
+      )}
     >
       {children}
     </Button>
   );
 }
+
+/* =========================================================
+   FILTER SELECT
+========================================================= */
 
 function FilterSelect({
   value,
@@ -844,18 +2117,36 @@ function FilterSelect({
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
-  options: { value: string; label: string }[];
+  options: {
+    value: string;
+    label: string;
+  }[];
   className?: string;
 }) {
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
+    <Select
+      value={value}
+      onValueChange={onChange}
+    >
+      <SelectTrigger
+        className={cn(
+          "border-white/[0.12] bg-[#0b0d12] text-base text-zinc-200",
+          className,
+        )}
+      >
+        <SelectValue
+          placeholder={placeholder}
+        />
       </SelectTrigger>
+
       <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            className="text-base"
+          >
+            {option.label}
           </SelectItem>
         ))}
       </SelectContent>

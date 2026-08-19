@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+
 import { api } from "@/lib/api";
 
 export interface RevisionItem {
@@ -14,8 +15,12 @@ export interface RevisionItem {
   felt_difficulty: string;
   confidence_rating: number;
 
+  time_taken_minutes: number;
+
   title: string;
   topic?: string;
+
+  question_link?: string;
 
   priorityLabel?: string;
   priorityScore?: number;
@@ -29,26 +34,36 @@ export interface DueRevisionResponse {
 
 const revisionService = {
   async getDueRevisions(): Promise<DueRevisionResponse> {
+    const res = await api.get("/revision/due");
 
-
-const res = await api.get("/revision/due");
     return res.data;
   },
 
-async completeRevision(problemId: number | string) {
-  const res = await api.post(`/revision/complete/${problemId}`);
-  return res.data;
-},
+  async completeRevision(
+    problemId: number | string,
+    timeTaken: number
+  ) {
+    const res = await api.post(
+      `/revision/complete/${problemId}`,
+      {
+        timeTaken,
+      }
+    );
+
+    return res.data;
+  },
 
   async getAllRevisions() {
-   const res = await api.get("/revision/all");
+    const res = await api.get("/revision/all");
+
     return res.data;
   },
 
   async addRevision(problemId: number | string) {
-  const res = await api.post(`/revision/${problemId}`);
-  return res.data;
-},
+    const res = await api.post(`/revision/${problemId}`);
+
+    return res.data;
+  },
 };
 
 export default revisionService;

@@ -1,4 +1,3 @@
-
 /* eslint-disable prettier/prettier */
 
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,11 @@ import {
     Target,
     Sun,
     Sunset,
-    Moon,
     Sunrise,
     CheckCircle2,
+    Brain,
+    ChevronRight,
+    Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "@tanstack/react-router";
@@ -36,6 +37,10 @@ interface DashboardData {
     revision: {
         dueCount: number;
     };
+
+    focusTopic?: {
+        topic?: string;
+    } | null;
 }
 
 interface Props {
@@ -50,8 +55,8 @@ export function WelcomeCard({ dashboard }: Props) {
 
     const hour = new Date().getHours();
 
-    let greeting = "Welcome";
-    let GreetingIcon = Sparkles;
+    let greeting = "Good Evening";
+    let GreetingIcon = Sunset;
 
     if (hour >= 5 && hour < 12) {
         greeting = "Good Morning";
@@ -59,20 +64,30 @@ export function WelcomeCard({ dashboard }: Props) {
     } else if (hour >= 12 && hour < 17) {
         greeting = "Good Afternoon";
         GreetingIcon = Sun;
-    } else if (hour >= 17 && hour < 21) {
-        greeting = "Good Evening";
-        GreetingIcon = Sunset;
-    } else {
-        greeting = "Good Night";
-        GreetingIcon = Moon;
     }
 
-    const revisionDue = dashboard.revision.dueCount;
+    const revisionDue = dashboard.revision?.dueCount ?? 0;
+    const solved = dashboard.stats?.solved ?? 0;
+    const streak = dashboard.stats?.streak ?? 0;
+    const readiness = dashboard.readiness?.score ?? 0;
+    const readinessLevel =
+        dashboard.readiness?.level ?? "Beginner";
+
+    const focusTopic =
+        dashboard.focusTopic?.topic ?? null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+        <motion.section
+            initial={{
+                opacity: 0,
+                y: 18,
+                scale: 0.985,
+            }}
+            animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+            }}
             transition={{
                 duration: 0.7,
                 ease: [0.22, 1, 0.36, 1],
@@ -81,19 +96,16 @@ export function WelcomeCard({ dashboard }: Props) {
                 group
                 relative
                 overflow-hidden
-                rounded-3xl
+                rounded-[28px]
                 border
-                border-zinc-800
-                p-8
-                md:p-9
+                border-white/[0.08]
+                bg-[#09090b]
+                shadow-2xl
+                shadow-black/30
             "
-            style={{
-                background: "var(--gradient-card)",
-                boxShadow: "var(--shadow-card)",
-            }}
         >
             {/* =====================================================
-                BACKGROUND GLOW
+                AMBIENT BACKGROUND
             ===================================================== */}
 
             <motion.div
@@ -101,103 +113,94 @@ export function WelcomeCard({ dashboard }: Props) {
                     pointer-events-none
                     absolute
                     -right-32
-                    -top-32
-                    h-80
-                    w-80
+                    -top-40
+                    h-[420px]
+                    w-[420px]
                     rounded-full
-                    bg-violet-600/20
-                    blur-[110px]
-                "
-                animate={{
-                    scale: [1, 1.12, 1],
-                    opacity: [0.45, 0.65, 0.45],
-                }}
-                transition={{
-                    duration: 7,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-            />
-
-            <motion.div
-                className="
-                    pointer-events-none
-                    absolute
-                    -bottom-40
-                    -left-32
-                    h-80
-                    w-80
-                    rounded-full
-                    bg-cyan-500/10
+                    bg-violet-600/[0.14]
                     blur-[120px]
                 "
                 animate={{
-                    scale: [1, 1.1, 1],
-                    opacity: [0.3, 0.5, 0.3],
-                }}
-                transition={{
-                    duration: 9,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-            />
-          
-{/* Animated subtle background grid */}
-<motion.div
-    className="
-        pointer-events-none
-        absolute
-        -inset-16
-        [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)]
-        [background-size:32px_32px]
-    "
-    initial={{
-        opacity: 0.015,
-    }}
-    animate={{
-        x: [0, 32],
-        y: [0, 32],
-        opacity: [0.015, 0.03, 0.015],
-    }}
-    transition={{
-        x: {
-            duration: 14,
-            repeat: Infinity,
-            ease: "linear",
-        },
-        y: {
-            duration: 14,
-            repeat: Infinity,
-            ease: "linear",
-        },
-        opacity: {
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-        },
-    }}
-/>
-
-            {/* subtle light sweep */}
-            <motion.div
-                className="
-                    pointer-events-none
-                    absolute
-                    -left-1/2
-                    top-0
-                    h-full
-                    w-1/3
-                    rotate-12
-                    bg-white/[0.025]
-                    blur-2xl
-                "
-                animate={{
-                    x: ["0%", "420%"],
+                    scale: [1, 1.12, 1],
+                    opacity: [0.45, 0.7, 0.45],
                 }}
                 transition={{
                     duration: 8,
                     repeat: Infinity,
-                    repeatDelay: 5,
+                    ease: "easeInOut",
+                }}
+            />
+
+            <motion.div
+                className="
+                    pointer-events-none
+                    absolute
+                    -bottom-44
+                    -left-40
+                    h-[360px]
+                    w-[360px]
+                    rounded-full
+                    bg-cyan-500/[0.08]
+                    blur-[120px]
+                "
+                animate={{
+                    scale: [1, 1.08, 1],
+                    opacity: [0.25, 0.45, 0.25],
+                }}
+                transition={{
+                    duration: 10,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                }}
+            />
+
+            {/* =====================================================
+                MOVING GRID
+            ===================================================== */}
+
+            <motion.div
+                className="
+                    pointer-events-none
+                    absolute
+                    -inset-20
+                    opacity-[0.025]
+                    [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)]
+                    [background-size:36px_36px]
+                "
+                animate={{
+                    x: [0, 36],
+                    y: [0, 36],
+                }}
+                transition={{
+                    duration: 16,
+                    repeat: Infinity,
+                    ease: "linear",
+                }}
+            />
+
+            {/* =====================================================
+                LIGHT SWEEP
+            ===================================================== */}
+
+            <motion.div
+                className="
+                    pointer-events-none
+                    absolute
+                    -left-1/3
+                    top-0
+                    h-full
+                    w-1/4
+                    rotate-[18deg]
+                    bg-white/[0.025]
+                    blur-2xl
+                "
+                animate={{
+                    x: ["0%", "520%"],
+                }}
+                transition={{
+                    duration: 9,
+                    repeat: Infinity,
+                    repeatDelay: 6,
                     ease: "easeInOut",
                 }}
             />
@@ -206,476 +209,776 @@ export function WelcomeCard({ dashboard }: Props) {
                 CONTENT
             ===================================================== */}
 
-            <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative p-6 md:p-8 lg:p-9">
 
-                {/* =================================================
-                    LEFT
-                ================================================= */}
-
-                <div className="max-w-2xl">
-
-                    {/* Greeting badge */}
-
-                    <motion.div
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{
-                            delay: 0.15,
-                            duration: 0.5,
-                        }}
-                        className="
-                            inline-flex
-                            items-center
-                            gap-2
-                            rounded-full
-                            border
-                            border-violet-500/20
-                            bg-violet-500/10
-                            px-4
-                            py-2
-                            text-sm
-                            font-medium
-                            text-violet-300
-                        "
-                    >
-                        <motion.span
-                            animate={{
-                                rotate: [0, -8, 8, 0],
-                                y: [0, -1, 0],
-                            }}
-                            transition={{
-                                duration: 2.5,
-                                repeat: Infinity,
-                                repeatDelay: 3,
-                                ease: "easeInOut",
-                            }}
-                        >
-                            <GreetingIcon size={16} />
-                        </motion.span>
-
-                        {greeting}
-                    </motion.div>
-
-                    {/* Heading */}
-
-                    <motion.h1
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            delay: 0.25,
-                            duration: 0.65,
-                            ease: [0.22, 1, 0.36, 1],
-                        }}
-                        className="
-                            mt-5
-                            text-4xl
-                            font-bold
-                            tracking-tight
-                            text-white
-                            md:text-5xl
-                        "
-                    >
-                        {greeting},{" "}
-
-                        <motion.span
-                            className="
-                                inline-block
-                                text-violet-400
-                            "
-                            animate={{
-                                textShadow: [
-                                    "0 0 0px rgba(139,92,246,0)",
-                                    "0 0 22px rgba(139,92,246,0.25)",
-                                    "0 0 0px rgba(139,92,246,0)",
-                                ],
-                            }}
-                            transition={{
-                                duration: 4,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                            }}
-                        >
-                            {name}
-                        </motion.span>
-                    </motion.h1>
-
-                    {/* Description */}
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            delay: 0.35,
-                            duration: 0.6,
-                        }}
-                        className="
-                            mt-5
-                            max-w-xl
-                            text-lg
-                            leading-8
-                            text-zinc-400
-                        "
-                    >
-                        You've solved{" "}
-
-                        <span className="font-bold text-white">
-                            {dashboard.stats.solved}
-                        </span>{" "}
-
-                        problems so far. Your current streak is{" "}
-
-                        <span className="font-bold text-orange-400">
-                            {dashboard.stats.streak} day
-                            {dashboard.stats.streak !== 1 ? "s" : ""}
-                        </span>{" "}
-
-                        and your interview readiness is{" "}
-
-                        <span className="font-bold text-violet-400">
-                            {dashboard.readiness.level}
-                        </span>.
-                    </motion.p>
+                <div className="grid gap-8 lg:grid-cols-[1fr_330px] lg:items-center">
 
                     {/* =================================================
-                        ACTIONS
+                        LEFT CONTENT
                     ================================================= */}
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                            delay: 0.45,
-                            duration: 0.6,
-                        }}
-                        className="mt-8 flex flex-wrap gap-3"
-                    >
+                    <div>
 
-                        {/* Resume Practice */}
+                        {/* Greeting */}
 
                         <motion.div
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.97 }}
+                            initial={{
+                                opacity: 0,
+                                x: -12,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                x: 0,
+                            }}
+                            transition={{
+                                delay: 0.1,
+                                duration: 0.5,
+                            }}
+                            className="
+                                inline-flex
+                                items-center
+                                gap-2
+                                rounded-full
+                                border
+                                border-violet-400/15
+                                bg-violet-400/[0.07]
+                                px-3.5
+                                py-1.5
+                                text-sm
+                                font-medium
+                                text-violet-200
+                            "
                         >
-                            <Button
-                                className="
-                                    group
-                                    relative
-                                    overflow-hidden
-                                    text-white
-                                "
-                                style={{
-                                    background:
-                                        "var(--gradient-primary)",
-                                    boxShadow:
-                                        "var(--shadow-elegant)",
+                            <motion.span
+                                animate={{
+                                    rotate: [0, -7, 7, 0],
                                 }}
-                                onClick={() =>
-                                    navigate({
-                                        to: "/problems",
-                                    })
-                                }
+                                transition={{
+                                    duration: 2.5,
+                                    repeat: Infinity,
+                                    repeatDelay: 4,
+                                }}
                             >
-                                <motion.span
-                                    className="relative z-10 flex items-center"
-                                >
-                                    Resume Practice
+                                <GreetingIcon size={15} />
+                            </motion.span>
 
-                                    <motion.span
-                                        animate={{
-                                            x: [0, 3, 0],
-                                        }}
-                                        transition={{
-                                            duration: 1.6,
-                                            repeat: Infinity,
-                                            ease: "easeInOut",
-                                        }}
-                                    >
-                                        <ArrowRight
-                                            className="ml-2"
-                                            size={18}
-                                        />
-                                    </motion.span>
-                                </motion.span>
+                            {greeting}
+                        </motion.div>
 
-                                {/* hover shine */}
+                        {/* Heading */}
+
+                        <motion.h1
+                            initial={{
+                                opacity: 0,
+                                y: 12,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.18,
+                                duration: 0.6,
+                                ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="
+                                mt-5
+                                text-4xl
+                                font-bold
+                                tracking-tight
+                                text-white
+                                sm:text-5xl
+                                md:text-[46px]
+                            "
+                        >
+                            Ready to sharpen
+                            <br />
+
+                            <span className="relative inline-block">
+                                your edge,{" "}
 
                                 <motion.span
                                     className="
-                                        pointer-events-none
-                                        absolute
-                                        inset-y-0
-                                        -left-10
-                                        w-8
-                                        rotate-12
-                                        bg-white/20
-                                        blur-md
+                                        inline-block
+                                        bg-gradient-to-r
+                                        from-violet-400
+                                        via-fuchsia-300
+                                        to-cyan-300
+                                        bg-clip-text
+                                        text-transparent
                                     "
                                     animate={{
-                                        x: ["0%", "500%"],
+                                        backgroundPosition: [
+                                            "0% 50%",
+                                            "100% 50%",
+                                            "0% 50%",
+                                        ],
                                     }}
                                     transition={{
-                                        duration: 2.8,
+                                        duration: 5,
                                         repeat: Infinity,
-                                        repeatDelay: 3,
                                         ease: "easeInOut",
                                     }}
-                                />
-                            </Button>
-                        </motion.div>
+                                    style={{
+                                        backgroundSize: "200% 200%",
+                                    }}
+                                >
+                                    {name}?
+                                </motion.span>
+                            </span>
+                        </motion.h1>
 
-                        {/* Revision */}
+                        {/* Description */}
+
+                        <motion.p
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.3,
+                                duration: 0.55,
+                            }}
+                            className="
+                                mt-4
+                                max-w-xl
+                                text-base
+                                font-medium
+                                leading-7
+                                text-zinc-200
+                                md:text-lg
+                            "
+                        >
+                            You've solved{" "}
+                            <span className="font-bold text-white">
+                                {solved}
+                            </span>{" "}
+                            problems so far. Your interview readiness is{" "}
+                            <span className="font-bold text-violet-300">
+                                {readinessLevel}
+                            </span>
+                            .
+                        </motion.p>
+
+                        {/* =================================================
+                            QUICK METRICS
+                        ================================================= */}
 
                         <motion.div
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.97 }}
+                            initial={{
+                                opacity: 0,
+                                y: 12,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.4,
+                                duration: 0.55,
+                            }}
+                            className="
+                                mt-6
+                                flex
+                                flex-wrap
+                                items-center
+                                gap-3
+                            "
                         >
-                            <Button
-                                variant="outline"
-                                className="
-                                    gap-2
-                                    border-zinc-700
-                                    bg-zinc-900/40
-                                    text-zinc-200
-                                    transition-all
-                                    hover:border-violet-500/40
-                                    hover:bg-violet-500/10
-                                "
-                                onClick={() =>
-                                    navigate({
-                                        to: "/revisions",
-                                    })
-                                }
-                            >
-                                {revisionDue > 0 ? (
-                                    <>
-                                        <motion.span
-                                            animate={{
-                                                rotate: [0, -8, 8, 0],
-                                            }}
-                                            transition={{
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                repeatDelay: 3,
-                                            }}
-                                        >
-                                            <Target size={16} />
-                                        </motion.span>
 
-                                        Today's Revision · {revisionDue} pending
-                                    </>
-                                ) : (
-                                    <>
+                            <QuickMetric
+                                icon={CheckCircle2}
+                                label="Problems solved"
+                                value={solved}
+                                iconClass="text-emerald-400"
+                            />
+
+                            {streak > 0 && (
+                                <QuickMetric
+                                    icon={Flame}
+                                    label="Day streak"
+                                    value={streak}
+                                    iconClass="text-orange-400"
+                                />
+                            )}
+
+                            {focusTopic && (
+                                <QuickMetric
+                                    icon={Brain}
+                                    label="Current focus"
+                                    value={focusTopic}
+                                    iconClass="text-cyan-400"
+                                    textValue
+                                />
+                            )}
+
+                        </motion.div>
+
+                        {/* =================================================
+                            ACTIONS
+                        ================================================= */}
+
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 12,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.5,
+                                duration: 0.55,
+                            }}
+                            className="
+                                mt-7
+                                flex
+                                flex-wrap
+                                gap-3
+                            "
+                        >
+
+                            <motion.div
+                                whileHover={{
+                                    y: -2,
+                                }}
+                                whileTap={{
+                                    scale: 0.97,
+                                }}
+                            >
+                                <Button
+                                    onClick={() =>
+                                        navigate({
+                                            to: "/problems",
+                                        })
+                                    }
+                                    className="
+                                        relative
+                                        h-11
+                                        overflow-hidden
+                                        border-0
+                                        bg-gradient-to-r
+                                        from-violet-600
+                                        via-violet-500
+                                        to-blue-500
+                                        px-5
+                                        text-base
+                                        font-semibold
+                                        text-white
+                                        shadow-lg
+                                        shadow-violet-500/20
+                                    "
+                                >
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        Continue Practice
+
                                         <motion.span
                                             animate={{
-                                                scale: [1, 1.12, 1],
+                                                x: [0, 3, 0],
                                             }}
                                             transition={{
-                                                duration: 2,
+                                                duration: 1.8,
                                                 repeat: Infinity,
                                                 ease: "easeInOut",
                                             }}
                                         >
-                                            <CheckCircle2 size={16} />
+                                            <ArrowRight size={18} />
                                         </motion.span>
+                                    </span>
 
-                                        Today's Revision · Done
-                                    </>
-                                )}
-                            </Button>
+                                    <motion.span
+                                        className="
+                                            pointer-events-none
+                                            absolute
+                                            -left-10
+                                            top-0
+                                            h-full
+                                            w-8
+                                            rotate-12
+                                            bg-white/20
+                                            blur-md
+                                        "
+                                        animate={{
+                                            x: ["0%", "550%"],
+                                        }}
+                                        transition={{
+                                            duration: 2.8,
+                                            repeat: Infinity,
+                                            repeatDelay: 4,
+                                            ease: "easeInOut",
+                                        }}
+                                    />
+                                </Button>
+                            </motion.div>
+
+                            <motion.div
+                                whileHover={{
+                                    y: -2,
+                                }}
+                                whileTap={{
+                                    scale: 0.97,
+                                }}
+                            >
+                                <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                        navigate({
+                                            to: "/revisions",
+                                        })
+                                    }
+                                    className={`
+                                        h-11
+                                        gap-2
+                                        border-white/[0.12]
+                                        bg-white/[0.025]
+                                        px-4
+                                        text-sm
+                                        font-semibold
+                                        text-zinc-100
+                                        transition-all
+                                        duration-300
+                                        hover:border-violet-400/30
+                                        hover:bg-violet-400/[0.07]
+                                        ${
+                                            revisionDue > 0
+                                                ? "border-violet-400/20"
+                                                : ""
+                                        }
+                                    `}
+                                >
+                                    {revisionDue > 0 ? (
+                                        <>
+                                            <Target
+                                                size={17}
+                                                className="text-violet-300"
+                                            />
+
+                                            <span>
+                                                {revisionDue} revision
+                                                {revisionDue !== 1
+                                                    ? "s"
+                                                    : ""}{" "}
+                                                due
+                                            </span>
+
+                                            <ChevronRight
+                                                size={16}
+                                                className="text-zinc-300"
+                                            />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2
+                                                size={17}
+                                                className="text-emerald-400"
+                                            />
+
+                                            <span>
+                                                Revisions complete
+                                            </span>
+                                        </>
+                                    )}
+                                </Button>
+                            </motion.div>
+
                         </motion.div>
+                    </div>
 
+                    {/* =================================================
+                        RIGHT READINESS PANEL
+                    ================================================= */}
+
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            x: 20,
+                            scale: 0.97,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            x: 0,
+                            scale: 1,
+                        }}
+                        transition={{
+                            delay: 0.3,
+                            duration: 0.7,
+                            ease: [0.22, 1, 0.36, 1],
+                        }}
+                        className="
+                            relative
+                            overflow-hidden
+                            rounded-3xl
+                            border
+                            border-white/[0.08]
+                            bg-white/[0.025]
+                            p-5
+                            backdrop-blur-xl
+                        "
+                    >
+
+                        <motion.div
+                            className="
+                                pointer-events-none
+                                absolute
+                                -right-12
+                                -top-12
+                                h-32
+                                w-32
+                                rounded-full
+                                bg-violet-500/15
+                                blur-3xl
+                            "
+                            animate={{
+                                scale: [1, 1.2, 1],
+                                opacity: [0.4, 0.7, 0.4],
+                            }}
+                            transition={{
+                                duration: 5,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                            }}
+                        />
+
+                        <div className="relative">
+
+                            <div className="flex items-center justify-between">
+
+                                <div className="flex items-center gap-2">
+
+                                    <div
+                                        className="
+                                            flex
+                                            h-8
+                                            w-8
+                                            items-center
+                                            justify-center
+                                            rounded-lg
+                                            border
+                                            border-violet-400/15
+                                            bg-violet-400/[0.08]
+                                        "
+                                    >
+                                        <Target
+                                            size={15}
+                                            className="text-violet-300"
+                                        />
+                                    </div>
+
+                                    <span className="text-sm font-semibold text-zinc-100">
+                                        Interview readiness
+                                    </span>
+
+                                </div>
+
+                                <Zap
+                                    size={16}
+                                    className="text-violet-400"
+                                />
+
+                            </div>
+
+                            <div className="mt-7 flex items-end justify-between">
+
+                                <div>
+
+                                    <motion.div
+                                        initial={{
+                                            opacity: 0,
+                                            y: 8,
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            y: 0,
+                                        }}
+                                        transition={{
+                                            delay: 0.65,
+                                            duration: 0.5,
+                                        }}
+                                        className="
+                                            text-5xl
+                                            font-bold
+                                            tracking-tight
+                                            text-white
+                                        "
+                                    >
+                                        {readiness}
+
+                                        <span className="text-2xl text-violet-400">
+                                            %
+                                        </span>
+                                    </motion.div>
+
+                                    <p className="mt-1 text-sm font-medium text-zinc-200">
+                                        {readinessLevel}
+                                    </p>
+
+                                </div>
+
+                                <div className="text-right">
+
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-300">
+                                        Progress
+                                    </p>
+
+                                    <p className="mt-1 text-sm font-medium text-zinc-200">
+                                        {solved} solved
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div className="mt-5">
+
+                                <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
+
+                                    <motion.div
+                                        initial={{
+                                            width: 0,
+                                        }}
+                                        animate={{
+                                            width: `${readiness}%`,
+                                        }}
+                                        transition={{
+                                            delay: 0.55,
+                                            duration: 1.1,
+                                            ease: [0.22, 1, 0.36, 1],
+                                        }}
+                                        className="
+                                            relative
+                                            h-full
+                                            rounded-full
+                                            bg-gradient-to-r
+                                            from-violet-600
+                                            via-fuchsia-400
+                                            to-cyan-400
+                                        "
+                                    >
+
+                                        <motion.div
+                                            className="
+                                                absolute
+                                                right-0
+                                                top-0
+                                                h-full
+                                                w-10
+                                                bg-white/30
+                                                blur-sm
+                                            "
+                                            animate={{
+                                                opacity: [0, 1, 0],
+                                            }}
+                                            transition={{
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                repeatDelay: 2,
+                                            }}
+                                        />
+
+                                    </motion.div>
+
+                                </div>
+
+                            </div>
+
+                            <div className="my-5 h-px bg-white/[0.08]" />
+
+                            <div className="flex items-start gap-3">
+
+                                <motion.div
+                                    animate={{
+                                        rotate: [0, 4, -4, 0],
+                                    }}
+                                    transition={{
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        repeatDelay: 3,
+                                    }}
+                                    className="
+                                        mt-0.5
+                                        flex
+                                        h-8
+                                        w-8
+                                        shrink-0
+                                        items-center
+                                        justify-center
+                                        rounded-lg
+                                        bg-cyan-400/[0.07]
+                                    "
+                                >
+                                    <Sparkles
+                                        size={15}
+                                        className="text-cyan-300"
+                                    />
+                                </motion.div>
+
+                                <div>
+
+                                    <p className="text-sm font-semibold text-zinc-100">
+                                        Keep the momentum going
+                                    </p>
+
+                                    <p className="mt-1 text-xs font-medium leading-5 text-zinc-200">
+                                        {revisionDue > 0
+                                            ? `You have ${revisionDue} revision${
+                                                  revisionDue !== 1
+                                                      ? "s"
+                                                      : ""
+                                              } waiting.`
+                                            : "Your revision queue is clear."}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
                     </motion.div>
                 </div>
 
-                {/* =================================================
-                    RIGHT STATS
-                ================================================= */}
+                {/* =====================================================
+                    BOTTOM STATUS
+                ===================================================== */}
 
                 <motion.div
-                    initial={{ opacity: 0, x: 24 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{
+                        opacity: 0,
+                        y: 8,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
                     transition={{
-                        delay: 0.35,
-                        duration: 0.7,
-                        ease: [0.22, 1, 0.36, 1],
+                        delay: 0.65,
+                        duration: 0.5,
                     }}
                     className="
-                        grid
-                        w-full
-                        max-w-md
-                        grid-cols-2
-                        gap-4
+                        mt-7
+                        flex
+                        items-center
+                        justify-between
+                        border-t
+                        border-white/[0.08]
+                        pt-5
                     "
                 >
 
-                    {/* STREAK */}
+                    <div className="flex items-center gap-2">
 
-                    <StatCard
-                        icon={Flame}
-                        iconClass="text-orange-400"
-                        value={dashboard.stats.streak}
-                        label="Day Streak"
-                        delay={0.1}
-                        animateIcon="flame"
-                    />
+                        <span className="relative flex h-2 w-2">
 
-                    {/* READINESS */}
+                            <motion.span
+                                className="
+                                    absolute
+                                    inline-flex
+                                    h-full
+                                    w-full
+                                    rounded-full
+                                    bg-emerald-400
+                                "
+                                animate={{
+                                    scale: [1, 1.8, 1],
+                                    opacity: [0.8, 0, 0.8],
+                                }}
+                                transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                }}
+                            />
 
-                    <StatCard
-                        icon={Target}
-                        iconClass="text-violet-400"
-                        value={`${dashboard.readiness.score}%`}
-                        label="Interview Ready"
-                        delay={0.2}
-                        animateIcon="target"
-                    />
+                            <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
 
-                    {/* EASY */}
+                        </span>
 
-                    <StatCard
-                        value={dashboard.stats.easy}
-                        label="Easy Solved"
-                        valueClass="text-green-400"
-                        delay={0.3}
-                    />
+                        <span className="text-sm font-medium text-zinc-200">
+                            AlgoForge is tracking your progress
+                        </span>
 
-                    {/* MEDIUM */}
+                    </div>
 
-                    <StatCard
-                        value={dashboard.stats.medium}
-                        label="Medium Solved"
-                        valueClass="text-yellow-400"
-                        delay={0.4}
-                    />
+                    <span className="hidden text-sm font-medium text-zinc-300 sm:block">
+                        Keep solving. Keep improving.
+                    </span>
 
                 </motion.div>
+
             </div>
-        </motion.div>
+        </motion.section>
     );
 }
 
-
 /* =========================================================
-   STAT CARD
+   QUICK METRIC
 ========================================================= */
 
-function StatCard({
+function QuickMetric({
     icon: Icon,
-    iconClass,
-    value,
     label,
-    valueClass = "text-white",
-    delay = 0,
-    animateIcon,
+    value,
+    iconClass,
+    textValue = false,
 }: {
-    icon?: any;
-    iconClass?: string;
-    value: string | number;
+    icon: any;
     label: string;
-    valueClass?: string;
-    delay?: number;
-    animateIcon?: "flame" | "target";
+    value: string | number;
+    iconClass: string;
+    textValue?: boolean;
 }) {
     return (
         <motion.div
-            initial={{
-                opacity: 0,
-                y: 12,
-                scale: 0.97,
-            }}
-            animate={{
-                opacity: 1,
-                y: 0,
-                scale: 1,
-            }}
-            transition={{
-                delay,
-                duration: 0.5,
-                ease: [0.22, 1, 0.36, 1],
-            }}
             whileHover={{
-                y: -4,
-                scale: 1.015,
+                y: -2,
             }}
             className="
-                group/stat
-                relative
-                overflow-hidden
-                rounded-2xl
+                flex
+                items-center
+                gap-2.5
+                rounded-xl
                 border
-                border-zinc-800
-                bg-zinc-900/60
-                p-5
+                border-white/[0.08]
+                bg-white/[0.025]
+                px-3
+                py-2
                 transition-colors
                 duration-300
-                hover:border-zinc-700
+                hover:border-white/[0.14]
+                hover:bg-white/[0.04]
             "
         >
-            {/* Hover glow */}
 
-            <div
-                className="
-                    pointer-events-none
-                    absolute
-                    -right-8
-                    -top-8
-                    h-20
-                    w-20
-                    rounded-full
-                    bg-violet-500/0
-                    blur-2xl
-                    transition-all
-                    duration-500
-                    group-hover/stat:bg-violet-500/10
-                "
+            <Icon
+                size={15}
+                className={iconClass}
             />
 
-            {Icon && (
-                <motion.div
-                    animate={
-                        animateIcon === "flame"
-                            ? {
-                                  y: [0, -2, 0],
-                                  rotate: [0, -3, 3, 0],
-                              }
-                            : animateIcon === "target"
-                              ? {
-                                    scale: [1, 1.06, 1],
-                                  }
-                              : undefined
-                    }
-                    transition={
-                        animateIcon
-                            ? {
-                                  duration:
-                                      animateIcon === "flame"
-                                          ? 2.2
-                                          : 2.8,
-                                  repeat: Infinity,
-                                  repeatDelay: 2,
-                                  ease: "easeInOut",
-                              }
-                            : undefined
-                    }
-                    className="relative"
+            <div>
+
+                <p className="text-[11px] font-medium text-zinc-300">
+                    {label}
+                </p>
+
+                <p
+                    className={`
+                        text-sm
+                        font-bold
+                        ${
+                            textValue
+                                ? "max-w-[120px] truncate text-zinc-100"
+                                : "text-white"
+                        }
+                    `}
                 >
-                    <Icon
-                        className={iconClass}
-                        size={26}
-                    />
-                </motion.div>
-            )}
+                    {value}
+                </p>
 
-            <motion.div
-                className={`relative mt-4 text-3xl font-bold ${valueClass}`}
-                whileHover={{ x: 2 }}
-            >
-                {value}
-            </motion.div>
-
-            <div className="relative mt-1 text-sm text-zinc-400">
-                {label}
             </div>
+
         </motion.div>
     );
 }

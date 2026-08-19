@@ -24,7 +24,10 @@ export const getDueRevisions = async (req, res) => {
 export const markRevisionDone = async (req, res) => {
   try {
     const userId = req.user.id;
-    const problemId = Number(req.params.problemId);
+
+    const problemId = Number(
+      req.params.problemId
+    );
 
     if (!problemId) {
       return res.status(400).json({
@@ -33,7 +36,28 @@ export const markRevisionDone = async (req, res) => {
       });
     }
 
-    const result = await markRevisionDoneService(userId, problemId);
+    const {
+      timeTaken = 0,
+    } = req.body || {};
+
+    if (
+      timeTaken !== undefined &&
+      (Number.isNaN(Number(timeTaken)) ||
+        Number(timeTaken) < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "timeTaken must be a valid positive number",
+      });
+    }
+
+    const result =
+      await markRevisionDoneService(
+        userId,
+        problemId,
+        Number(timeTaken)
+      );
 
     res.json({
       success: true,
@@ -41,7 +65,15 @@ export const markRevisionDone = async (req, res) => {
       data: result,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(
+      "Revision completion error:",
+      err
+    );
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 

@@ -1,12 +1,13 @@
 /* eslint-disable prettier/prettier */
 
 import { useState } from "react";
+
 import {
-  Check,
-  ChevronDown,
-  Copy,
-  UserRound,
-  LogOut,
+    Check,
+    ChevronDown,
+    Copy,
+    LogOut,
+    UserRound,
 } from "lucide-react";
 
 import { useNavigate } from "@tanstack/react-router";
@@ -14,561 +15,653 @@ import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
 } from "@/components/ui/avatar";
 
 import { useAuthStore } from "@/store/auth-store";
 
-
 export function Topbar() {
+    const user = useAuthStore((s) => s.user);
+    const logout = useAuthStore((s) => s.logout);
 
-  const user = useAuthStore((s) => s.user);
+    const navigate = useNavigate();
 
-  const logout = useAuthStore((s) => s.logout);
+    const [copied, setCopied] = useState(false);
 
-  const navigate = useNavigate();
+    /*
+    ============================================================
+    USER INITIALS
+    ============================================================
+    */
 
-  const [copied, setCopied] = useState(false);
+    const initials =
+        user?.name
+            ?.trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((part) => part.charAt(0))
+            .slice(0, 2)
+            .join("")
+            .toUpperCase() || "U";
 
+    /*
+    ============================================================
+    LEETCODE PROFILE IMAGE
 
-  /* -------------------------------------------------------
-     USER INITIALS
-  ------------------------------------------------------- */
+    We intentionally don't use DiceBear or a static avatar.
 
-  const initials = (user?.name ?? "U")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+    The profile image is taken from the LeetCode data already
+    available on the authenticated user object.
 
+    Multiple possible property shapes are supported so this
+    component doesn't force a particular backend structure.
+    ============================================================
+    */
 
-  /* -------------------------------------------------------
-     CARTOON AVATAR
-     
-     Same user always gets the same avatar because
-     the seed is based on their name.
-  ------------------------------------------------------- */
+    const leetcodeProfile = (
+        user as
+            | {
+                  leetcode?: {
+                      avatar?: string | null;
+                      avatarUrl?: string | null;
+                      profile?: {
+                          avatar?: string | null;
+                          avatarUrl?: string | null;
+                      } | null;
+                  } | null;
+                  leetcodeProfile?: {
+                      avatar?: string | null;
+                      avatarUrl?: string | null;
+                  } | null;
+                  leetcode_profile?: {
+                      avatar?: string | null;
+                      avatar_url?: string | null;
+                  } | null;
+              }
+            | null
+    );
 
-  const avatarSeed = encodeURIComponent(
-    user?.name ?? "AlgoForge User"
-  );
+    const leetcodeAvatar =
+        leetcodeProfile?.leetcode?.avatar ??
+        leetcodeProfile?.leetcode?.avatarUrl ??
+        leetcodeProfile?.leetcode?.profile?.avatar ??
+        leetcodeProfile?.leetcode?.profile?.avatarUrl ??
+        leetcodeProfile?.leetcodeProfile?.avatar ??
+        leetcodeProfile?.leetcodeProfile?.avatarUrl ??
+        leetcodeProfile?.leetcode_profile?.avatar ??
+        leetcodeProfile?.leetcode_profile?.avatar_url ??
+        null;
 
-  const avatarUrl =
-    `https://api.dicebear.com/10.x/sprouts/svg?patternProbability=0&cheeksProbability=0&tags=animation&eyesVariant=angry,bigPupils,close,dots,happy,round,sideeye,sleepy,wide,wink&patternVariant=band,dots,ring,speckles,stripes&seed=Felix`;
+    /*
+    ============================================================
+    COPY EMAIL
+    ============================================================
+    */
 
+    const copyEmail = async () => {
+        if (!user?.email) return;
 
-  /* -------------------------------------------------------
-     COPY EMAIL
-  ------------------------------------------------------- */
+        try {
+            await navigator.clipboard.writeText(user.email);
 
-  const copyEmail = async () => {
+            setCopied(true);
 
-    if (!user?.email) return;
+            window.setTimeout(() => {
+                setCopied(false);
+            }, 1500);
+        } catch (error) {
+            console.error("Failed to copy email:", error);
+        }
+    };
 
-    try {
+    /*
+    ============================================================
+    LOGOUT
+    ============================================================
+    */
 
-      await navigator.clipboard.writeText(user.email);
+    const handleLogout = () => {
+        logout();
 
-      setCopied(true);
+        navigate({
+            to: "/login",
+        });
+    };
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 1500);
+    return (
+        <header
+            className="
+                sticky
+                top-0
+                z-40
 
-    } catch (error) {
+                h-14
+                w-full
 
-      console.error("Failed to copy email:", error);
-
-    }
-
-  };
-
-
-  return (
-
-    <header
-      className="
-        sticky
-        top-0
-        z-30
-
-        flex
-        h-14
-        items-center
-        gap-3
-
-        border-b
-        border-white/[0.07]
-
-        bg-background/75
-
-        px-4
-
-        backdrop-blur-xl
-      "
-    >
-
-      {/* -------------------------------------------------
-          SIDEBAR TOGGLE
-      ------------------------------------------------- */}
-
-      <SidebarTrigger
-        className="
-          text-muted-foreground
-
-          transition-all
-          duration-200
-
-          hover:bg-white/[0.05]
-          hover:text-white
-
-          active:scale-95
-        "
-      />
-
-
-      {/* -------------------------------------------------
-          RIGHT SIDE
-      ------------------------------------------------- */}
-
-      <div
-        className="
-          ml-auto
-          flex
-          items-center
-          gap-3
-        "
-      >
-
-        {/* -------------------------------------------------
-            SEPARATOR
-        ------------------------------------------------- */}
-
-        <div
-          className="
-            h-7
-            w-[2px]
-            rounded-full
-            bg-white/[0.18]
-          "
-        />
-
-
-        {/* -------------------------------------------------
-            PROFILE DROPDOWN
-        ------------------------------------------------- */}
-
-        <DropdownMenu>
-
-          <DropdownMenuTrigger asChild>
-
-            <button
-              className="
-                group
-
-                flex
-                items-center
-                gap-2
-
-                rounded-full
-
-                border
+                border-b
                 border-white/[0.10]
 
-                bg-white/[0.03]
+                bg-background/80
 
-                py-1
-                pl-1
-                pr-3
+                backdrop-blur-2xl
 
-                shadow-[0_2px_12px_rgba(0,0,0,0.25)]
+                supports-[backdrop-filter]:bg-background/65
+            "
+        >
+            {/* =====================================================
+                TOPBAR INNER
+            ===================================================== */}
 
-                backdrop-blur-xl
-
-                transition-all
-                duration-300
-                ease-out
-
-                hover:border-white/[0.18]
-                hover:bg-white/[0.06]
-
-                hover:shadow-[0_4px_22px_rgba(0,0,0,0.35)]
-
-                active:scale-[0.98]
-              "
-            >
-
-              {/* -------------------------------------------------
-                  AVATAR
-              ------------------------------------------------- */}
-
-              <Avatar
+            <div
                 className="
-                  h-8
-                  w-8
-
-                  overflow-hidden
-
-                  bg-blue-500/[0.08]
-
-                  ring-1
-                  ring-white/[0.12]
-
-                  shadow-[0_0_18px_rgba(59,130,246,0.15)]
-
-                  transition-all
-                  duration-300
-
-                  group-hover:scale-105
-                  group-hover:ring-blue-400/30
-
-                  group-hover:shadow-[0_0_22px_rgba(59,130,246,0.25)]
+                    flex
+                    h-full
+                    w-full
+                    items-center
+                    px-4
+                    sm:px-6
                 "
-              >
+            >
+                {/* =================================================
+                    SIDEBAR
+                ================================================= */}
 
-                <AvatarImage
-                  src={avatarUrl}
-                  alt={`${user?.name ?? "User"} avatar`}
-                  className="
-                    scale-[1.15]
+                <SidebarTrigger
+                    className="
+                        h-9
+                        w-9
 
-                    transition-transform
-                    duration-500
+                        rounded-xl
 
-                    group-hover:scale-[1.22]
-                  "
+                        text-zinc-300
+
+                        transition-all
+                        duration-200
+
+                        hover:bg-white/[0.07]
+                        hover:text-white
+
+                        active:scale-95
+                    "
                 />
 
-                <AvatarFallback
-                  className="
-                    bg-primary/[0.12]
+                {/* =================================================
+                    RIGHT ACTIONS
+                ================================================= */}
 
-                    text-xs
-                    font-semibold
-
-                    text-primary
-                  "
+                <div
+                    className="
+                        ml-auto
+                        flex
+                        items-center
+                        gap-3
+                    "
                 >
-                  {initials}
-                </AvatarFallback>
+                    {/* =================================================
+                        SEPARATOR
+                    ================================================= */}
 
-              </Avatar>
+                    <div
+                        className="
+                            hidden
+                            h-6
+                            w-px
+                            bg-white/[0.14]
+                            sm:block
+                        "
+                    />
 
+                    {/* =================================================
+                        PROFILE
+                    ================================================= */}
 
-              {/* -------------------------------------------------
-                  USER NAME
-              ------------------------------------------------- */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                className="
+                                    group
 
-              <span
-                className="
-                  hidden
+                                    flex
+                                    items-center
+                                    gap-2
 
-                  max-w-[140px]
+                                    rounded-full
 
-                  truncate
+                                    border
+                                    border-white/[0.10]
 
-                  text-sm
-                  font-medium
+                                    bg-white/[0.035]
 
-                  text-foreground
+                                    py-1
+                                    pl-1
+                                    pr-2.5
 
-                  sm:inline
-                "
-              >
-                {user?.name ?? "Guest"}
-              </span>
+                                    shadow-[0_4px_20px_rgba(0,0,0,0.18)]
 
+                                    backdrop-blur-xl
 
-              {/* -------------------------------------------------
-                  DROPDOWN ARROW
-              ------------------------------------------------- */}
+                                    outline-none
 
-              <ChevronDown
-                className="
-                  h-3.5
-                  w-3.5
+                                    transition-all
+                                    duration-300
 
-                  text-muted-foreground
+                                    hover:border-white/[0.18]
+                                    hover:bg-white/[0.065]
 
-                  transition-transform
-                  duration-300
+                                    focus-visible:ring-2
+                                    focus-visible:ring-white/[0.18]
 
-                  group-data-[state=open]:rotate-180
-                  group-data-[state=open]:text-blue-400
-                "
-              />
+                                    active:scale-[0.98]
+                                "
+                            >
+                                {/* =====================================
+                                    LEETCODE AVATAR
+                                ===================================== */}
 
-            </button>
+                                <Avatar
+                                    className="
+                                        h-8
+                                        w-8
 
-          </DropdownMenuTrigger>
+                                        overflow-hidden
 
+                                        rounded-full
 
-          {/* ---------------------------------------------------
-              DROPDOWN
-          --------------------------------------------------- */}
+                                        border
+                                        border-white/[0.14]
 
-          <DropdownMenuContent
-            align="end"
-            sideOffset={10}
-            className="
-              w-64
+                                        bg-zinc-900
 
-              rounded-2xl
+                                        shadow-[0_0_18px_rgba(255,255,255,0.06)]
 
-              border
-              border-white/[0.10]
+                                        transition-all
+                                        duration-300
 
-              bg-zinc-950/[0.96]
+                                        group-hover:border-white/[0.24]
+                                        group-hover:shadow-[0_0_22px_rgba(255,255,255,0.10)]
+                                    "
+                                >
+                                    {leetcodeAvatar && (
+                                        <AvatarImage
+                                            src={leetcodeAvatar}
+                                            alt={
+                                                user?.name
+                                                    ? `${user.name} profile`
+                                                    : "Profile"
+                                            }
+                                            className="
+                                                object-cover
 
-              p-2
+                                                transition-transform
+                                                duration-500
 
-              shadow-[0_20px_50px_rgba(0,0,0,0.55)]
+                                                group-hover:scale-105
+                                            "
+                                        />
+                                    )}
 
-              backdrop-blur-2xl
+                                    <AvatarFallback
+                                        className="
+                                            bg-white/[0.07]
 
-              data-[state=open]:animate-in
-              data-[state=open]:fade-in-0
-              data-[state=open]:zoom-in-95
+                                            text-xs
+                                            font-semibold
 
-              data-[state=closed]:animate-out
-              data-[state=closed]:fade-out-0
-              data-[state=closed]:zoom-out-95
-            "
-          >
+                                            text-white
+                                        "
+                                    >
+                                        {initials}
+                                    </AvatarFallback>
+                                </Avatar>
 
-            {/* -------------------------------------------------
-                PROFILE HEADER
-            ------------------------------------------------- */}
+                                {/* =====================================
+                                    CHEVRON
+                                ===================================== */}
 
-            <div className="px-3 py-3">
+                                <ChevronDown
+                                    className="
+                                        h-3.5
+                                        w-3.5
 
-              <div className="flex items-center gap-3">
+                                        text-zinc-400
 
-                <Avatar
-                  className="
-                    h-11
-                    w-11
+                                        transition-all
+                                        duration-300
 
-                    ring-1
-                    ring-white/[0.12]
+                                        group-hover:text-white
 
-                    bg-blue-500/[0.08]
+                                        group-data-[state=open]:rotate-180
+                                        group-data-[state=open]:text-white
+                                    "
+                                />
+                            </button>
+                        </DropdownMenuTrigger>
 
-                    shadow-[0_0_20px_rgba(59,130,246,0.15)]
-                  "
-                >
+                        {/* =================================================
+                            DROPDOWN
+                        ================================================= */}
 
-                  <AvatarImage
-                    src={avatarUrl}
-                    alt={`${user?.name ?? "User"} avatar`}
-                    className="scale-[1.15]"
-                  />
+                        <DropdownMenuContent
+                            align="end"
+                            sideOffset={10}
+                            className="
+                                w-72
 
-                  <AvatarFallback
-                    className="
-                      bg-primary/[0.12]
-                      font-semibold
-                      text-primary
-                    "
-                  >
-                    {initials}
-                  </AvatarFallback>
+                                overflow-hidden
 
-                </Avatar>
+                                rounded-2xl
 
+                                border
+                                border-white/[0.11]
 
-                <div className="min-w-0">
+                                bg-zinc-950/[0.97]
 
-                  <p
-                    className="
-                      truncate
-                      text-sm
-                      font-semibold
-                      text-white
-                    "
-                  >
-                    {user?.name ?? "Guest"}
-                  </p>
+                                p-1.5
 
-                  <p
-                    className="
-                      mt-0.5
-                      truncate
-                      text-xs
-                      text-zinc-500
-                    "
-                  >
-                    {user?.email ?? "Not signed in"}
-                  </p>
+                                shadow-[0_24px_70px_rgba(0,0,0,0.60)]
 
+                                backdrop-blur-2xl
+
+                                data-[state=open]:animate-in
+                                data-[state=open]:fade-in-0
+                                data-[state=open]:zoom-in-95
+
+                                data-[state=closed]:animate-out
+                                data-[state=closed]:fade-out-0
+                                data-[state=closed]:zoom-out-95
+                            "
+                        >
+                            {/* =============================================
+                                PROFILE HEADER
+                            ============================================= */}
+
+                            <div
+                                className="
+                                    rounded-xl
+                                    px-3
+                                    py-3.5
+
+                                    transition-colors
+
+                                    hover:bg-white/[0.025]
+                                "
+                            >
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-3
+                                    "
+                                >
+                                    {/* Avatar */}
+
+                                    <Avatar
+                                        className="
+                                            h-11
+                                            w-11
+
+                                            shrink-0
+
+                                            border
+                                            border-white/[0.13]
+
+                                            bg-zinc-900
+
+                                            shadow-[0_0_22px_rgba(255,255,255,0.06)]
+                                        "
+                                    >
+                                        {leetcodeAvatar && (
+                                            <AvatarImage
+                                                src={leetcodeAvatar}
+                                                alt={
+                                                    user?.name
+                                                        ? `${user.name} profile`
+                                                        : "Profile"
+                                                }
+                                                className="object-cover"
+                                            />
+                                        )}
+
+                                        <AvatarFallback
+                                            className="
+                                                bg-white/[0.07]
+
+                                                font-semibold
+                                                text-white
+                                            "
+                                        >
+                                            {initials}
+                                        </AvatarFallback>
+                                    </Avatar>
+
+                                    {/* User information */}
+
+                                    <div className="min-w-0 flex-1">
+                                        <p
+                                            className="
+                                                truncate
+
+                                                text-sm
+                                                font-semibold
+                                                tracking-tight
+
+                                                text-white
+                                            "
+                                        >
+                                            {user?.name}
+                                        </p>
+
+                                        <p
+                                            className="
+                                                mt-1
+
+                                                truncate
+
+                                                text-xs
+
+                                                text-zinc-400
+                                            "
+                                        >
+                                            {user?.email}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <DropdownMenuSeparator
+                                className="
+                                    mx-1
+                                    bg-white/[0.09]
+                                "
+                            />
+
+                            {/* =============================================
+                                VIEW PROFILE
+                            ============================================= */}
+
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    navigate({
+                                        to: "/profile",
+                                    });
+                                }}
+                                className="
+                                    mt-1
+
+                                    cursor-pointer
+
+                                    rounded-xl
+
+                                    px-3
+                                    py-2.5
+
+                                    text-sm
+                                    font-medium
+
+                                    text-zinc-300
+
+                                    outline-none
+
+                                    transition-all
+                                    duration-200
+
+                                    hover:bg-white/[0.06]
+                                    hover:text-white
+
+                                    focus:bg-white/[0.06]
+                                    focus:text-white
+                                "
+                            >
+                                <UserRound
+                                    className="
+                                        mr-2.5
+                                        h-4
+                                        w-4
+                                    "
+                                />
+
+                                View Profile
+                            </DropdownMenuItem>
+
+                            {/* =============================================
+                                COPY EMAIL
+                            ============================================= */}
+
+                            <DropdownMenuItem
+                                onClick={copyEmail}
+                                className="
+                                    mt-0.5
+
+                                    cursor-pointer
+
+                                    rounded-xl
+
+                                    px-3
+                                    py-2.5
+
+                                    text-sm
+                                    font-medium
+
+                                    text-zinc-300
+
+                                    outline-none
+
+                                    transition-all
+                                    duration-200
+
+                                    hover:bg-white/[0.06]
+                                    hover:text-white
+
+                                    focus:bg-white/[0.06]
+                                    focus:text-white
+                                "
+                            >
+                                {copied ? (
+                                    <Check
+                                        className="
+                                            mr-2.5
+                                            h-4
+                                            w-4
+
+                                            text-emerald-400
+                                        "
+                                    />
+                                ) : (
+                                    <Copy
+                                        className="
+                                            mr-2.5
+                                            h-4
+                                            w-4
+                                        "
+                                    />
+                                )}
+
+                                {copied ? "Email copied" : "Copy email"}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator
+                                className="
+                                    mx-1
+                                    my-1
+                                    bg-white/[0.09]
+                                "
+                            />
+
+                            {/* =============================================
+                                LOGOUT
+                            ============================================= */}
+
+                            <DropdownMenuItem
+                                onClick={handleLogout}
+                                className="
+                                    cursor-pointer
+
+                                    rounded-xl
+
+                                    px-3
+                                    py-2.5
+
+                                    text-sm
+                                    font-medium
+
+                                    text-red-400
+
+                                    outline-none
+
+                                    transition-all
+                                    duration-200
+
+                                    hover:bg-red-500/[0.08]
+                                    hover:text-red-300
+
+                                    focus:bg-red-500/[0.08]
+                                    focus:text-red-300
+                                "
+                            >
+                                <LogOut
+                                    className="
+                                        mr-2.5
+                                        h-4
+                                        w-4
+                                    "
+                                />
+
+                                Log out
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
-
-              </div>
-
             </div>
 
+            {/* =========================================================
+                SUBTLE BOTTOM LIGHT
+            ========================================================= */}
 
-            <DropdownMenuSeparator
-              className="
-                mx-1
-                bg-white/[0.08]
-              "
-            />
-<DropdownMenuItem
-  onClick={() => {
-    navigate({
-      to: "/profile",
-    });
-  }}
-  className="
-    mt-1
-
-    cursor-pointer
-
-    rounded-xl
-
-    px-3
-    py-2.5
-
-    text-zinc-300
-
-    transition-colors
-
-    focus:bg-white/[0.06]
-    focus:text-white
-  "
->
-  <UserRound
-    className="
-      mr-2
-      h-4
-      w-4
-    "
-  />
-
-  View Profile
-
-</DropdownMenuItem>
-
-
-            {/* -------------------------------------------------
-                COPY EMAIL
-            ------------------------------------------------- */}
-
-            <DropdownMenuItem
-              onClick={copyEmail}
-              className="
-                mt-1
-
-                cursor-pointer
-
-                rounded-xl
-
-                px-3
-                py-2.5
-
-                text-zinc-300
-
-                transition-colors
-
-                focus:bg-white/[0.06]
-                focus:text-white
-              "
-            >
-
-              {copied ? (
-
-                <Check
-                  className="
-                    mr-2
-                    h-4
-                    w-4
-                    text-emerald-400
-                  "
-                />
-
-              ) : (
-
-                <Copy
-                  className="
-                    mr-2
-                    h-4
-                    w-4
-                  "
-                />
-
-              )}
-
-              {copied
-                ? "Email copied"
-                : "Copy email"}
-
-            </DropdownMenuItem>
-
-
-            {/* -------------------------------------------------
-                LOGOUT
-            ------------------------------------------------- */}
-
-            <DropdownMenuItem
-              onClick={() => {
-
-                logout();
-
-                navigate({
-                  to: "/login",
-                });
-
-              }}
-              className="
-                mt-1
-
-                cursor-pointer
-
-                rounded-xl
-
-                px-3
-                py-2.5
-
-                text-red-400
-
-                transition-colors
-
-                focus:bg-red-500/[0.10]
-                focus:text-red-400
-              "
-            >
-
-              <LogOut
+            <div
                 className="
-                  mr-2
-                  h-4
-                  w-4
+                    pointer-events-none
+                    absolute
+                    bottom-0
+                    left-0
+                    h-px
+                    w-full
+                    bg-gradient-to-r
+                    from-transparent
+                    via-white/[0.12]
+                    to-transparent
                 "
-              />
-
-              Log out
-
-            </DropdownMenuItem>
-
-          </DropdownMenuContent>
-
-        </DropdownMenu>
-
-      </div>
-
-    </header>
-
-  );
+            />
+        </header>
+    );
 }

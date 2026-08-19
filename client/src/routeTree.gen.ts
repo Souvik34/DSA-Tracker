@@ -18,6 +18,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as InterviewHistoryRouteImport } from './routes/interview-history'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ContestsRouteImport } from './routes/contests'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceSessionIdRouteImport } from './routes/workspace.$sessionId'
 import { Route as InterviewHistorySessionIdRouteImport } from './routes/interview-history/$sessionId'
@@ -68,6 +69,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContestsRoute = ContestsRouteImport.update({
+  id: '/contests',
+  path: '/contests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -93,6 +99,7 @@ const InterviewSessionIdReportRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/contests'
     | '/dashboard'
     | '/interview-history'
     | '/interviews'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contests'
     | '/dashboard'
     | '/interview-history'
     | '/interviews'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/contests'
     | '/dashboard'
     | '/interview-history'
     | '/interviews'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContestsRoute: typeof ContestsRoute
   DashboardRoute: typeof DashboardRoute
   InterviewHistoryRoute: typeof InterviewHistoryRouteWithChildren
   InterviewsRoute: typeof InterviewsRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contests': {
+      id: '/contests'
+      path: '/contests'
+      fullPath: '/contests'
+      preLoaderRoute: typeof ContestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -309,6 +329,7 @@ const InterviewHistoryRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContestsRoute: ContestsRoute,
   DashboardRoute: DashboardRoute,
   InterviewHistoryRoute: InterviewHistoryRouteWithChildren,
   InterviewsRoute: InterviewsRoute,

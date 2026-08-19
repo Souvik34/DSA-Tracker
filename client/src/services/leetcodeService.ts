@@ -9,8 +9,20 @@ const leetcodeService = {
     });
   },
 
-  syncActivity: () => {
-    return api.post("/leetcode/sync");
+  connectProfile: (username: string) => {
+    return api.post("/leetcode/connect", {
+      username,
+    });
+  },
+
+  getProfile: () => {
+    return api.get("/leetcode/profile");
+  },
+
+  syncActivity: (problems: unknown[]) => {
+    return api.post("/leetcode/sync", {
+      problems,
+    });
   },
 
   disconnectProfile: () => {

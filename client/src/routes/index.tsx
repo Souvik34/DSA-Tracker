@@ -1,11 +1,21 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+/* eslint-disable prettier/prettier */
+
+import { createFileRoute } from "@tanstack/react-router";
+import LandingPage from "@/features/landing/LandingPage";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    if (typeof window !== "undefined" && !localStorage.getItem("auth_token")) {
-      throw redirect({ to: "/login" });
-    }
-    throw redirect({ to: "/dashboard" });
-  },
-});
+  head: () => ({
+    meta: [
+      {
+        title: "Dykstra — Become Interview Ready",
+      },
+      {
+        name: "description",
+        content:
+          "Practice DSA, revise intelligently and prepare for technical interviews with Dykstra.",
+      },
+    ],
+  }),
 
+  component: LandingPage,
+});

@@ -355,7 +355,7 @@ export function AuthShell({
 
             {/* BOTTOM */}
 
-            <div className="text-xs text-white/25">
+            <div className="text-xs text-white">
               Built for consistency, not cramming.
             </div>
           </div>

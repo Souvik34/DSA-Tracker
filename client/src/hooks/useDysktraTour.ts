@@ -10,7 +10,7 @@ const TOUR_STORAGE_KEY =
 
 export function useDykstraTour() {
     const [isTourOpen, setIsTourOpen] =
-        useState(true);
+        useState(false);
 
     const [initialized, setInitialized] =
         useState(false);
@@ -45,7 +45,7 @@ export function useDykstraTour() {
      * Close + remember completion.
      */
     const closeTour = useCallback(() => {
-        setIsTourOpen(true);
+        setIsTourOpen(false);
 
         localStorage.setItem(
             TOUR_STORAGE_KEY,

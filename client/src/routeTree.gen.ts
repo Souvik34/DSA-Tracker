@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RevisionsRouteImport } from './routes/revisions'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProblemsRouteImport } from './routes/problems'
 import { Route as OauthSuccessRouteImport } from './routes/oauth-success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InterviewsRouteImport } from './routes/interviews'
 import { Route as InterviewHistoryRouteImport } from './routes/interview-history'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContestsRouteImport } from './routes/contests'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,6 +34,11 @@ const SignupRoute = SignupRouteImport.update({
 const RevisionsRoute = RevisionsRouteImport.update({
   id: '/revisions',
   path: '/revisions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -62,6 +69,11 @@ const InterviewsRoute = InterviewsRouteImport.update({
 const InterviewHistoryRoute = InterviewHistoryRouteImport.update({
   id: '/interview-history',
   path: '/interview-history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -101,12 +113,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -117,12 +131,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -134,12 +150,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/contests': typeof ContestsRoute
   '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/interview-history': typeof InterviewHistoryRouteWithChildren
   '/interviews': typeof InterviewsRoute
   '/login': typeof LoginRoute
   '/oauth-success': typeof OauthSuccessRoute
   '/problems': typeof ProblemsRoute
   '/profile': typeof ProfileRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/revisions': typeof RevisionsRoute
   '/signup': typeof SignupRoute
   '/interview-history/$sessionId': typeof InterviewHistorySessionIdRoute
@@ -152,12 +170,14 @@ export interface FileRouteTypes {
     | '/'
     | '/contests'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/profile'
+    | '/reset-password'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -168,12 +188,14 @@ export interface FileRouteTypes {
     | '/'
     | '/contests'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/profile'
+    | '/reset-password'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -184,12 +206,14 @@ export interface FileRouteTypes {
     | '/'
     | '/contests'
     | '/dashboard'
+    | '/forgot-password'
     | '/interview-history'
     | '/interviews'
     | '/login'
     | '/oauth-success'
     | '/problems'
     | '/profile'
+    | '/reset-password'
     | '/revisions'
     | '/signup'
     | '/interview-history/$sessionId'
@@ -201,12 +225,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContestsRoute: typeof ContestsRoute
   DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   InterviewHistoryRoute: typeof InterviewHistoryRouteWithChildren
   InterviewsRoute: typeof InterviewsRoute
   LoginRoute: typeof LoginRoute
   OauthSuccessRoute: typeof OauthSuccessRoute
   ProblemsRoute: typeof ProblemsRoute
   ProfileRoute: typeof ProfileRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   RevisionsRoute: typeof RevisionsRoute
   SignupRoute: typeof SignupRoute
   WorkspaceSessionIdRoute: typeof WorkspaceSessionIdRoute
@@ -227,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/revisions'
       fullPath: '/revisions'
       preLoaderRoute: typeof RevisionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -269,6 +302,13 @@ declare module '@tanstack/react-router' {
       path: '/interview-history'
       fullPath: '/interview-history'
       preLoaderRoute: typeof InterviewHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -331,12 +371,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContestsRoute: ContestsRoute,
   DashboardRoute: DashboardRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   InterviewHistoryRoute: InterviewHistoryRouteWithChildren,
   InterviewsRoute: InterviewsRoute,
   LoginRoute: LoginRoute,
   OauthSuccessRoute: OauthSuccessRoute,
   ProblemsRoute: ProblemsRoute,
   ProfileRoute: ProfileRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   RevisionsRoute: RevisionsRoute,
   SignupRoute: SignupRoute,
   WorkspaceSessionIdRoute: WorkspaceSessionIdRoute,

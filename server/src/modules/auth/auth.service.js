@@ -111,47 +111,67 @@ export const handleRefreshToken = async (refreshToken) => {
 };
 
 
-export const  forgotPassword = async({email})=> {
+export const forgotPassword = async ({ email }) => {
   const user = await authRepository.findUserByEmail(email);
 
-  if(!user)
-  {
-    throw new Error('User with this email does not exist');
+  if (!user) {
+    throw new Error("User with this email does not exist");
   }
 
-  const resetToken =  crypto.randomBytes(32).toString('hex');
- const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  // Invalidate any previous reset links
+  await authRepository.deletePasswordResetTokensByUserId(user.id);
 
+  const resetToken = crypto.randomBytes(32).toString("hex");
 
- await authRepository.storePasswordResetToken(
+  const expiresAt = new Date(
+    Date.now() + 15 * 60 * 1000
+  );
+
+  await authRepository.storePasswordResetToken(
     user.id,
     resetToken,
     expiresAt
- );
+  );
 
   await sendPasswordResetEmail(email, resetToken);
+
   return {
-    message: "Password reset token generated",
-    resetToken: resetToken
+    message: "Password reset email sent successfully",
   };
-}
+};
 
 
-export const resetPassword = async({resetToken, newPassword})=> {
-  const record = await authRepository.findPasswordResetToken(resetToken);
+export const resetPassword = async ({ resetToken, newPassword }) => {
+  console.log("TOKEN RECEIVED:", resetToken);
 
-  if(!record || record.expires_at < new Date())
-  {
-    throw new Error('Invalid or expired reset token');
+  const record =
+    await authRepository.findPasswordResetToken(resetToken);
+
+  console.log("DB RECORD:", record);
+
+  if (record) {
+    console.log("EXPIRES AT:", record.expires_at);
+    console.log("CURRENT TIME:", new Date());
+    console.log(
+      "EXPIRED:",
+      new Date(record.expires_at) < new Date()
+    );
+  }
+
+  if (!record || new Date(record.expires_at) < new Date()) {
+    throw new Error("Invalid or expired reset token");
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  await authRepository.updateUserPassword(record.user_id, hashedPassword);
+  await authRepository.updateUserPassword(
+    record.user_id,
+    hashedPassword
+  );
 
   await authRepository.deletePasswordResetToken(resetToken);
 
   return {
-    message: "Password reset successfully"
+    message: "Password reset successfully",
   };
-}
+};

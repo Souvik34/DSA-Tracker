@@ -10,6 +10,8 @@ import { ProgressCards } from "@/features/dashboard/progress-cards";
 import { RecentActivity } from "@/features/dashboard/recent-activity";
 import InterviewReadinessCard from "@/features/dashboard/InterviewReadinessCard";
 import AIMentorCard from "../features/dashboard/aiMentorCard";
+import DykstraTour from "@/components/tour/DykstraTour";
+import { useDykstraTour } from "../hooks/useDysktraTour";
 
 import { useDashboard } from "@/hooks/useDashboard";
 
@@ -62,6 +64,12 @@ function DashboardPage() {
     const user = useAuthStore(
         (s) => s.user
     );
+        const {
+        isTourOpen,
+        initializeTour,
+        closeTour,
+        replayTour,
+    } = useDykstraTour();
 
     const [dashboard, setDashboard] =
         useState<DashboardData | null>(null);
@@ -74,6 +82,20 @@ function DashboardPage() {
 
         loadDashboard();
     }, [user]);
+    useEffect(() => {
+    if (
+        !isLoading &&
+        !loading &&
+        dashboard
+    ) {
+        initializeTour();
+    }
+}, [
+    isLoading,
+    loading,
+    dashboard,
+    initializeTour,
+]);
 
     const loadDashboard = async () => {
         try {
@@ -343,6 +365,7 @@ function DashboardPage() {
                 ================================================= */}
 
                 <motion.section
+                data-tour="tour-ai-mentor"
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -360,6 +383,7 @@ function DashboardPage() {
                 ================================================= */}
 
                 <motion.section
+                data-tour="tour-interview-readiness"
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -379,6 +403,8 @@ function DashboardPage() {
                 ================================================= */}
 
                 <motion.section
+
+    data-tour="tour-activity"
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -411,6 +437,10 @@ function DashboardPage() {
 
             </div>
         </div>
+        <DykstraTour
+    open={isTourOpen}
+    onClose={closeTour}
+/>
     </DashboardShell>
 );
 }

@@ -97,6 +97,24 @@ export const authService = {
   isAuthenticated() {
     return Boolean(this.getToken());
   },
+  async forgotPassword(email: string) {
+  const { data } = await api.post("/auth/forgot-password", {
+    email,
+  });
+
+  return data;
+},
+
+async resetPassword(resetToken: string, newPassword: string) {
+  const { data } = await api.post("/auth/reset-password", {
+    resetToken,
+    newPassword,
+  });
+
+  return data;
+}
 };
+
+
 
 export default authService;

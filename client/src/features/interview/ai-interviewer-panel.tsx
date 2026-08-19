@@ -5,27 +5,23 @@ import interviewService from "@/services/interviewService";
 import { useNavigate } from "@tanstack/react-router";
 import { useInterviewSocket } from "../../socket/interviewSocketProvider";
 import { socket } from "@/socket/socket";
-import { Bot, UserRound } from "lucide-react";
+import {
+  Bot,
+  UserRound,
+  Send,
+  Clock3,
+  Sparkles,
+  Circle,
+  Wifi,
+  MessageSquare,
+  ShieldCheck,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { SupportedLanguageId } from "@/features/editor/code-editor";
 
 interface Message {
   role: "INTERVIEWER" | "CANDIDATE";
   content: string;
-}
-
-interface Problem {
-  title: string;
-  description: string;
-
-  examples: {
-    input: string;
-    output: string;
-    explanation?: string;
-  }[];
-
-  constraints: string[];
-
-  starterCode?: string;
 }
 
 interface Props {
@@ -61,12 +57,22 @@ export default function AIInterviewerPanel({
   const [input, setInput] = useState("");
 
   const [loading, setLoading] = useState(false);
-const [showIdleModal, setShowIdleModal] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-const interviewStartedRef = useRef(false);
-const [interviewAccessChecked, setInterviewAccessChecked] =
-  useState(false);
-  const interviewSocket = useInterviewSocket();
+
+  const [showIdleModal, setShowIdleModal] =
+    useState(false);
+
+  const messagesEndRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const interviewStartedRef =
+    useRef(false);
+
+  const [interviewAccessChecked, setInterviewAccessChecked] =
+    useState(false);
+
+  const interviewSocket =
+    useInterviewSocket();
+
   const navigate = useNavigate();
 
   /*
@@ -80,303 +86,202 @@ const [interviewAccessChecked, setInterviewAccessChecked] =
     return () => {
       interviewSocket.leaveInterview();
     };
-  }, [sessionId]);
+  }, [sessionId, interviewSocket]);
 
   /*
    * Load interview state
    */
- 
+  useEffect(() => {
+    if (!sessionId) return;
 
-useEffect(() => {
-  if (!sessionId) return;
-
-  const loadInterview = async () => {
-    try {
-      const res =
-        await interviewService.getInterviewState(
-          sessionId
-        );
-
-      const data =
-        res?.data?.data ??
-        res?.data ??
-        res;
-
-      /*
-       * Interview is still active.
-       * Allow the start-interview effect to continue.
-       */
-   setInterviewAccessChecked(true);
-
-      if (data.session?.phase) {
-        setPhase(data.session.phase);
-      }
-
-      if (data?.aiReply) {
-        await addAIMessageSafely(data.aiReply);
-      }
-
-      if (data.firstQuestion) {
-        console.log(
-          "FIRST QUESTION:",
-          data.firstQuestion
-        );
-      }
-
-    } catch (err: any) {
-
-      console.error(
-        "Failed to load interview:",
-        err
-      );
-
-      /*
-       * Backend says this interview is already finished.
-       */
-      if (
-        err?.response?.status === 409 &&
-        err?.response?.data?.code ===
-          "INTERVIEW_ALREADY_COMPLETED"
-      ) {
-
-        console.log(
-          "Interview already completed. Redirecting to report..."
-        );
-
-        await navigate({
-          to: "/interview/$sessionId/report",
-          params: {
-            sessionId,
-          },
-        });
-
-        return;
-      }
-
-      /*
-       * Don't allow the interview to start if
-       * we couldn't verify the session.
-       */
-    setInterviewAccessChecked(false);
-    }
-  };
-
-  loadInterview();
-
-}, [sessionId, navigate]);
-
-   /*
-   * Receive AI response
-   */
-  /*
- * Receive AI interviewer messages
- *
- * Socket messages are used for realtime responses.
- * The HTTP response from submitAIResponse() is also used
- * for reliability, especially for the initial introduction.
- */
-useEffect(() => {
-
-  const handleAIResponse = async (data: any) => {
-
-    console.log(
-      "INTERVIEWER SOCKET MESSAGE:",
-      data
-    );
-
-    if (data.phase) {
-      setPhase(data.phase);
-    }
-
-    const text =
-      data.aiReply ??
-      data.message ??
-      "";
-
-    if (!text) {
-      console.warn(
-        "Received interviewer event without message:",
-        data
-      );
-      return;
-    }
-
-    await addAIMessageSafely(
-      text
-    );
-
-    if (data.phase === "FINISHED") {
-
+    const loadInterview = async () => {
       try {
+        const res =
+          await interviewService.getInterviewState(
+            sessionId
+          );
 
-        await interviewService.endInterview(
-          sessionId
-        );
+        const data =
+          res?.data?.data ??
+          res?.data ??
+          res;
 
-        await navigate({
-          to: "/interview/$sessionId/report",
-          params: {
-            sessionId,
-          },
-        });
+        setInterviewAccessChecked(true);
 
-      } catch (err) {
+        if (data.session?.phase) {
+          setPhase(data.session.phase);
+        }
 
+        if (data?.aiReply) {
+          await addAIMessageSafely(data.aiReply);
+        }
+
+        if (data.firstQuestion) {
+          console.log(
+            "FIRST QUESTION:",
+            data.firstQuestion
+          );
+        }
+      } catch (err: any) {
         console.error(
-          "Failed to open interview report:",
+          "Failed to load interview:",
           err
         );
 
+        if (
+          err?.response?.status === 409 &&
+          err?.response?.data?.code ===
+            "INTERVIEW_ALREADY_COMPLETED"
+        ) {
+          await navigate({
+            to: "/interview/$sessionId/report",
+            params: {
+              sessionId,
+            },
+          });
+
+          return;
+        }
+
+        setInterviewAccessChecked(false);
       }
-    }
-  };
+    };
 
-  socket.on(
-    "interviewer-message",
-    handleAIResponse
-  );
+    loadInterview();
+  }, [sessionId, navigate]);
 
-  return () => {
+  /*
+   * Receive AI interviewer messages
+   */
+  useEffect(() => {
+    const handleAIResponse = async (data: any) => {
+      console.log(
+        "INTERVIEWER SOCKET MESSAGE:",
+        data
+      );
 
-    socket.off(
+      if (data.phase) {
+        setPhase(data.phase);
+      }
+
+      const text =
+        data.aiReply ??
+        data.message ??
+        "";
+
+      if (!text) {
+        return;
+      }
+
+      await addAIMessageSafely(text);
+
+      if (data.phase === "FINISHED") {
+        try {
+          await interviewService.endInterview(
+            sessionId
+          );
+
+          await navigate({
+            to: "/interview/$sessionId/report",
+            params: {
+              sessionId,
+            },
+          });
+        } catch (err) {
+          console.error(
+            "Failed to open interview report:",
+            err
+          );
+        }
+      }
+    };
+
+    socket.on(
       "interviewer-message",
       handleAIResponse
     );
 
-  };
-
-}, [sessionId, navigate]);
-
-
-useEffect(() => {
-
-  if (!sessionId) {
-    return;
-  }
-
-  if (!interviewSocket) {
-    return;
-  }
-  if (!interviewAccessChecked) {
-    return;
-  }
-  if (interviewStartedRef.current) {
-    return;
-  }
-
-  const startInterview = async () => {
-
-    if (interviewStartedRef.current) {
-      return;
-    }
-
-    interviewStartedRef.current = true;
-
-    console.log(
-      "Starting interviewer..."
-    );
-
-    try {
-
-      const response =
-        await interviewService.submitAIResponse(
-          sessionId,
-          {
-            message:
-              "__INTERVIEW_START__",
-            code: "",
-            isSubmission: false
-          }
-        );
-
-      console.log(
-        "INTERVIEW START RESPONSE:",
-        response
+    return () => {
+      socket.off(
+        "interviewer-message",
+        handleAIResponse
       );
-
-      /*
-       * Depending on your axios service,
-       * the actual response may be response.data.
-       */
-    const data =
-  response?.data?.data ?? response?.data ?? response;
-console.log("INTRO DATA:", data);
-console.log("INTRO REPLY:", data?.aiReply);
-
-if (data?.aiReply) {
-  console.log("ADDING INTRO TO CHAT");
-  await addAIMessageSafely(data.aiReply);
-}
-      /*
-       * Update phase from HTTP response.
-       */
-      if (data?.phase) {
-
-        setPhase(
-          data.phase
-        );
-
-      }
-
-      /*
-       * Most important part.
-       *
-       * Use HTTP response as a reliable fallback
-       * for the introduction.
-       */
-    
-
-    } catch (err) {
-
-      console.error(
-        "Failed to start interviewer:",
-        err
-      );
-
-      /*
-       * Allow another attempt if the request itself failed.
-       */
-      interviewStartedRef.current =
-        false;
-
-    }
-
-  };
+    };
+  }, [sessionId, navigate]);
 
   /*
-   * Socket is already connected.
+   * Start interview
    */
-  if (socket.connected) {
+  useEffect(() => {
+    if (!sessionId) return;
+    if (!interviewSocket) return;
+    if (!interviewAccessChecked) return;
+    if (interviewStartedRef.current) return;
 
-    startInterview();
+    const startInterview = async () => {
+      if (interviewStartedRef.current) {
+        return;
+      }
 
-  } else {
+      interviewStartedRef.current = true;
 
-    /*
-     * Wait until Socket.IO connects.
-     */
-    socket.once(
-      "connect",
-      startInterview
-    );
+      try {
+        const response =
+          await interviewService.submitAIResponse(
+            sessionId,
+            {
+              message:
+                "__INTERVIEW_START__",
+              code: "",
+              isSubmission: false,
+            }
+          );
 
-  }
+        const data =
+          response?.data?.data ??
+          response?.data ??
+          response;
 
-  return () => {
+        if (data?.aiReply) {
+          await addAIMessageSafely(
+            data.aiReply
+          );
+        }
 
-    socket.off(
-      "connect",
-      startInterview
-    );
+        if (data?.phase) {
+          setPhase(data.phase);
+        }
+      } catch (err) {
+        console.error(
+          "Failed to start interviewer:",
+          err
+        );
 
-  };
+        interviewStartedRef.current =
+          false;
+      }
+    };
 
-}, [
-  sessionId,
-  interviewSocket,
-  interviewAccessChecked
-]);
+    if (socket.connected) {
+      startInterview();
+    } else {
+      socket.once(
+        "connect",
+        startInterview
+      );
+    }
 
+    return () => {
+      socket.off(
+        "connect",
+        startInterview
+      );
+    };
+  }, [
+    sessionId,
+    interviewSocket,
+    interviewAccessChecked,
+  ]);
 
   /*
    * Interview timer
@@ -396,7 +301,7 @@ if (data?.aiReply) {
   }, []);
 
   /*
-   * Auto scroll to newest message
+   * Auto scroll
    */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -405,7 +310,7 @@ if (data?.aiReply) {
   }, [messages, typingMessage]);
 
   /*
-   * Handle interview-ended event
+   * Interview ended
    */
   useEffect(() => {
     const handleInterviewEnded = () => {
@@ -432,20 +337,29 @@ if (data?.aiReply) {
     };
   }, [sessionId, navigate]);
 
+  /*
+   * Idle detection
+   */
   useEffect(() => {
-  const handleInterviewIdle = () => {
-    setShowIdleModal(true);
-  };
+    const handleInterviewIdle = () => {
+      setShowIdleModal(true);
+    };
 
-  socket.on("interview-idle", handleInterviewIdle);
+    socket.on(
+      "interview-idle",
+      handleInterviewIdle
+    );
 
-  return () => {
-    socket.off("interview-idle", handleInterviewIdle);
-  };
-}, []);
+    return () => {
+      socket.off(
+        "interview-idle",
+        handleInterviewIdle
+      );
+    };
+  }, []);
 
   /*
-   * Send code changes to backend
+   * Send code changes
    */
   useEffect(() => {
     if (!sessionId) return;
@@ -462,115 +376,83 @@ if (data?.aiReply) {
   }, [code, sessionId]);
 
   /*
-   * Type AI message
-   *
-   * IMPORTANT:
-   * The temporary typing message is rendered INSIDE
-   * the conversation instead of above the conversation.
+   * AI typing
    */
-const addAIMessageSafely = useCallback(
-  async (text: string) => {
-
-  if (!text?.trim()) {
-    return;
-  }
-
-  const normalizedText =
-    text.trim();
-
-  /*
-   * Prevent duplicate AI messages.
-   *
-   * This is especially important for the
-   * introduction because it can arrive through
-   * both HTTP and Socket.IO.
-   */
-  const alreadyExists =
-    messages.some(
-      message =>
-        message.role === "INTERVIEWER" &&
-        message.content.trim() === normalizedText
-    );
-
-  if (alreadyExists) {
-    console.log(
-      "Skipping duplicate AI message"
-    );
-    return;
-  }
-
-  /*
-   * Type the message.
-   */
-  setTypingMessage("");
-
-  let output = "";
-
-  for (const char of normalizedText) {
-
-    output += char;
-
-    setTypingMessage(
-      output
-    );
-
-    await new Promise(
-      resolve =>
-        setTimeout(
-          resolve,
-          18
-        )
-    );
-  }
-
-  /*
-   * Check again before inserting.
-   *
-   * Another socket event may have inserted the
-   * same message while we were typing.
-   */
-  setMessages(prev => {
-
-    const duplicate =
-      prev.some(
-        message =>
-          message.role === "INTERVIEWER" &&
-          message.content.trim() ===
-            normalizedText
-      );
-
-    if (duplicate) {
-      return prev;
-    }
-
-    return [
-      ...prev,
-      {
-        role: "INTERVIEWER",
-        content: normalizedText
+  const addAIMessageSafely = useCallback(
+    async (text: string) => {
+      if (!text?.trim()) {
+        return;
       }
-    ];
 
-  });
+      const normalizedText =
+        text.trim();
 
-  setTypingMessage("");
-}, [messages]);
- 
+      const alreadyExists =
+        messages.some(
+          (message) =>
+            message.role ===
+              "INTERVIEWER" &&
+            message.content.trim() ===
+              normalizedText
+        );
+
+      if (alreadyExists) {
+        return;
+      }
+
+      setTypingMessage("");
+
+      let output = "";
+
+      for (const char of normalizedText) {
+        output += char;
+
+        setTypingMessage(output);
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, 18)
+        );
+      }
+
+      setMessages((prev) => {
+        const duplicate =
+          prev.some(
+            (message) =>
+              message.role ===
+                "INTERVIEWER" &&
+              message.content.trim() ===
+                normalizedText
+          );
+
+        if (duplicate) {
+          return prev;
+        }
+
+        return [
+          ...prev,
+          {
+            role: "INTERVIEWER",
+            content: normalizedText,
+          },
+        ];
+      });
+
+      setTypingMessage("");
+    },
+    [messages]
+  );
 
   /*
    * Send candidate message
    */
   const sendMessage = async () => {
-    const userMessage = input.trim();
+    const userMessage =
+      input.trim();
 
     if (!userMessage || loading) {
       return;
     }
 
-    /*
-     * Immediately put candidate message
-     * into the conversation.
-     */
     setMessages((prev) => [
       ...prev,
       {
@@ -583,14 +465,14 @@ const addAIMessageSafely = useCallback(
     setLoading(true);
 
     try {
-  await interviewService.submitAIResponse(
-    sessionId,
-    {
-        message: userMessage,
-        code,
-        isSubmission: false,
-    }
-);
+      await interviewService.submitAIResponse(
+        sessionId,
+        {
+          message: userMessage,
+          code,
+          isSubmission: false,
+        }
+      );
     } catch (err) {
       console.error(
         "Failed to send interview response:",
@@ -602,8 +484,7 @@ const addAIMessageSafely = useCallback(
   };
 
   /*
-   * Enter = send
-   * Shift + Enter = new line
+   * Keyboard handling
    */
   const handleInputKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement>
@@ -617,8 +498,13 @@ const addAIMessageSafely = useCallback(
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const min = Math.floor(seconds / 60);
+  const formatTime = (
+    seconds: number
+  ) => {
+    const min = Math.floor(
+      seconds / 60
+    );
+
     const sec = seconds % 60;
 
     return `${min}:${sec
@@ -633,184 +519,788 @@ const addAIMessageSafely = useCallback(
       c.toUpperCase()
     );
 
+  const isLowTime = time <= 5 * 60;
+
   return (
-<aside className="relative flex min-h-0 h-full flex-col overflow-hidden">
+    <aside className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[#07070a] text-white">
 
-    {showIdleModal && (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="w-[90%] max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl">
+      {/* =====================================================
+          AMBIENT BACKGROUND
+      ===================================================== */}
 
-          <h2 className="text-lg font-semibold">
-            Still working?
-          </h2>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute -right-32 -top-32 h-80 w-80 rounded-full bg-violet-600/[0.07] blur-[110px]"
+          animate={{
+            scale: [1, 1.15, 1],
+            opacity: [0.35, 0.6, 0.35],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            You haven't made any progress for a while.
-            Are you still working on the problem?
-          </p>
+        <motion.div
+          className="absolute -bottom-40 -left-32 h-72 w-72 rounded-full bg-blue-500/[0.045] blur-[110px]"
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.25, 0.45, 0.25],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
-          <div className="mt-5 flex justify-end">
-            <button
-              onClick={() => setShowIdleModal(false)}
-              className="rounded-lg border border-border px-4 py-2 text-sm transition hover:bg-muted"
-            >
-              Yes, I'm working
-            </button>
-          </div>
-
-        </div>
+        <div
+          className="
+            absolute inset-0
+            opacity-[0.018]
+            [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)]
+            [background-size:32px_32px]
+          "
+        />
       </div>
-    )}
-  {/* ================================================= */}
-      {/* HEADER */}
-      {/* ================================================= */}
 
-      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">
-            AI Interviewer
-          </p>
+      {/* =====================================================
+          IDLE MODAL
+      ===================================================== */}
 
-          <div className="mt-1 flex items-center gap-2">
-            <span className="rounded-md bg-violet-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-violet-400">
-              {phaseLabel}
+      <AnimatePresence>
+        {showIdleModal && (
+          <motion.div
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            className="
+              absolute
+              inset-0
+              z-50
+              flex
+              items-center
+              justify-center
+              bg-black/70
+              px-5
+              backdrop-blur-md
+            "
+          >
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: 18,
+                scale: 0.96,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: 10,
+                scale: 0.98,
+              }}
+              transition={{
+                duration: 0.3,
+              }}
+              className="
+                relative
+                w-full
+                max-w-sm
+                overflow-hidden
+                rounded-3xl
+                border
+                border-white/[0.09]
+                bg-[#0d0d11]
+                p-6
+                shadow-2xl
+                shadow-black/60
+              "
+            >
+              <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-violet-500/15 blur-3xl" />
+
+              <div className="relative">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.08, 1],
+                  }}
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                  }}
+                  className="
+                    flex
+                    h-12
+                    w-12
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    border
+                    border-violet-500/20
+                    bg-violet-500/10
+                  "
+                >
+                  <MessageSquare
+                    size={20}
+                    className="text-violet-400"
+                  />
+                </motion.div>
+
+                <h2 className="mt-5 text-xl font-semibold tracking-tight text-white">
+                  Still working?
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  You haven't made any progress
+                  for a while. Are you still
+                  working on the problem?
+                </p>
+
+                <motion.button
+                  whileHover={{
+                    y: -1,
+                  }}
+                  whileTap={{
+                    scale: 0.98,
+                  }}
+                  onClick={() =>
+                    setShowIdleModal(false)
+                  }
+                  className="
+                    mt-6
+                    w-full
+                    rounded-xl
+                    bg-violet-600
+                    px-4
+                    py-3
+                    text-sm
+                    font-medium
+                    text-white
+                    shadow-lg
+                    shadow-violet-600/20
+                    transition
+                    hover:bg-violet-500
+                  "
+                >
+                  Yes, I'm working
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#09090d]/80 px-4 py-3.5 backdrop-blur-xl">
+
+        <div className="flex min-w-0 items-center gap-3">
+
+          {/* AI presence */}
+
+          <div className="relative">
+            <motion.div
+              animate={{
+                boxShadow: [
+                  "0 0 0 0 rgba(139,92,246,0.0)",
+                  "0 0 0 5px rgba(139,92,246,0.08)",
+                  "0 0 0 0 rgba(139,92,246,0.0)",
+                ],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+              }}
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-violet-500/20
+                bg-violet-500/10
+              "
+            >
+              <Bot
+                size={17}
+                className="text-violet-400"
+              />
+            </motion.div>
+
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full border-2 border-[#09090d] bg-emerald-400">
+              <span className="h-1 w-1 rounded-full bg-white" />
             </span>
           </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold tracking-tight text-white">
+                AI Interviewer
+              </p>
+
+              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400">
+                <Circle
+                  size={6}
+                  fill="currentColor"
+                />
+                LIVE
+              </span>
+            </div>
+
+            <div className="mt-1 flex items-center gap-2">
+              <span className="rounded-md border border-violet-500/15 bg-violet-500/[0.08] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-300">
+                {phaseLabel}
+              </span>
+
+           
+            </div>
+          </div>
         </div>
 
-        <div className="ml-2 shrink-0 rounded-md border border-border/60 bg-background/70 px-2.5 py-1.5 text-xs font-medium tabular-nums">
-          ⏱ {formatTime(time)}
-        </div>
+        {/* Timer */}
+
+        <motion.div
+          animate={
+            isLowTime
+              ? {
+                  borderColor: [
+                    "rgba(244,63,94,0.15)",
+                    "rgba(244,63,94,0.45)",
+                    "rgba(244,63,94,0.15)",
+                  ],
+                }
+              : {}
+          }
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+          }}
+          className={`
+            ml-3
+            flex
+            shrink-0
+            items-center
+            gap-2
+            rounded-xl
+            border
+            px-3
+            py-2
+            text-xs
+            font-semibold
+            tabular-nums
+            backdrop-blur-sm
+            ${
+              isLowTime
+                ? "border-rose-500/20 bg-rose-500/[0.07] text-rose-300"
+                : "border-white/[0.08] bg-white/[0.035] text-zinc-300"
+            }
+          `}
+        >
+          <Clock3
+            size={14}
+            className={
+              isLowTime
+                ? "text-rose-400"
+                : "text-violet-400"
+            }
+          />
+
+          {formatTime(time)}
+        </motion.div>
       </div>
 
-      {/* ================================================= */}
-      {/* CHAT */}
-      {/* ================================================= */}
+      {/* =====================================================
+          CHAT
+      ===================================================== */}
 
       <div
-        className="interview-chat-scroll min-h-0 flex-1 overflow-y-auto px-3 py-4"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor:
-            "rgba(139,92,246,0.45) transparent",
-        }}
+        className="
+          interview-chat-scroll
+          relative
+          z-10
+          min-h-0
+          flex-1
+          overflow-y-auto
+          px-4
+          py-5
+        "
       >
-        <div className="space-y-4">
-        {messages.map((msg, index) => {
-  const isAI = msg.role === "INTERVIEWER";
+        <div className="mx-auto max-w-3xl space-y-5">
 
-  return (
-    <div
-      key={`${index}-${msg.role}`}
-      className={`flex items-start gap-2.5 ${
-        isAI ? "justify-start" : "justify-end"
-      }`}
-    >
-      {/* AI avatar */}
-      {isAI && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10">
-          <Bot className="h-3.5 w-3.5 text-violet-400" />
-        </div>
-      )}
+          {messages.map(
+            (msg, index) => {
+              const isAI =
+                msg.role ===
+                "INTERVIEWER";
 
-      <div
-        className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-          isAI
-            ? "rounded-tl-md border border-border/60 bg-card text-foreground"
-            : "rounded-tr-md bg-violet-600 text-white"
-        }`}
-      >
-        {msg.content}
-      </div>
+              return (
+                <motion.div
+                  key={`${index}-${msg.role}`}
+                  initial={{
+                    opacity: 0,
+                    y: 10,
+                    scale: 0.99,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                  }}
+                  transition={{
+                    duration: 0.35,
+                    ease: [
+                      0.22,
+                      1,
+                      0.36,
+                      1,
+                    ],
+                  }}
+                  className={`flex items-end gap-2.5 ${
+                    isAI
+                      ? "justify-start"
+                      : "justify-end"
+                  }`}
+                >
 
-      {/* Candidate avatar */}
-      {!isAI && (
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-600/15">
-          <UserRound className="h-3.5 w-3.5 text-violet-300" />
-        </div>
-      )}
-    </div>
-  );
-})}
+                  {/* AI avatar */}
 
-          {/* AI currently typing */}
-       {typingMessage && (
-  <div className="flex items-start gap-2.5 justify-start">
-    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-violet-500/30 bg-violet-500/10">
-      <Bot className="h-3.5 w-3.5 text-violet-400" />
-    </div>
+                  {isAI && (
+                    <motion.div
+                      whileHover={{
+                        scale: 1.06,
+                      }}
+                      className="
+                        mb-1
+                        flex
+                        h-8
+                        w-8
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        border
+                        border-violet-500/20
+                        bg-violet-500/10
+                      "
+                    >
+                      <Bot
+                        size={15}
+                        className="text-violet-400"
+                      />
+                    </motion.div>
+                  )}
 
-    <div className="max-w-[82%] rounded-2xl rounded-tl-md border border-border/60 bg-card px-3.5 py-2.5 text-sm leading-relaxed">
-      {typingMessage}
-      <span className="ml-0.5 inline-block animate-pulse">
-        ▋
-      </span>
-    </div>
-  </div>
-)}
+                  {/* Message */}
 
-          {/* Loading indicator */}
-          {loading && !typingMessage && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl rounded-tl-md border border-border/60 bg-card px-3.5 py-2.5">
-                <div className="flex items-center gap-1">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
-                  <span
-                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
-                    style={{
-                      animationDelay: "120ms",
+                  <motion.div
+                    whileHover={{
+                      y: -1,
                     }}
-                  />
-                  <span
-                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
-                    style={{
-                      animationDelay: "240ms",
-                    }}
+                    className={`
+                      relative
+                      max-w-[84%]
+                      px-4
+                      py-3
+                      text-[14px]
+                      leading-6
+                      shadow-lg
+                      sm:text-[15px]
+                      ${
+                        isAI
+                          ? "rounded-2xl rounded-bl-md border border-white/[0.07] bg-[#101016] text-zinc-200 shadow-black/10"
+                          : "rounded-2xl rounded-br-md bg-gradient-to-br from-violet-600 to-violet-500 text-white shadow-violet-950/20"
+                      }
+                    `}
+                  >
+                    {isAI && (
+                      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-400/80">
+                        <Sparkles size={10} />
+                        Interviewer
+                      </div>
+                    )}
+
+                    <span className="whitespace-pre-wrap">
+                      {msg.content}
+                    </span>
+                  </motion.div>
+
+                  {/* Candidate avatar */}
+
+                  {!isAI && (
+                    <motion.div
+                      whileHover={{
+                        scale: 1.06,
+                      }}
+                      className="
+                        mb-1
+                        flex
+                        h-8
+                        w-8
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-xl
+                        border
+                        border-violet-400/20
+                        bg-violet-600/15
+                      "
+                    >
+                      <UserRound
+                        size={15}
+                        className="text-violet-300"
+                      />
+                    </motion.div>
+                  )}
+                </motion.div>
+              );
+            }
+          )}
+
+          {/* AI typing */}
+
+          <AnimatePresence>
+            {typingMessage && (
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: 8,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                exit={{
+                  opacity: 0,
+                }}
+                className="flex items-end gap-2.5"
+              >
+                <div
+                  className="
+                    mb-1
+                    flex
+                    h-8
+                    w-8
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-violet-500/20
+                    bg-violet-500/10
+                  "
+                >
+                  <Bot
+                    size={15}
+                    className="text-violet-400"
                   />
                 </div>
-              </div>
-            </div>
-          )}
+
+                <div
+                  className="
+                    max-w-[84%]
+                    rounded-2xl
+                    rounded-bl-md
+                    border
+                    border-white/[0.07]
+                    bg-[#101016]
+                    px-4
+                    py-3
+                    text-[14px]
+                    leading-6
+                    text-zinc-200
+                    sm:text-[15px]
+                  "
+                >
+                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-400/80">
+                    <Sparkles size={10} />
+                    Interviewer
+                  </div>
+
+                  {typingMessage}
+
+                  <motion.span
+                    animate={{
+                      opacity: [1, 0, 1],
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                    }}
+                    className="ml-1 text-violet-400"
+                  >
+                    ▋
+                  </motion.span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Loading */}
+
+          <AnimatePresence>
+            {loading &&
+              !typingMessage && (
+                <motion.div
+                  initial={{
+                    opacity: 0,
+                    y: 6,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  exit={{
+                    opacity: 0,
+                  }}
+                  className="flex items-end gap-2.5"
+                >
+                  <div
+                    className="
+                      flex
+                      h-8
+                      w-8
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      border
+                      border-violet-500/20
+                      bg-violet-500/10
+                    "
+                  >
+                    <Bot
+                      size={15}
+                      className="text-violet-400"
+                    />
+                  </div>
+
+                  <div
+                    className="
+                      rounded-2xl
+                      rounded-bl-md
+                      border
+                      border-white/[0.07]
+                      bg-[#101016]
+                      px-4
+                      py-3.5
+                    "
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {[0, 1, 2].map(
+                        (item) => (
+                          <motion.span
+                            key={item}
+                            animate={{
+                              y: [
+                                0,
+                                -4,
+                                0,
+                              ],
+                              opacity: [
+                                0.35,
+                                1,
+                                0.35,
+                              ],
+                            }}
+                            transition={{
+                              duration: 0.9,
+                              repeat: Infinity,
+                              delay:
+                                item *
+                                0.14,
+                            }}
+                            className="
+                              h-1.5
+                              w-1.5
+                              rounded-full
+                              bg-violet-400
+                            "
+                          />
+                        )
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+          </AnimatePresence>
 
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* ================================================= */}
-      {/* INPUT */}
-      {/* ================================================= */}
+      {/* =====================================================
+          INPUT
+      ===================================================== */}
 
-      <div className="shrink-0 border-t border-border/60 bg-background/60 p-3">
-        <div className="flex items-end gap-2 rounded-xl border border-border/70 bg-card/60 p-2 focus-within:border-violet-500/60">
-          <textarea
-            value={input}
-            onChange={(e) =>
-              setInput(e.target.value)
-            }
-            onKeyDown={handleInputKeyDown}
-            placeholder="Type your response..."
-            rows={4}
-            disabled={loading}
-            className="max-h-32 min-h-[36px] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-1.5 text-sm leading-5 outline-none placeholder:text-muted-foreground disabled:opacity-50"
-          />
+      <div className="relative z-10 shrink-0 border-t border-white/[0.07] bg-[#09090d]/90 px-3 pb-3 pt-3 backdrop-blur-xl sm:px-4">
 
-          <button
-            onClick={sendMessage}
-            disabled={
-              loading || !input.trim()
-            }
-            className="shrink-0 rounded-lg bg-violet-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+        <div className="mx-auto max-w-3xl">
+
+          <motion.div
+            whileFocus={{
+              scale: 1.002,
+            }}
+            className="
+              group
+              relative
+              flex
+              items-end
+              gap-2
+              overflow-hidden
+              rounded-2xl
+              border
+              border-white/[0.09]
+              bg-[#111116]
+              p-2
+              shadow-xl
+              shadow-black/20
+              transition-all
+              duration-300
+              focus-within:border-violet-500/40
+              focus-within:shadow-violet-950/10
+            "
           >
-            {loading ? "..." : "Send"}
-          </button>
-        </div>
 
-        <p className="mt-1.5 px-1 text-[10px] text-muted-foreground">
-          Enter to send · Shift + Enter for new line
-        </p>
+            {/* Input glow */}
+
+            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-focus-within:opacity-100">
+              <div className="absolute -inset-10 bg-violet-500/[0.035] blur-3xl" />
+            </div>
+
+            <textarea
+              value={input}
+              onChange={(e) =>
+                setInput(
+                  e.target.value
+                )
+              }
+              onKeyDown={
+                handleInputKeyDown
+              }
+              placeholder="Type your response..."
+              rows={1}
+              disabled={loading}
+              className="
+                relative
+                max-h-32
+                min-h-[42px]
+                flex-1
+                resize-none
+                overflow-y-auto
+                bg-transparent
+                px-3
+                py-2.5
+                text-[14px]
+                leading-6
+                text-white
+                outline-none
+                placeholder:text-zinc-600
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+                sm:text-[15px]
+              "
+            />
+
+            <motion.button
+              whileHover={{
+                scale: 1.03,
+              }}
+              whileTap={{
+                scale: 0.96,
+              }}
+              onClick={sendMessage}
+              disabled={
+                loading ||
+                !input.trim()
+              }
+              className="
+                relative
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-violet-600
+                text-white
+                shadow-lg
+                shadow-violet-600/20
+                transition-all
+                duration-300
+                hover:bg-violet-500
+                disabled:cursor-not-allowed
+                disabled:bg-zinc-800
+                disabled:text-zinc-600
+                disabled:shadow-none
+              "
+            >
+              {loading ? (
+                <motion.div
+                  animate={{
+                    rotate: 360,
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+                />
+              ) : (
+                <Send
+                  size={16}
+                />
+              )}
+            </motion.button>
+          </motion.div>
+
+          {/* Input footer */}
+
+          <div className="mt-2 flex items-center justify-between px-1">
+
+            <div className="flex items-center gap-2 text-[10px] text-zinc-600">
+              <Wifi
+                size={11}
+                className="text-emerald-400"
+              />
+
+              <span className="font-medium text-emerald-400">
+                Connected
+              </span>
+
+              <span className="text-zinc-800">
+                •
+              </span>
+
+             
+            </div>
+
+            <p className="text-[10px] text-zinc-100">
+              Enter to send · Shift + Enter
+              for new line
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* WebKit scrollbar */}
+      {/* =====================================================
+          SCROLLBAR
+      ===================================================== */}
+
       <style>
         {`
           .interview-chat-scroll::-webkit-scrollbar {
@@ -822,12 +1312,30 @@ const addAIMessageSafely = useCallback(
           }
 
           .interview-chat-scroll::-webkit-scrollbar-thumb {
-            background: rgba(139, 92, 246, 0.35);
+            background: rgba(139, 92, 246, 0.28);
             border-radius: 999px;
           }
 
           .interview-chat-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(139, 92, 246, 0.6);
+            background: rgba(139, 92, 246, 0.55);
+          }
+
+          .interview-chat-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
+          }
+
+          textarea::-webkit-scrollbar {
+            width: 4px;
+          }
+
+          textarea::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          textarea::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 999px;
           }
         `}
       </style>

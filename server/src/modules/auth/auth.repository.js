@@ -80,3 +80,10 @@ export const findPasswordResetToken = async (token) => {
 
   return result.rows[0];
 };
+
+export const deletePasswordResetTokensByUserId = async (userId) => {
+  await pool.query(
+    `DELETE FROM password_resets WHERE user_id = $1`,
+    [userId]
+  );
+};

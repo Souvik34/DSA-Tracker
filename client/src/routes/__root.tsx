@@ -8,7 +8,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-
+import BugReportWidget, { BugReportButton } from "@/components/bug-report/BugReportButton"
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { InterviewSocketProvider } from "@/socket/interviewSocketProvider";
@@ -119,7 +119,7 @@ function RootComponent() {
     <InterviewSocketProvider>
 
         <Outlet />
-
+  <BugReportButton />
     </InterviewSocketProvider>
 
     <Toaster

@@ -11,12 +11,15 @@ import {
   googleCallback,
 
 } from "./auth.controller.js";
+import feedbackRoutes from "./feedback/feedback.routes.js";
+
 
 import { authLimiter } from "../../middlewares/ratelimit.js";
 import { protect } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
+router.use("/feedback", feedbackRoutes);
 router.post("/signup", authLimiter, signUp);
 router.post("/signin", authLimiter, signIn);
 router.post("/signout", authLimiter, signOut);

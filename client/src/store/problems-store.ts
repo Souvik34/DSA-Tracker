@@ -343,9 +343,9 @@ export const useProblemsStore = create<ProblemsStore>()(
        * This is no longer a single global key.
        *
        * Each user gets:
-       * algoforge_problems_<userId>
+       * Dykstra_problems_<userId>
        */
-      name: "algoforge_problems_v1",
+      name: "Dykstra_problems_v1",
 
       storage: {
         getItem: (name) => {

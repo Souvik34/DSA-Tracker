@@ -897,7 +897,7 @@ export function WelcomeCard({ dashboard }: Props) {
                         </span>
 
                         <span className="text-sm font-medium text-zinc-200">
-                            AlgoForge is tracking your progress
+                            Dykstra is tracking your progress
                         </span>
 
                     </div>

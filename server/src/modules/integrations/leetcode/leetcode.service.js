@@ -34,7 +34,7 @@ const leetCodeGraphQL = async (
         "Content-Type": "application/json",
 
         "User-Agent":
-          "AlgoForge/1.0",
+          "Dykstra/1.0",
 
         "Referer":
           "https://leetcode.com/",

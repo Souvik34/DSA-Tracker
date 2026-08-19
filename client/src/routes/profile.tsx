@@ -775,7 +775,7 @@ function ProfilePage() {
 
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {leetcode?.valid
-                        ? "Your coding activity is synced with AlgoForge."
+                        ? "Your coding activity is synced with Dykstra."
                         : "Connect your profile to import coding progress."}
                     </p>
 
@@ -1420,7 +1420,7 @@ function ProfilePage() {
                     <div>
 
                       <h3 className="text-sm font-semibold">
-                        AlgoForge × LeetCode
+                        Dykstra × LeetCode
                       </h3>
 
                       <p className="mt-1 max-w-2xl text-[10px] leading-5 text-muted-foreground">
@@ -1481,7 +1481,7 @@ function ProfilePage() {
 
               <p className="mt-2 max-w-md text-xs leading-6 text-muted-foreground">
                 Bring your solving history, statistics,
-                achievements and activity into AlgoForge.
+                achievements and activity into Dykstra.
               </p>
 
             </CardContent>

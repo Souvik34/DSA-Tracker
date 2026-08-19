@@ -30,7 +30,7 @@ export const Route = createFileRoute("/problems")({
   head: () => ({
     meta: [
       {
-        title: "Problems · AlgoForge",
+        title: "Problems · Dykstra",
       },
       {
         name: "description",

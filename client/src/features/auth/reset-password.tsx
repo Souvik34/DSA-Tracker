@@ -186,7 +186,7 @@ try {
 
               <div className="text-left">
                 <div className="text-[15px] font-semibold">
-                  AlgoForge
+                  Dykstra
                 </div>
 
                 <div className="text-xs text-white/35">
@@ -296,7 +296,7 @@ try {
 
                       <p className="mt-2.5 text-[14px] leading-6 text-white/45">
                         Choose a strong password to secure
-                        your AlgoForge account.
+                        your Dykstra account.
                       </p>
                     </div>
 
@@ -617,7 +617,7 @@ try {
           </div>
 
           <p className="mt-6 text-center text-[11px] text-white/20">
-            Secure account recovery · AlgoForge
+            Secure account recovery · Dykstra
           </p>
         </div>
       </div>

@@ -41,7 +41,7 @@ export const Route = createFileRoute("/workspace/$sessionId")({
   beforeLoad: ({ location }) => requireAuth(location),
   head: () => ({
     meta: [
-      { title: "Interview Workspace · AlgoForge" },
+      { title: "Interview Workspace · Dykstra" },
       {
         name: "description",
         content:

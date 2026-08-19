@@ -179,7 +179,7 @@ export function ForgotPassword() {
 
               <div className="text-left">
                 <div className="text-[15px] font-semibold">
-                  AlgoForge
+                  Dykstra
                 </div>
 
                 <div className="text-xs text-white/35">
@@ -489,7 +489,7 @@ export function ForgotPassword() {
           </div>
 
           <p className="mt-6 text-center text-[11px] text-white/20">
-            Secure account recovery · AlgoForge
+            Secure account recovery · Dykstra
           </p>
         </div>
       </div>

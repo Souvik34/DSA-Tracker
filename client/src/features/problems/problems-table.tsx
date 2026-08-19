@@ -53,7 +53,7 @@ import { toast } from "sonner";
 const LIMIT = 50;
 
 const ACCORDION_STORAGE_KEY =
-  "algoforge-problems-open-topics";
+  "Dykstra-problems-open-topics";
 
 const difficultyClasses: Record<Difficulty, string> = {
   Easy:

@@ -9,11 +9,11 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       {
-        title: "Sign in · AlgoForge",
+        title: "Sign in · Dykstra",
       },
       {
         name: "description",
-        content: "Sign in to your AlgoForge DSA prep account.",
+        content: "Sign in to your Dykstra DSA prep account.",
       },
     ],
   }),

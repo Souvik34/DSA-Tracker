@@ -119,7 +119,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="leading-tight">
               <div className="text-base font-semibold tracking-tight">
-                AlgoForge
+                Dykstra
               </div>
 
               <div className="mt-0.5 text-xs font-medium text-slate-400">

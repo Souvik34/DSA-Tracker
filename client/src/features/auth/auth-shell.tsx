@@ -235,7 +235,7 @@ export function AuthShell({
 
               <div>
                 <div className="text-[15px] font-semibold tracking-tight">
-                  AlgoForge
+                  Dykstra
                 </div>
 
                 <div className="mt-0.5 text-xs text-white/35">
@@ -396,7 +396,7 @@ export function AuthShell({
                 </div>
 
                 <span className="text-[15px] font-semibold">
-                  AlgoForge
+                  Dykstra
                 </span>
               </Link>
             </div>
@@ -946,7 +946,7 @@ export function AuthShell({
             {/* MOBILE BOTTOM */}
 
             <div className="mt-6 text-center text-[11px] text-white/20 lg:hidden">
-              AlgoForge
+              Dykstra
             </div>
           </div>
         </div>

@@ -6,8 +6,8 @@ import { useAuthStore } from "@/store/auth-store";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Create account · AlgoForge" },
-      { name: "description", content: "Create your AlgoForge account and start prepping." },
+      { title: "Create account · Dykstra" },
+      { name: "description", content: "Create your Dykstra account and start prepping." },
     ],
   }),
   component: SignupPage,

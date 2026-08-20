@@ -67,7 +67,10 @@ evaluateCode: async(data:{
     const { data } = await api.post("/interview/start", payload);
     return data;
   },
-
+async getInterviewLimit() {
+  const { data } = await api.get("/interview/limit");
+  return data;
+},
  getInterviewReport: async(
     sessionId: string
 )=>{

@@ -5,9 +5,22 @@ import {
   sendInterviewMessage,
   endInterview, getInterviewById, getInterviewReport,    getInterviewHistory,
 } from "./interview.controller.js";
-
+import { getInterviewLimit } from "./interviewLimit/interviewLimit.controller.js";
+import { interviewLimitMiddleware } from "../../middlewares/interviewLimit.middleware.js";
 const router = express.Router();
-router.post("/start", protect, startInterview);
+router.get(
+    "/limit",
+    protect,
+    getInterviewLimit
+);
+
+router.post(
+    "/start",
+    protect,
+    interviewLimitMiddleware,
+    startInterview
+);
+
 router.post("/message", protect, sendInterviewMessage);
 router.post("/end", protect, endInterview);
 router.get(

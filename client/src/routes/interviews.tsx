@@ -1,8 +1,13 @@
 /* eslint-disable prettier/prettier */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Play, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Play,
+  Sparkles,
+  Clock3,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import interviewService from "../services/interviewService";
@@ -31,64 +36,373 @@ function InterviewsPage() {
   const [language, setLanguage] = useState("java");
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("SDE-1");
+
   const [questionStrategy, setQuestionStrategy] =
     useState("RELEVANT");
 
   const [loading, setLoading] = useState(false);
 
+  /*
+   * ============================================================
+   * INTERVIEW LIMIT STATE
+   * ============================================================
+   */
+
+  const [interviewsRemaining, setInterviewsRemaining] =
+    useState(3);
+
+  const [interviewLimit, setInterviewLimit] =
+    useState(3);
+
+  const [resetAt, setResetAt] =
+    useState<string | null>(null);
+
+  const [limitLoading, setLimitLoading] =
+    useState(true);
+
+  const [timeRemaining, setTimeRemaining] =
+    useState("");
+
+
+  /*
+   * ============================================================
+   * FETCH INTERVIEW LIMIT
+   * ============================================================
+   */
+
+  const fetchInterviewLimit = async () => {
+    try {
+      setLimitLoading(true);
+
+      const response =
+        await interviewService.getInterviewLimit();
+
+      const data = response?.data;
+
+      if (!data) {
+        return;
+      }
+
+      setInterviewLimit(
+        Number(data.limit ?? 3)
+      );
+
+      setInterviewsRemaining(
+        Number(data.remaining ?? 0)
+      );
+
+      setResetAt(
+        data.resetsAt ?? null
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Failed to fetch interview limit:",
+        error
+      );
+
+    } finally {
+
+      setLimitLoading(false);
+    }
+  };
+
+
+  /*
+   * ============================================================
+   * LOAD LIMIT WHEN PAGE OPENS
+   * ============================================================
+   */
+
+  useEffect(() => {
+    fetchInterviewLimit();
+  }, []);
+
+
+  /*
+   * ============================================================
+   * COUNTDOWN TIMER
+   * ============================================================
+   */
+
+  useEffect(() => {
+
+    if (!resetAt) {
+      setTimeRemaining("");
+      return;
+    }
+
+    const updateTimer = () => {
+
+      const now =
+        Date.now();
+
+      const resetTime =
+        new Date(resetAt).getTime();
+
+      const difference =
+        resetTime - now;
+
+
+      /*
+       * Window expired.
+       *
+       * Ask backend for the fresh
+       * limit instead of guessing.
+       */
+
+      if (difference <= 0) {
+
+        setTimeRemaining("");
+
+        fetchInterviewLimit();
+
+        return;
+      }
+
+
+      const totalSeconds =
+        Math.floor(
+          difference / 1000
+        );
+
+      const hours =
+        Math.floor(
+          totalSeconds / 3600
+        );
+
+      const minutes =
+        Math.floor(
+          (totalSeconds % 3600) / 60
+        );
+
+      const seconds =
+        totalSeconds % 60;
+
+
+      /*
+       * Keep the UI clean.
+       *
+       * Example:
+       *
+       * 17h 42m
+       *
+       * 42m 18s
+       */
+
+      if (hours > 0) {
+
+        setTimeRemaining(
+          `${hours}h ${minutes}m`
+        );
+
+      } else {
+
+        setTimeRemaining(
+          `${minutes}m ${seconds}s`
+        );
+      }
+    };
+
+
+    updateTimer();
+
+    const interval =
+      setInterval(
+        updateTimer,
+        1000
+      );
+
+
+    return () => {
+      clearInterval(interval);
+    };
+
+  }, [resetAt]);
+
+
+  /*
+   * ============================================================
+   * START INTERVIEW
+   * ============================================================
+   */
+
   const startInterview = async () => {
-    if (loading) return;
+
+    if (loading) {
+      return;
+    }
+
+    /*
+     * Prevent the request if the UI already knows
+     * that the user has no interviews left.
+     */
+
+    if (interviewsRemaining <= 0) {
+
+      toast.error(
+        "You've reached your daily interview limit."
+      );
+
+      return;
+    }
+
 
     setLoading(true);
 
     try {
-      const res = await interviewService.startAISession({
-        type: "DSA",
-        difficulty,
-        language,
-        company: company.trim() || null,
-        role,
-        questionStrategy,
-      });
 
-      const sessionId = res.data.session.id;
+      const res =
+        await interviewService.startAISession({
 
-      toast.success("Interview Started!");
+          type: "DSA",
+
+          difficulty,
+
+          language,
+
+          company:
+            company.trim() || null,
+
+          role,
+
+          questionStrategy,
+
+        });
+
+
+      const sessionId =
+        res.data.session.id;
+
+
+      /*
+       * The middleware consumed one slot.
+       *
+       * Update the UI immediately so the user
+       * doesn't have to refresh the page.
+       */
+
+      setInterviewsRemaining(
+        (previous) =>
+          Math.max(previous - 1, 0)
+      );
+
+
+      /*
+       * If this was the final interview,
+       * fetch the authoritative reset time
+       * from the backend.
+       */
+
+      if (interviewsRemaining - 1 <= 0) {
+
+        await fetchInterviewLimit();
+
+      } else {
+
+        /*
+         * We don't have to refetch immediately
+         * because the backend already returned
+         * successfully and one slot was consumed.
+         */
+
+        setResetAt(
+          res?.data?.data?.resetsAt ??
+          resetAt
+        );
+      }
+
+
+      toast.success(
+        "Interview Started!"
+      );
+
 
       navigate({
         to: `/workspace/${sessionId}`,
       });
-    } catch (err: any) {
-      console.error("START INTERVIEW ERROR:", err);
 
-      if (err?.response?.status === 429) {
+    } catch (err: any) {
+
+      console.error(
+        "START INTERVIEW ERROR:",
+        err
+      );
+
+
+      /*
+       * Backend is the final authority.
+       *
+       * If another tab/device consumed the
+       * final slot, this catches it.
+       */
+
+      if (
+        err?.response?.status === 429
+      ) {
+
+        const limitData =
+          err?.response?.data;
+
+
+        setInterviewsRemaining(0);
+
+        if (limitData?.resetsAt) {
+
+          setResetAt(
+            limitData.resetsAt
+          );
+        }
+
+
         toast.error(
-          err?.response?.data?.message ||
+          limitData?.message ||
             "You've reached your daily interview limit."
         );
+
         return;
       }
+
 
       toast.error(
         err?.response?.data?.message ||
           err?.message ||
           "Unable to start interview."
       );
+
     } finally {
+
       setLoading(false);
     }
   };
 
+
   /*
-   * IMPORTANT:
-   * When AI is generating the interview, completely replace
-   * the page with the custom ScreenLoader.
-   *
-   * No button is rendered during loading.
+   * ============================================================
+   * LOADING SCREEN
+   * ============================================================
    */
+
   if (loading) {
-    return <ScreenLoader text="Preparing interview" />;
+
+    return (
+      <ScreenLoader
+        text="Preparing interview"
+      />
+    );
   }
+
+
+  /*
+   * ============================================================
+   * LIMIT REACHED
+   * ============================================================
+   */
+
+  const limitReached =
+    interviewsRemaining <= 0;
+
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030507] text-white">
@@ -97,7 +411,6 @@ function InterviewsPage() {
           BACKGROUND
       ====================================================== */}
 
-      {/* Large blue glow - top left */}
       <div
         className="
           pointer-events-none
@@ -112,7 +425,6 @@ function InterviewsPage() {
         "
       />
 
-      {/* Violet glow - top right */}
       <div
         className="
           pointer-events-none
@@ -127,7 +439,6 @@ function InterviewsPage() {
         "
       />
 
-      {/* Blue glow - bottom */}
       <div
         className="
           pointer-events-none
@@ -142,7 +453,6 @@ function InterviewsPage() {
         "
       />
 
-      {/* Violet secondary glow */}
       <div
         className="
           pointer-events-none
@@ -157,7 +467,6 @@ function InterviewsPage() {
         "
       />
 
-      {/* Very subtle radial texture */}
       <div
         className="
           pointer-events-none
@@ -171,11 +480,13 @@ function InterviewsPage() {
         }}
       />
 
+
       {/* =====================================================
           CONTENT
       ====================================================== */}
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-7 md:px-8">
+
 
         {/* ===================================================
             TOP BAR
@@ -183,10 +494,13 @@ function InterviewsPage() {
 
         <div className="mb-10 flex items-center justify-between">
 
-          {/* Back to dashboard */}
           <Button
             variant="ghost"
-            onClick={() => navigate({ to: "/dashboard" })}
+            onClick={() =>
+              navigate({
+                to: "/dashboard",
+              })
+            }
             className="
               gap-2
               text-muted-foreground
@@ -196,10 +510,11 @@ function InterviewsPage() {
             "
           >
             <ArrowLeft className="h-4 w-4" />
+
             Back to Dashboard
           </Button>
 
-          {/* AI badge */}
+
           <div
             className="
               flex
@@ -217,9 +532,12 @@ function InterviewsPage() {
             "
           >
             <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+
             AI Interview
           </div>
+
         </div>
+
 
         {/* ===================================================
             HEADER
@@ -246,15 +564,19 @@ function InterviewsPage() {
             <Sparkles className="h-6 w-6 text-blue-400" />
           </div>
 
+
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
             AI Mock Interview
           </h1>
+
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
             Configure your interview and practice like you're sitting
             across from a real interviewer.
           </p>
+
         </div>
+
 
         {/* ===================================================
             MAIN CARD
@@ -273,6 +595,10 @@ function InterviewsPage() {
           "
         >
 
+          {/* =================================================
+              CARD HEADER
+          ================================================== */}
+
           <CardHeader
             className="
               border-b
@@ -282,22 +608,210 @@ function InterviewsPage() {
               py-5
             "
           >
-            <h2 className="text-base font-semibold">
-              Interview configuration
-            </h2>
 
-            <p className="mt-1 text-xs text-muted-foreground">
-              Customize the interview based on your target role.
-            </p>
+            <div className="flex items-center justify-between gap-4">
+
+              <div>
+
+                <h2 className="text-base font-semibold">
+                  Interview configuration
+                </h2>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Customize the interview based on your target role.
+                </p>
+
+              </div>
+
+
+              {/* =================================================
+                  DAILY LIMIT BADGE
+              ================================================== */}
+
+              {!limitLoading && (
+                <div
+                  className={`
+                    shrink-0
+                    rounded-xl
+                    border
+                    px-3
+                    py-2
+                    text-right
+                    transition-all
+                    ${
+                      limitReached
+                        ? "border-red-400/15 bg-red-500/[0.05]"
+                        : "border-blue-400/10 bg-blue-500/[0.04]"
+                    }
+                  `}
+                >
+
+                  <div className="flex items-center gap-2">
+
+                    <div
+                      className={`
+                        h-1.5
+                        w-1.5
+                        rounded-full
+                        ${
+                          limitReached
+                            ? "bg-red-400"
+                            : "bg-blue-400"
+                        }
+                      `}
+                    />
+
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Daily Limit
+                    </span>
+
+                  </div>
+
+
+                  <p
+                    className={`
+                      mt-0.5
+                      text-sm
+                      font-semibold
+                      ${
+                        limitReached
+                          ? "text-red-300"
+                          : "text-white"
+                      }
+                    `}
+                  >
+                    {interviewsRemaining} / {interviewLimit}
+                  </p>
+
+                </div>
+              )}
+
+            </div>
+
           </CardHeader>
+
 
           <CardContent className="space-y-6 px-6 py-6">
 
-            {/* Difficulty + Language */}
+
+            {/* =================================================
+                LIMIT INFORMATION
+            ================================================== */}
+
+            {!limitLoading && (
+
+              <div
+                className={`
+                  flex
+                  items-center
+                  justify-between
+                  rounded-xl
+                  border
+                  px-4
+                  py-3
+                  ${
+                    limitReached
+                      ? "border-red-400/10 bg-red-500/[0.035]"
+                      : "border-white/[0.06] bg-white/[0.02]"
+                  }
+                `}
+              >
+
+                <div className="flex items-center gap-3">
+
+                  <div
+                    className={`
+                      flex
+                      h-8
+                      w-8
+                      items-center
+                      justify-center
+                      rounded-lg
+                      ${
+                        limitReached
+                          ? "bg-red-500/[0.08]"
+                          : "bg-blue-500/[0.08]"
+                      }
+                    `}
+                  >
+                    <Clock3
+                      className={`
+                        h-4
+                        w-4
+                        ${
+                          limitReached
+                            ? "text-red-400"
+                            : "text-blue-400"
+                        }
+                      `}
+                    />
+                  </div>
+
+
+                  <div>
+
+                    <p className="text-xs font-medium">
+
+                      {limitReached
+                        ? "Daily interview limit reached"
+                        : `${interviewsRemaining} interview${
+                            interviewsRemaining === 1
+                              ? ""
+                              : "s"
+                          } remaining today`
+                      }
+
+                    </p>
+
+
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+
+                      {limitReached
+                        ? "Your interviews will become available again after the current 24-hour window."
+                        : "You can start another AI interview whenever you're ready."
+                      }
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+
+                {/* =================================================
+                    RESET TIMER
+                ================================================== */}
+
+                {limitReached &&
+                  timeRemaining && (
+
+                    <div className="text-right">
+
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Available in
+                      </p>
+
+                      <p className="mt-0.5 text-sm font-semibold text-white">
+                        {timeRemaining}
+                      </p>
+
+                    </div>
+
+                  )}
+
+              </div>
+
+            )}
+
+
+            {/* =================================================
+                DIFFICULTY + LANGUAGE
+            ================================================== */}
 
             <div className="grid gap-5 md:grid-cols-2">
 
               <div>
+
                 <label className="mb-2 block text-sm font-medium">
                   Difficulty
                 </label>
@@ -306,6 +820,7 @@ function InterviewsPage() {
                   value={difficulty}
                   onValueChange={setDifficulty}
                 >
+
                   <SelectTrigger
                     className="
                       border-white/[0.08]
@@ -317,7 +832,9 @@ function InterviewsPage() {
                     <SelectValue />
                   </SelectTrigger>
 
+
                   <SelectContent>
+
                     <SelectItem value="Easy">
                       Easy
                     </SelectItem>
@@ -329,11 +846,16 @@ function InterviewsPage() {
                     <SelectItem value="Hard">
                       Hard
                     </SelectItem>
+
                   </SelectContent>
+
                 </Select>
+
               </div>
 
+
               <div>
+
                 <label className="mb-2 block text-sm font-medium">
                   Programming Language
                 </label>
@@ -342,6 +864,7 @@ function InterviewsPage() {
                   value={language}
                   onValueChange={setLanguage}
                 >
+
                   <SelectTrigger
                     className="
                       border-white/[0.08]
@@ -353,7 +876,9 @@ function InterviewsPage() {
                     <SelectValue />
                   </SelectTrigger>
 
+
                   <SelectContent>
+
                     <SelectItem value="java">
                       Java
                     </SelectItem>
@@ -369,21 +894,32 @@ function InterviewsPage() {
                     <SelectItem value="javascript">
                       JavaScript
                     </SelectItem>
+
                   </SelectContent>
+
                 </Select>
+
               </div>
+
             </div>
 
-            {/* Company */}
+
+            {/* =================================================
+                COMPANY
+            ================================================== */}
 
             <div>
+
               <label className="mb-2 block text-sm font-medium">
                 Target Company
               </label>
 
+
               <input
                 value={company}
-                onChange={(e) => setCompany(e.target.value)}
+                onChange={(e) =>
+                  setCompany(e.target.value)
+                }
                 placeholder="e.g. Microsoft, Google, Amazon"
                 className="
                   h-10
@@ -403,23 +939,31 @@ function InterviewsPage() {
                 "
               />
 
+
               <p className="mt-2 text-xs text-muted-foreground">
                 Optional. Leave blank for a general software engineering
                 interview.
               </p>
+
             </div>
 
-            {/* Role */}
+
+            {/* =================================================
+                ROLE
+            ================================================== */}
 
             <div>
+
               <label className="mb-2 block text-sm font-medium">
                 Target Role
               </label>
+
 
               <Select
                 value={role}
                 onValueChange={setRole}
               >
+
                 <SelectTrigger
                   className="
                     border-white/[0.08]
@@ -429,7 +973,9 @@ function InterviewsPage() {
                   <SelectValue />
                 </SelectTrigger>
 
+
                 <SelectContent>
+
                   <SelectItem value="SDE-1">
                     SDE-1
                   </SelectItem>
@@ -441,21 +987,30 @@ function InterviewsPage() {
                   <SelectItem value="Senior Software Engineer">
                     Senior Software Engineer
                   </SelectItem>
+
                 </SelectContent>
+
               </Select>
+
             </div>
 
-            {/* Question strategy */}
+
+            {/* =================================================
+                QUESTION STRATEGY
+            ================================================== */}
 
             <div>
+
               <label className="mb-2 block text-sm font-medium">
                 Question Type
               </label>
+
 
               <Select
                 value={questionStrategy}
                 onValueChange={setQuestionStrategy}
               >
+
                 <SelectTrigger
                   className="
                     border-white/[0.08]
@@ -465,7 +1020,9 @@ function InterviewsPage() {
                   <SelectValue />
                 </SelectTrigger>
 
+
                 <SelectContent>
+
                   <SelectItem value="RELEVANT">
                     Interview Relevant
                   </SelectItem>
@@ -481,11 +1038,17 @@ function InterviewsPage() {
                   <SelectItem value="MIXED">
                     Mixed
                   </SelectItem>
+
                 </SelectContent>
+
               </Select>
+
             </div>
 
-            {/* AI information */}
+
+            {/* =================================================
+                AI INFORMATION
+            ================================================== */}
 
             <div
               className="
@@ -496,11 +1059,13 @@ function InterviewsPage() {
                 p-4
               "
             >
+
               <div className="flex gap-3">
 
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
 
                 <div>
+
                   <p className="text-sm font-medium">
                     AI-powered interview
                   </p>
@@ -509,54 +1074,113 @@ function InterviewsPage() {
                     Your interviewer will adapt follow-up questions
                     based on your approach, code, and responses.
                   </p>
+
                 </div>
 
               </div>
+
             </div>
+
 
             {/* =================================================
                 START BUTTON
             ================================================== */}
 
             <Button
-              className="
+              className={`
                 h-11
                 w-full
                 border-0
-                bg-gradient-to-r
-                from-blue-600
-                via-blue-500
-                to-violet-600
                 font-medium
                 shadow-lg
-                shadow-blue-950/30
                 transition-all
-                hover:scale-[1.005]
-                hover:from-blue-500
-                hover:via-blue-400
-                hover:to-violet-500
-              "
+
+                ${
+                  limitReached
+                    ? "cursor-not-allowed bg-white/[0.06] text-muted-foreground shadow-none hover:bg-white/[0.06]"
+                    : "bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 shadow-blue-950/30 hover:scale-[1.005] hover:from-blue-500 hover:via-blue-400 hover:to-violet-500"
+                }
+              `}
               size="lg"
               onClick={startInterview}
-              disabled={loading}
+              disabled={
+                loading ||
+                limitLoading ||
+                limitReached
+              }
             >
-              <Play className="mr-2 h-4 w-4" />
-              Start Interview
+
+              {limitReached ? (
+
+                <>
+                  <Clock3 className="mr-2 h-4 w-4" />
+
+                  Limit Reached
+
+                </>
+
+              ) : (
+
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+
+                  Start Interview
+
+                </>
+
+              )}
+
             </Button>
 
-            {/* Daily limit */}
 
-            <p className="text-center text-[11px] text-muted-foreground">
-              Free users can start up to{" "}
-              <span className="font-medium text-white/70">
-                3 AI interviews
-              </span>{" "}
-              per day.
-            </p>
+            {/* =================================================
+                DAILY LIMIT FOOTER
+            ================================================== */}
+
+            <div className="text-center">
+
+              {limitReached && timeRemaining ? (
+
+                <p className="text-[11px] text-muted-foreground">
+
+                  Your next{" "}
+                  <span className="font-medium text-white/70">
+                    3 interviews
+                  </span>{" "}
+                  will be available in{" "}
+
+                  <span className="font-medium text-blue-400">
+                    {timeRemaining}
+                  </span>
+
+                  .
+
+                </p>
+
+              ) : (
+
+                <p className="text-[11px] text-muted-foreground">
+
+                  Free users can start up to{" "}
+
+                  <span className="font-medium text-white/70">
+                    {interviewLimit} AI interviews
+                  </span>{" "}
+
+                  within a 24-hour window.
+
+                </p>
+
+              )}
+
+            </div>
 
           </CardContent>
+
         </Card>
+
       </div>
+
     </div>
   );
 }

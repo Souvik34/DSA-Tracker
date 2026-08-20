@@ -201,12 +201,7 @@ const onEndInterview = async () => {
       <header className="flex items-center justify-between border-b border-border/60 bg-card/40 px-4 py-3">
         <div className="flex items-center gap-3">
           
-          <Link
-            to="/problems"
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Problems
-          </Link>
+     
           <span className="text-sm font-medium">{problem.title}</span>
           <Badge variant="outline" className={difficultyTone}>
             {problem.difficulty}

@@ -111,7 +111,6 @@ const job = await solveQueue.add(
   "solve-job",
   { userId, problemId, difficulty, timeTaken },
   {
-    jobId: `${userId}-${problemId}`,
     attempts: 3,
     backoff: {
       type: "exponential",
@@ -280,47 +279,41 @@ export const getProblemNotes = async (req, res) => {
   }
 };
 
-export const startProblem = async(req,res)=>{
+export const startProblem = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const problemId = Number(req.params.id);
 
-try{
+    console.log("========== START PROBLEM ==========");
+    console.log("USER:", userId);
+    console.log("PROBLEM:", problemId);
 
-const userId=req.user.id;
-const problemId=Number(req.params.id);
+    const data =
+      await problemService.startProblemAttempt(
+        userId,
+        problemId
+      );
 
+    console.log("START RESULT:", data);
 
-const data =
-await problemService.startProblemAttempt(
-userId,
-problemId
-);
+    if (data.blocked) {
+      return res.status(403).json({
+        success: false,
+        blocked: true,
+        problemId: data.attempt.problem_id,
+        message: "Complete your current problem first",
+      });
+    }
 
+    res.json({
+      success: true,
+      attempt: data.attempt,
+    });
+  } catch (err) {
+    console.error("START PROBLEM ERROR:", err);
 
-if(data.blocked){
-
-  return res.status(403).json({
-    success: false,
-    blocked: true,
-    problemId: data.attempt.problem_id,
-    message: "Complete your current problem first"
-  });
-
-}
-
-
-res.json({
-
-success:true,
-attempt:data.attempt
-
-});
-
-
-}catch(err){
-
-res.status(500).json({
-message:err.message
-});
-
-}
-
+    res.status(500).json({
+      message: err.message,
+    });
+  }
 };

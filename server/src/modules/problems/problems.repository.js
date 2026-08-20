@@ -351,55 +351,55 @@ export const getMentorProblemsRepo = async (
     return result.rows;
 };
 
-    export const startProblemAttemptRepo = async (
-    userId,
-    problemId
+ export const startProblemAttemptRepo = async (
+  userId,
+  problemId
 ) => {
+  console.log("START REPO:", {
+    userId,
+    problemId,
+  });
 
-    const active = await pool.query(
-        `
-        SELECT *
-        FROM problem_attempts
-        WHERE user_id=$1
-        AND status='STARTED'
-        `,
-        [userId]
-    );
+  const active = await pool.query(
+    `
+    SELECT *
+    FROM problem_attempts
+    WHERE user_id = $1
+      AND status = 'STARTED'
+    `,
+    [userId]
+  );
 
+  console.log("ACTIVE ATTEMPT:", active.rows[0]);
 
-    if(active.rows.length > 0){
-
-        return {
-            blocked:true,
-            attempt:active.rows[0]
-        };
-
-    }
-
-
-    const result = await pool.query(
-        `
-     INSERT INTO problem_attempts
-(
- user_id,
- problem_id,
- status
-)
-VALUES($1,$2,'STARTED')
-RETURNING *
-        `,
-        [
-            userId,
-            problemId
-        ]
-    );
-
-
+  if (active.rows.length > 0) {
     return {
-        blocked:false,
-        attempt:result.rows[0]
+      blocked: true,
+      attempt: active.rows[0],
     };
+  }
 
+  const result = await pool.query(
+    `
+    INSERT INTO problem_attempts (
+      user_id,
+      problem_id,
+      status
+    )
+    VALUES ($1, $2, 'STARTED')
+    RETURNING *
+    `,
+    [userId, problemId]
+  );
+
+  console.log("INSERTED ATTEMPT:", result.rows[0]);
+
+ 
+ 
+  return {
+    blocked: false,
+    attempt: result.rows[0],
+  };
 };
 export const completeProblemAttemptRepo = async (
     userId,

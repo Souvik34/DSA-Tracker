@@ -643,234 +643,299 @@ export function ProblemsTable() {
      OPEN PROBLEM
   ======================================================= */
 
-  const handleOpenProblem =
-    async (p: Problem) => {
-      /* ================================================
-         ROADMAP
-      ================================================= */
+ const handleOpenProblem = async (p: Problem) => {
+  const alreadySolved = !!byId[p.id]?.solved;
 
-      if (roadmapMode) {
-        try {
-          await problemService.completeMentorProblem(
-            p.id,
-          );
+  /* =================================================
+     MENTOR / ROADMAP MODE
+  ================================================= */
 
-          window.open(
-            p.leetcodeUrl,
-            "_blank",
-          );
+  if (roadmapMode) {
+    try {
+      /*
+       * -----------------------------------------------
+       * ALREADY SOLVED
+       *
+       * This problem was solved before the mentor
+       * recommended it.
+       *
+       * We can complete the mentor item immediately.
+       * -----------------------------------------------
+       */
 
-          toast.success(
-            "Mentor problem completed",
-          );
-        } catch (error) {
-          console.error(
-            "Mentor completion failed:",
-            error,
-          );
+      if (alreadySolved) {
+        await problemService.completeMentorProblem(
+          p.id
+        );
 
-          toast.error(
-            "Failed to update mentor progress",
-          );
-        }
+        toast.success(
+          "Mentor problem completed"
+        );
 
-        return;
-      }
-
-      /* ================================================
-         ALREADY SOLVED
-      ================================================= */
-
-      if (byId[p.id]?.solved) {
         window.open(
           p.leetcodeUrl,
-          "_blank",
+          "_blank"
         );
 
         return;
       }
 
-      /* ================================================
-         ANOTHER ACTIVE PROBLEM
-      ================================================= */
+      /*
+       * -----------------------------------------------
+       * NEW / UNSOLVED MENTOR PROBLEM
+       *
+       * DO NOT complete the mentor item here.
+       *
+       * Start it normally so the backend creates:
+       *
+       * problem_attempts -> STARTED
+       *
+       * Then the user solves it and checks the
+       * solved checkbox.
+       * -----------------------------------------------
+       */
 
+      await problemService.startProblem(p.id);
+
+      startProblem(p.id);
+
+      window.open(
+        p.leetcodeUrl,
+        "_blank"
+      );
+
+      return;
+    } catch (error: any) {
+      console.error(
+        "Mentor problem start failed:",
+        error
+      );
+
+      /*
+       * Existing active problem
+       */
       if (
-        activeProblemId &&
-        activeProblemId !==
-          String(p.id) &&
-        !byId[
-          activeProblemId
-        ]?.solved
+        error?.response?.status === 403
       ) {
-        const previous =
-          problems.find(
-            (item) =>
-              String(item.id) ===
-              String(
-                activeProblemId,
-              ),
-          );
+        const blockedProblemId =
+          error?.response?.data?.problemId;
 
-        if (previous) {
-          setWarningProblem(
-            previous,
-          );
-
-          return;
-        }
-      }
-
-      /* ================================================
-         START
-      ================================================= */
-
-      try {
-        await problemService.startProblem(
-          p.id,
-        );
-
-        startProblem(p.id);
-
-        window.open(
-          p.leetcodeUrl,
-          "_blank",
-        );
-      } catch (error: any) {
-        console.error(
-          "Start problem failed:",
-          error,
-        );
-
-        if (
-          error?.response
-            ?.status === 403
-        ) {
-          const blockedProblemId =
-            error?.response?.data
-              ?.problemId;
-
-          if (!blockedProblemId) {
-            toast.error(
-              "You already have a problem in progress.",
-            );
-
-            return;
-          }
-
-          startProblem(
-            blockedProblemId,
-          );
+        if (blockedProblemId) {
+          startProblem(blockedProblemId);
 
           const previous =
             problems.find(
               (item) =>
                 String(item.id) ===
-                String(
-                  blockedProblemId,
-                ),
+                String(blockedProblemId)
             );
 
           if (previous) {
             setWarningProblem(
-              previous,
+              previous
             );
 
             return;
-          }
-
-          try {
-            const previous =
-              await problemService.getById(
-                blockedProblemId,
-              );
-
-            const mappedPrevious: Problem =
-              {
-                id: previous.id,
-                title:
-                  previous.title,
-                difficulty:
-                  formatDifficulty(
-                    previous.difficulty,
-                  ),
-                topic:
-                  previous.topic,
-                companies: [],
-                leetcodeUrl:
-                  previous.question_link,
-              };
-
-            setWarningProblem(
-              mappedPrevious,
-            );
-
-            return;
-          } catch (fetchError) {
-            console.error(
-              "Failed to fetch blocked problem:",
-              fetchError,
-            );
-
-            toast.error(
-              "Could not load the active problem.",
-            );
           }
         }
 
         toast.error(
-          "Failed to start problem",
+          "You already have a problem in progress."
+        );
+
+        return;
+      }
+
+      toast.error(
+        "Failed to start mentor problem"
+      );
+
+      return;
+    }
+  }
+
+  /* =================================================
+     ALREADY SOLVED — NORMAL MODE
+  ================================================= */
+
+  if (alreadySolved) {
+    window.open(
+      p.leetcodeUrl,
+      "_blank"
+    );
+
+    return;
+  }
+
+  /* =================================================
+     ANOTHER ACTIVE PROBLEM — NORMAL MODE
+  ================================================= */
+
+  if (
+    activeProblemId &&
+    activeProblemId !== String(p.id) &&
+    !byId[activeProblemId]?.solved
+  ) {
+    const previous =
+      problems.find(
+        (item) =>
+          String(item.id) ===
+          String(activeProblemId)
+      );
+
+    if (previous) {
+      setWarningProblem(previous);
+      return;
+    }
+  }
+
+  /* =================================================
+     START NORMAL PROBLEM
+  ================================================= */
+
+  try {
+    await problemService.startProblem(
+      p.id
+    );
+
+    startProblem(p.id);
+
+    window.open(
+      p.leetcodeUrl,
+      "_blank"
+    );
+  } catch (error: any) {
+    console.error(
+      "Start problem failed:",
+      error
+    );
+
+    if (
+      error?.response?.status === 403
+    ) {
+      const blockedProblemId =
+        error?.response?.data?.problemId;
+
+      if (!blockedProblemId) {
+        toast.error(
+          "You already have a problem in progress."
+        );
+
+        return;
+      }
+
+      startProblem(
+        blockedProblemId
+      );
+
+      const previous =
+        problems.find(
+          (item) =>
+            String(item.id) ===
+            String(
+              blockedProblemId
+            )
+        );
+
+      if (previous) {
+        setWarningProblem(
+          previous
+        );
+
+        return;
+      }
+
+      try {
+        const previous =
+          await problemService.getById(
+            blockedProblemId
+          );
+
+        const mappedPrevious: Problem = {
+          id: previous.id,
+          title: previous.title,
+          difficulty:
+            formatDifficulty(
+              previous.difficulty
+            ),
+          topic: previous.topic,
+          companies: [],
+          leetcodeUrl:
+            previous.question_link,
+        };
+
+        setWarningProblem(
+          mappedPrevious
+        );
+
+        return;
+      } catch (fetchError) {
+        console.error(
+          "Failed to fetch blocked problem:",
+          fetchError
+        );
+
+        toast.error(
+          "Could not load the active problem."
         );
       }
-    };
+    }
+
+    toast.error(
+      "Failed to start problem"
+    );
+  }
+};
 
   /* =======================================================
      SOLVE
   ======================================================= */
 
-  const handleSolve = async (
-    p: Problem,
-  ) => {
-    try {
-      const problemId =
-        String(p.id);
+ const handleSolve = async (
+  p: Problem,
+) => {
+  try {
+    const problemId = String(p.id);
 
-      const startTime =
-        startedProblems[
-          problemId
-        ];
+    const startTime =
+      startedProblems[problemId];
 
-      const timeTaken = startTime
-        ? Math.floor(
-            (Date.now() -
-              startTime) /
-              60000,
-          )
-        : 0;
+    const timeTaken = startTime
+      ? Math.floor(
+          (Date.now() - startTime) / 60000,
+        )
+      : 0;
 
-      await problemService.markSolved(
-        p.id,
-        p.difficulty,
-        timeTaken,
-      );
+    await problemService.markSolved(
+      p.id,
+      p.difficulty,
+      timeTaken,
+    );
 
-      markSolved(p.id);
-      removeStartedProblem(p.id);
-      clearActiveProblem();
+    markSolved(p.id);
+    removeStartedProblem(p.id);
+    clearActiveProblem();
 
-      toast.success(
-        "Problem marked as solved",
-      );
-    } catch (error) {
-      console.error(
-        "Solve failed:",
-        error,
-      );
+    toast.success(
+      "Problem marked as solved",
+    );
+  } catch (error: any) {
+    console.error(
+      "Solve failed response:",
+      error?.response?.data,
+    );
 
-      toast.error(
+    console.error(
+      "Solve failed status:",
+      error?.response?.status,
+    );
+
+    toast.error(
+      error?.response?.data?.message ||
         "Failed to mark problem as solved",
-      );
-    }
-  };
+    );
+  }
+};
 
   /* =======================================================
      MENTOR COMPLETE

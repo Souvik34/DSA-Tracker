@@ -4,6 +4,7 @@ import { addSolvedProblemService } from "../modules/progress/progress.service.js
 import { insertRevisionRepo } from "../modules/revision/revision.repository.js";
 import redisClient from "../config/redis.js";
 import { completeMentorProblem } from "../modules/mentor/mentor.service.js";
+console.log("🔥 SOLVE WORKER FILE LOADED");
 export const solveWorker = new Worker(
   "solve-problem",
   async (job) => {
@@ -70,6 +71,7 @@ await Promise.all([
     concurrency: 5,
   }
 );
+console.log("🔥 SOLVE WORKER CREATED");
 
 /* ---------- EVENTS ---------- */
 solveWorker.on("completed", (job) => {

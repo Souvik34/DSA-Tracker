@@ -108,6 +108,7 @@ export function RevisionGate({
   if (!blocked) return null;
 
   const visibleRevisions = revisions.slice(0, 5);
+
   const remaining = Math.max(
     0,
     revisions.length - visibleRevisions.length
@@ -143,19 +144,25 @@ export function RevisionGate({
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className={`absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/[0.08] blur-[120px] transition-all duration-1000 ${
-            visible ? "scale-100 opacity-100" : "scale-75 opacity-0"
+            visible
+              ? "scale-100 opacity-100"
+              : "scale-75 opacity-0"
           }`}
         />
 
         <div
           className={`absolute -left-32 top-10 h-72 w-72 rounded-full bg-violet-600/[0.07] blur-[100px] transition-all duration-1000 delay-200 ${
-            visible ? "scale-100 opacity-100" : "scale-50 opacity-0"
+            visible
+              ? "scale-100 opacity-100"
+              : "scale-50 opacity-0"
           }`}
         />
 
         <div
           className={`absolute -bottom-20 right-0 h-80 w-80 rounded-full bg-cyan-500/[0.05] blur-[110px] transition-all duration-1000 delay-300 ${
-            visible ? "scale-100 opacity-100" : "scale-50 opacity-0"
+            visible
+              ? "scale-100 opacity-100"
+              : "scale-50 opacity-0"
           }`}
         />
       </div>
@@ -208,14 +215,14 @@ export function RevisionGate({
 
                 <div className="min-w-0">
                   <div className="mb-1.5 flex items-center gap-2">
-                    <span className="text-[10px] font-bold tracking-[0.18em] text-blue-300">
+                    <span className="text-xs font-bold tracking-[0.18em] text-blue-300">
                       REVISION CHECKPOINT
                     </span>
 
                     <span className="h-1 w-1 rounded-full bg-blue-400/50" />
 
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-zinc-600">
-                      <LockKeyhole className="h-2.5 w-2.5" />
+                    <span className="flex items-center gap-1 text-xs font-medium text-zinc-300">
+                      <LockKeyhole className="h-3 w-3" />
                       LOCKED
                     </span>
                   </div>
@@ -224,7 +231,7 @@ export function RevisionGate({
                     Strengthen what you know.
                   </h2>
 
-                  <p className="mt-1.5 max-w-[390px] text-xs leading-5 text-zinc-500 sm:text-sm">
+                  <p className="mt-1.5 max-w-[390px] text-sm leading-5 text-zinc-300 sm:text-[15px]">
                     A few concepts are due for review before you
                     continue solving new problems.
                   </p>
@@ -238,7 +245,7 @@ export function RevisionGate({
                   {revisions.length}
                 </div>
 
-                <div className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">
+                <div className="text-xs font-medium uppercase tracking-wider text-zinc-300">
                   pending
                 </div>
               </div>
@@ -279,12 +286,12 @@ export function RevisionGate({
               <div className="flex items-center gap-2">
                 <Layers3 className="h-4 w-4 text-blue-400" />
 
-                <span className="text-xs font-semibold text-zinc-300">
+                <span className="text-sm font-semibold text-white">
                   Today's revisions
                 </span>
               </div>
 
-              <span className="text-[10px] text-zinc-600">
+              <span className="text-xs text-zinc-300">
                 Highest priority first
               </span>
             </div>
@@ -344,12 +351,12 @@ export function RevisionGate({
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="truncate text-xs font-medium text-zinc-200">
+                          <p className="truncate text-sm font-medium text-white">
                             {revision.title}
                           </p>
 
                           {revision.topic && (
-                            <span className="hidden shrink-0 rounded-md border border-white/[0.06] bg-white/[0.025] px-1.5 py-0.5 text-[9px] text-zinc-600 sm:inline">
+                            <span className="hidden shrink-0 rounded-md border border-white/[0.06] bg-white/[0.025] px-1.5 py-0.5 text-[10px] text-zinc-300 sm:inline">
                               {revision.topic}
                             </span>
                           )}
@@ -357,16 +364,16 @@ export function RevisionGate({
 
                         <div className="mt-1.5 flex items-center gap-3">
                           <span
-                            className={`text-[9px] font-bold tracking-wider ${config.text}`}
+                            className={`text-[10px] font-bold tracking-wider ${config.text}`}
                           >
                             {config.label}
                           </span>
 
-                          <span className="text-[9px] text-zinc-600">
+                          <span className="text-[11px] font-medium text-zinc-200">
                             Confidence {confidence}%
                           </span>
 
-                          <span className="hidden text-[9px] text-zinc-600 sm:inline">
+                          <span className="hidden text-[11px] font-medium text-zinc-300 sm:inline">
                             Revision {progress}/8
                           </span>
                         </div>
@@ -375,7 +382,7 @@ export function RevisionGate({
                       {/* Progress */}
 
                       <div className="hidden w-16 shrink-0 sm:block">
-                        <div className="mb-1 flex justify-between text-[8px] text-zinc-700">
+                        <div className="mb-1 flex justify-between text-[10px] font-medium text-zinc-300">
                           <span>PROGRESS</span>
                           <span>{progress}/8</span>
                         </div>
@@ -398,7 +405,7 @@ export function RevisionGate({
                         </div>
                       </div>
 
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-700 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-zinc-400" />
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-500 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-zinc-300" />
                     </div>
 
                     {/* Confidence bar */}
@@ -419,7 +426,7 @@ export function RevisionGate({
 
               {remaining > 0 && (
                 <div className="flex items-center justify-center py-1">
-                  <span className="text-[10px] text-zinc-600">
+                  <span className="text-xs font-medium text-zinc-300">
                     +{remaining} more revision
                     {remaining > 1 ? "s" : ""} waiting
                   </span>
@@ -428,8 +435,9 @@ export function RevisionGate({
 
               {revisions.length === 0 && (
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
-                  <AlertTriangle className="mx-auto h-5 w-5 text-zinc-600" />
-                  <p className="mt-2 text-xs text-zinc-500">
+                  <AlertTriangle className="mx-auto h-5 w-5 text-zinc-500" />
+
+                  <p className="mt-2 text-sm text-zinc-300">
                     Revision data is currently unavailable.
                   </p>
                 </div>
@@ -441,9 +449,9 @@ export function RevisionGate({
 
           <div className="mt-5 border-t border-white/[0.06] bg-black/20 px-6 py-5 sm:px-7">
             <div className="mb-3 flex items-center gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400/80" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-400/80" />
 
-              <p className="text-[10px] text-zinc-500">
+              <p className="text-xs font-medium text-zinc-300">
                 Complete your revisions to unlock new problems.
               </p>
             </div>
@@ -465,8 +473,9 @@ export function RevisionGate({
               </span>
             </Button>
 
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] text-zinc-700">
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
               <Sparkles className="h-3 w-3" />
+
               Spaced repetition is keeping your knowledge fresh
             </div>
           </div>
@@ -482,6 +491,7 @@ export function RevisionGate({
               opacity: 0;
               transform: translateY(8px);
             }
+
             to {
               opacity: 1;
               transform: translateY(0);
@@ -526,13 +536,13 @@ function MiniStat({
         <div className="min-w-0">
           <div
             className={`text-sm font-bold ${
-              danger ? "text-red-300" : "text-zinc-200"
+              danger ? "text-red-300" : "text-white"
             }`}
           >
             {value}
           </div>
 
-          <div className="text-[9px] uppercase tracking-wider text-zinc-600">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
             {label}
           </div>
         </div>

@@ -9,7 +9,8 @@ import { WelcomeCard } from "@/features/dashboard/welcome-card";
 import { ProgressCards } from "@/features/dashboard/progress-cards";
 import { RecentActivity } from "@/features/dashboard/recent-activity";
 import InterviewReadinessCard from "@/features/dashboard/InterviewReadinessCard";
-import AIMentorCard from "../features/dashboard/AIMentorCard";
+// import AIMentorCard from "../features/dashboard/AIMentorCard";
+import AIMentorCard from "@/features/dashboard/AIMentorCard";
 import DykstraTour from "@/components/tour/DykstraTour";
 import { useDykstraTour } from "../hooks/useDysktraTour";
 

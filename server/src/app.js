@@ -41,4 +41,7 @@ app.use("/api/v1/ai", aiRoutes);
 import interviewRoutes from "./modules/interview/interview.route.js";
 
 app.use("/api/v1/interview", interviewRoutes);
+
+import feedbackRoutes from "./modules/auth/feedback/feedback.routes.js";
+app.use("/api/v1/feedback", feedbackRoutes);
 export default app;

@@ -2,7 +2,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth-store";
-import { ScreenLoader } from "@/components/ui/screenLoader";
+import { ScreenLoader } from "@/components/ui/ScreenLoader";
 
 
 

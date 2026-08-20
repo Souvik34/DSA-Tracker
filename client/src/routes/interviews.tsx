@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { ScreenLoader } from "@/components/ui/screenLoader";
+import { ScreenLoader } from "@/components/ui/ScreenLoader";
 
 export const Route = createFileRoute("/interviews")({
   component: InterviewsPage,

@@ -5,7 +5,7 @@ interface ScreenLoaderProps {
   text?: string;
   fullScreen?: boolean;
   className?: string;
-}
+} 
 
 export function ScreenLoader({
   text = "Loading",

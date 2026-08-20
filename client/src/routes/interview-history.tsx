@@ -29,7 +29,7 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { ScreenLoader } from "@/components/ui/screenLoader";
+import { ScreenLoader } from "@/components/ui/ScreenLoader";
 
 export const Route = createFileRoute("/interview-history")({
   component: InterviewHistoryPage,

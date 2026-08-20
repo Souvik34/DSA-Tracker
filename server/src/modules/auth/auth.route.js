@@ -14,7 +14,7 @@ import {
 import feedbackRoutes from "./feedback/feedback.routes.js";
 
 
-import { authLimiter } from "../../middlewares/ratelimit.js";
+import { authLimiter } from "../../middlewares/rateLimit.js";
 import { protect } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();

@@ -123,14 +123,9 @@ async getProblemNotes(id: number | string) {
   return res.data.notes;
 },
 
-async saveNotes(problemId: number | string, notes: string) {
-  const res = await api.put(
-    `/problems/${problemId}/notes`,
-    { notes }
-  );
 
-  return res.data;
-},
+
+
 
 
 async getBookmarks() {
